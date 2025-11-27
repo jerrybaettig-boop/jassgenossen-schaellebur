@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jassgenossen Schällebur</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Import Map for React and Firebase -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      }
+    }
+    </script>
+
+    <style>
+        body { background-color: #f8fafc; }
+        .loading-spinner { border-top-color: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          Trophy, Users, PlusCircle, History, Club, ChevronRight, Crown, LayoutDashboard, Image as ImageIcon 
+        } from 'lucide-react';
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+
+        // ------------------------------------------------------------------
+        // IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE
+        // 1. Go to console.firebase.google.com
+        // 2. Click your project -> Project Settings (gear icon)
+        // 3. Scroll down to "Your apps" -> "SDK setup and configuration" -> Select "Config"
+        // 4. Copy the object inside and replace the empty object below.
+        // ------------------------------------------------------------------
+        
+        const firebaseConfig = {
+            // apiKey: "AIzaSy...",
+            // authDomain: "your-project.firebaseapp.com",
+            // projectId: "your-project",
+            // storageBucket: "your-project.appspot.com",
+            // messagingSenderId: "...",
+            // appId: "..."
+        };
+
+        // Initialize Firebase
+        // We add a check to prevent errors if the user hasn't pasted the config yet
+        let app, auth, db;
+        try {
+            if (!firebaseConfig.apiKey) {
+                console.warn("Firebase config is missing. Please edit the index.html file.");
+            } else {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch (e) {
+            console.error("Error initializing Firebase:", e);
+        }
+
+        // --- App ID for Data Separation ---
+        // Since this is your private site, we can just use a simple collection name.
+        const COLLECTION_NAME = 'jass_games'; 
+        const MEMBERS = ['Laurent', 'Toni', 'Diego', 'Jérôme'];
+        const LOGO_URL = "https://share.google/ATZ3xyPUdh9i08v0Q"; 
+
+        // --- Components ---
+
+        const Loading = () => (
+            React.createElement("div", { className: "min-h-screen bg-slate-50 flex items-center justify-center" },
+                React.createElement("div", { className: "animate-spin rounded-full h-12 w-12 border-4 border-red-700 loading-spinner" })
+            )
+        );
+
+        const Card = ({ children, className = "" }) => (
+            React.createElement("div", { className: `bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ${className}` }, children)
+        );
+
+        const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
+            const baseStyle = "px-4 py-3 rounded-lg font-medium transition-all active:scale-95 flex items-center justify-center gap-2";
+            const variants = {
+                primary: "bg-red-700 text-white hover:bg-red-800 shadow-md shadow-red-700/20",
+                secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                outline: "border-2 border-slate-200 text-slate-600 hover:border-slate-300"
+            };
+            return React.createElement("button", { 
+                onClick: onClick, 
+                disabled: disabled,
+                className: `${baseStyle} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`
+            }, children);
+        };
+
+        function JassClubApp() {
+            const [user, setUser] = useState(null);
+            const [games, setGames] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('leaderboard'); 
+            const [imageError, setImageError] = useState(false);
+            const [configError, setConfigError] = useState(false);
+            
+            const [scores, setScores] = useState({ Laurent: '', Toni: '', Diego: '', Jérôme: '' });
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            useEffect(() => {
+                if (!auth) {
+                    setConfigError(true);
+                    setLoading(false);
+                    return;
+                }
+
+                const initAuth = async () => {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Auth error:", error);
+                    }
+                };
+                initAuth();
+                
+                const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                    setUser(currentUser);
+                    if (!currentUser) setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            useEffect(() => {
+                if (!user || !db) return;
+
+                // Simple collection path for standalone app
+                const gamesRef = collection(db, COLLECTION_NAME);
+                const q = query(gamesRef);
+
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const gamesData = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    
+                    gamesData.sort((a, b) => {
+                        const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : (a.timestamp || 0);
+                        const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : (b.timestamp || 0);
+                        return timeB - timeA;
+                    });
+
+                    setGames(gamesData);
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Firestore error:", error);
+                    setLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, [user]);
+
+            const leaderboard = useMemo(() => {
+                const totals = { Laurent: 0, Toni: 0, Diego: 0, Jérôme: 0 };
+                const gamesPlayed = { Laurent: 0, Toni: 0, Diego: 0, Jérôme: 0 };
+
+                games.forEach(game => {
+                    MEMBERS.forEach(member => {
+                        if (game.scores && typeof game.scores[member] === 'number') {
+                            totals[member] += game.scores[member];
+                            gamesPlayed[member] += 1;
+                        }
+                    });
+                });
+
+                return Object.entries(totals)
+                    .map(([name, score]) => ({ name, score, played: gamesPlayed[name] }))
+                    .sort((a, b) => b.score - a.score);
+            }, [games]);
+
+            const handleAddGame = async (e) => {
+                e.preventDefault();
+                if (!user || !db) return;
+                setIsSubmitting(true);
+
+                try {
+                    const parsedScores = {};
+                    let hasData = false;
+                    
+                    MEMBERS.forEach(member => {
+                        const val = parseInt(scores[member]);
+                        if (!isNaN(val)) {
+                            parsedScores[member] = val;
+                            hasData = true;
+                        } else {
+                            parsedScores[member] = 0;
+                        }
+                    });
+
+                    if (!hasData) {
+                        alert("Please enter at least one score.");
+                        setIsSubmitting(false);
+                        return;
+                    }
+
+                    await addDoc(collection(db, COLLECTION_NAME), {
+                        timestamp: serverTimestamp(),
+                        createdBy: user.uid,
+                        scores: parsedScores,
+                        type: 'Standard Jass'
+                    });
+
+                    setScores({ Laurent: '', Toni: '', Diego: '', Jérôme: '' });
+                    setActiveTab('leaderboard');
+                } catch (error) {
+                    console.error("Error adding game:", error);
+                    alert("Could not save game. Check your internet or Firebase rules.");
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
+
+            const handleDeleteGame = async (gameId) => {
+                if(!confirm("Are you sure you want to delete this game entry?")) return;
+                try {
+                    await deleteDoc(doc(db, COLLECTION_NAME, gameId));
+                } catch (error) {
+                    console.error("Error deleting:", error);
+                }
+            };
+
+            if (configError) {
+                return React.createElement("div", { className: "min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center" },
+                    React.createElement("h1", { className: "text-2xl font-bold text-red-700 mb-4" }, "Setup Required"),
+                    React.createElement("p", { className: "text-slate-600 max-w-md" }, 
+                        "To use this app, you need to open the ", 
+                        React.createElement("code", { className: "bg-slate-200 px-1 py-0.5 rounded" }, "index.html"), 
+                        " file on your computer and paste your Firebase configuration keys where indicated."
+                    )
+                );
+            }
+
+            if (loading) return React.createElement(Loading);
+
+            return React.createElement("div", { className: "min-h-screen bg-slate-50 font-sans text-slate-900 pb-24 md:pb-10" },
+                // Header
+                React.createElement("header", { className: "bg-gradient-to-br from-red-800 to-red-600 text-white pt-8 pb-16 px-4 shadow-lg relative overflow-hidden" },
+                    React.createElement("div", { className: "absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" },
+                        React.createElement(Club, { className: "absolute -top-10 -left-10 w-48 h-48 rotate-12" }),
+                        React.createElement(Club, { className: "absolute bottom-0 right-0 w-32 h-32 -rotate-12" })
+                    ),
+                    React.createElement("div", { className: "max-w-md mx-auto text-center relative z-10" },
+                        React.createElement("div", { className: "bg-white/10 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm shadow-inner border border-white/20 overflow-hidden" },
+                            !imageError ? 
+                                React.createElement("img", { src: LOGO_URL, alt: "Club Logo", className: "w-full h-full object-cover", onError: () => setImageError(true) }) : 
+                                React.createElement(Club, { size: 40, className: "text-white" })
+                        ),
+                        React.createElement("h1", { className: "text-2xl font-bold tracking-tight mb-1" }, "Jassgenossen Schällebur"),
+                        React.createElement("p", { className: "text-red-100 text-sm font-medium opacity-90" }, "Est. 2024 • Zürich")
+                    )
+                ),
+
+                React.createElement("main", { className: "max-w-md mx-auto px-4 -mt-8 relative z-10 space-y-6" },
+                    // Navigation Tabs (Desktop/Tablet mostly)
+                    activeTab !== 'about' && React.createElement(Card, { className: "flex p-1 bg-slate-100 border-none" },
+                        ['leaderboard', 'add', 'history'].map(tab => 
+                            React.createElement("button", {
+                                key: tab,
+                                onClick: () => setActiveTab(tab),
+                                className: `flex-1 py-2 text-sm font-medium rounded-lg transition-all capitalize ${activeTab === tab ? 'bg-white text-red-700 shadow-sm' : 'text-slate-500'}`
+                            }, tab === 'add' ? 'Add Points' : tab)
+                        )
+                    ),
+
+                    // View: Leaderboard
+                    activeTab === 'leaderboard' && React.createElement("div", { className: "space-y-4" },
+                        React.createElement("div", { className: "grid gap-3" },
+                            leaderboard.map((player, index) => 
+                                React.createElement("div", { 
+                                    key: player.name,
+                                    className: `relative overflow-hidden rounded-xl p-4 flex items-center justify-between transition-all ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-amber-200 border shadow-sm' : 'bg-white border border-slate-200 shadow-sm'}`
+                                },
+                                    React.createElement("div", { className: "flex items-center gap-4" },
+                                        React.createElement("div", { className: `w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${index === 0 ? 'bg-amber-100 text-amber-700' : index === 1 ? 'bg-slate-100 text-slate-600' : index === 2 ? 'bg-orange-50 text-orange-700' : 'bg-slate-50 text-slate-400'}` }, index + 1),
+                                        React.createElement("div", null,
+                                            React.createElement("h3", { className: "font-bold text-lg text-slate-800" }, player.name),
+                                            React.createElement("p", { className: "text-xs text-slate-500" }, player.played, " Games Played")
+                                        )
+                                    ),
+                                    React.createElement("div", { className: "text-right" },
+                                        React.createElement("span", { className: `text-2xl font-black tracking-tight ${index === 0 ? 'text-amber-600' : 'text-slate-800'}` }, player.score.toLocaleString()),
+                                        React.createElement("p", { className: "text-[10px] uppercase font-bold text-slate-400 tracking-wider" }, "Points")
+                                    ),
+                                    index === 0 && React.createElement(Crown, { className: "absolute -top-1 -right-1 text-amber-100 rotate-12", size: 48 })
+                                )
+                            )
+                        ),
+                        React.createElement("div", { className: "bg-blue-50 border border-blue-100 rounded-lg p-4 mt-6" },
+                            React.createElement("h4", { className: "text-blue-800 font-semibold text-sm mb-1 flex items-center gap-2" }, 
+                                React.createElement(Users, { size: 16 }), " Club Purpose"
+                            ),
+                            React.createElement("p", { className: "text-blue-900/80 text-sm leading-relaxed" }, 
+                                "We are Jassgenossen Schällebur. Dedicated to the art of Jass, cultivating friendship, honouring tradition, and always playing the perfect Trumpf."
+                            )
+                        )
+                    ),
+
+                    // View: Add Score
+                    activeTab === 'add' && React.createElement(Card, { className: "p-6" },
+                        React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-4 flex items-center gap-2" },
+                            React.createElement(PlusCircle, { className: "text-red-700", size: 20 }), " New Game Entry"
+                        ),
+                        React.createElement("form", { onSubmit: handleAddGame, className: "space-y-4" },
+                            React.createElement("div", { className: "grid grid-cols-1 gap-4" },
+                                MEMBERS.map(member => 
+                                    React.createElement("div", { key: member, className: "flex items-center gap-3" },
+                                        React.createElement("label", { className: "w-24 font-medium text-slate-700" }, member),
+                                        React.createElement("input", {
+                                            type: "number",
+                                            placeholder: "0",
+                                            value: scores[member],
+                                            onChange: (e) => setScores(prev => ({ ...prev, [member]: e.target.value })),
+                                            className: "flex-1 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                                        })
+                                    )
+                                )
+                            ),
+                            React.createElement("div", { className: "pt-4" },
+                                React.createElement(Button, { disabled: isSubmitting, className: "w-full text-lg shadow-xl shadow-red-900/10" }, 
+                                    isSubmitting ? 'Saving...' : 'Save Points'
+                                )
+                            )
+                        )
+                    ),
+
+                    // View: History
+                    activeTab === 'history' && React.createElement("div", { className: "space-y-4" },
+                        React.createElement("h2", { className: "font-bold text-slate-500 text-sm uppercase tracking-wider ml-1" }, "Recent Games"),
+                        games.length === 0 ? 
+                            React.createElement("div", { className: "text-center py-12 text-slate-400" },
+                                React.createElement(History, { size: 48, className: "mx-auto mb-3 opacity-20" }),
+                                React.createElement("p", null, "No games recorded yet.")
+                            ) :
+                            games.map(game => 
+                                React.createElement(Card, { key: game.id, className: "p-4" },
+                                    React.createElement("div", { className: "flex justify-between items-start mb-3 border-b border-slate-100 pb-2" },
+                                        React.createElement("div", { className: "text-xs font-semibold text-slate-400 flex items-center gap-1" },
+                                            React.createElement(LayoutDashboard, { size: 12 }),
+                                            game.timestamp?.toDate ? game.timestamp.toDate().toLocaleDateString() : 'Just now'
+                                        ),
+                                        React.createElement("button", { 
+                                            onClick: () => handleDeleteGame(game.id),
+                                            className: "text-xs text-red-300 hover:text-red-600 px-2"
+                                        }, "Delete")
+                                    ),
+                                    React.createElement("div", { className: "grid grid-cols-2 gap-y-2 text-sm" },
+                                        Object.entries(game.scores || {})
+                                            .sort(([,a], [,b]) => b - a)
+                                            .map(([name, score]) => 
+                                                React.createElement("div", { key: name, className: "flex justify-between pr-4" },
+                                                    React.createElement("span", { className: "text-slate-600" }, name),
+                                                    React.createElement("span", { className: "font-bold text-slate-900" }, score)
+                                                )
+                                            )
+                                    )
+                                )
+                            )
+                    )
+                ),
+
+                // Mobile Bottom Nav
+                React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 pb-safe px-6 py-3 flex justify-around items-center z-50 md:hidden" },
+                    React.createElement("button", { 
+                        onClick: () => setActiveTab('leaderboard'),
+                        className: `flex flex-col items-center gap-1 ${activeTab === 'leaderboard' ? 'text-red-700' : 'text-slate-400'}`
+                    },
+                        React.createElement(Trophy, { size: 20, strokeWidth: activeTab === 'leaderboard' ? 2.5 : 2 }),
+                        React.createElement("span", { className: "text-[10px] font-medium" }, "Rankings")
+                    ),
+                    React.createElement("button", { 
+                        onClick: () => setActiveTab('add'),
+                        className: "bg-red-700 text-white p-3 rounded-full shadow-lg shadow-red-700/30 -mt-6 border-4 border-slate-50"
+                    },
+                        React.createElement(PlusCircle, { size: 24 })
+                    ),
+                    React.createElement("button", { 
+                        onClick: () => setActiveTab('history'),
+                        className: `flex flex-col items-center gap-1 ${activeTab === 'history' ? 'text-red-700' : 'text-slate-400'}`
+                    },
+                        React.createElement(History, { size: 20, strokeWidth: activeTab === 'history' ? 2.5 : 2 }),
+                        React.createElement("span", { className: "text-[10px] font-medium" }, "History")
+                    )
+                )
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(JassClubApp));
+    </script>
+</body>
+</html>
