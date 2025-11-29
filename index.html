@@ -1,43 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jassgenossen Schällebur - Leaderboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jassgenossen Schällebur</title>
     
+    <!-- Favicon mit dem neuen Logo -->
+    <link rel="icon" href="https://github.com/user-attachments/assets/aebb9a7b-aa92-4643-be2b-8dd06c255eea" type="image/png">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
     <style>
-        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
         .loading-spinner { border-top-color: transparent; }
-        /* Style for the logo placeholder if the image fails */
-        #logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-    /* Hintergrundmuster für den Header (Ihr Schälle-Bild, Base64) */
-    .header-bg-pattern {
-        /* Das Bild ist als Base64-Daten enthalten */
-        background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAM1BMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACHxR1VAAAAEHRSTlMA////AP///////////v7+/v7++22U7wAAAFtJREFUeNqdzFsSwCAAAzD/D73w0QcW2sA2+mBqVpQp19SgV20yK4mBv3wH+v1+e6/9oX1b3+h09g83+O8B88/5J575Vz76xXz0D779h5/x9x89g++79w/D33z2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D33z2Dzf47wHzz/knnflXPvrFfPQPP/3Hn/H3Hz2D4f33z/D3H/z/eAAAAAElFTkSuQmCC');
+
+        /* Hintergrundmuster "Schälle" */
+        .schalle-bg-pattern {
+            background-color: #1a1a1a; /* Fallback dunkelgrau */
+            /* URL zum Schälle Bild */
+            background-image: url('https://github.com/user-attachments/assets/22c10c8c-cc7a-4e69-965e-45a195246218');
             background-repeat: repeat;
-            background-size: 50px 50px;
+            background-size: 80px 80px; /* Größe der Schälle Kacheln */
+            background-blend-mode: overlay;
+        }
+
+        /* Mobile Navigation Fade Effect */
+        .nav-fade {
+            transition: opacity 0.3s ease, background-color 0.3s ease, backdrop-filter 0.3s ease;
+        }
+        .nav-scrolled {
+            opacity: 0.6;
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+        }
+        .nav-scrolled:hover {
+            opacity: 1;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Custom Scrollbar for nicer tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
         }
     </style>
 </head>
-<body>
+<body class="pb-24 md:pb-0"> <!-- Padding bottom for mobile nav space -->
+
     <div id="app">
-        <!-- The entire application will be rendered here -->
+        <!-- Application Content -->
     </div>
 
     <!-- Firebase Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ------------------------------------------------------------------
         // ##################################################################
@@ -56,440 +95,880 @@
 
         // --- Constants ---
         const COLLECTION_NAME = 'jass_games';
-        // HINWEIS: Dies ist die URL, die Sie von GitHub bereitgestellt haben.
-        // Stellen Sie sicher, dass dies der RAW-Link ist, damit er öffentlich zugänglich ist!
-        const LOGO_URL = "https://github.com/user-attachments/assets/aebb9a7b-aa92-4643-be2b-8dd06c255eea"; // Ihr Club-Logo
-        const ACCESS_CODE = '1993'; // <-- Zugangscode für Punkteingabe
-        // Define primary gold and black colors for consistency
-        const PRIMARY_GOLD = 'bg-yellow-500';
-        const PRIMARY_GOLD_HOVER = 'hover:bg-yellow-600';
-        const PRIMARY_BLACK_TEXT = 'text-gray-900';
-        const PRIMARY_BLACK_HEADER = 'bg-gradient-to-br from-gray-900 to-gray-700';
+        
+        // Updated URLs
+        const LOGO_URL = "https://github.com/user-attachments/assets/aebb9a7b-aa92-4643-be2b-8dd06c255eea";
+        const BACKGROUND_URL = "https://github.com/user-attachments/assets/22c10c8c-cc7a-4e69-965e-45a195246218";
+        
+        // NEW SECURITY CODE
+        const ACCESS_CODE = 'JG2020'; 
 
-        // Startpunkte der Spieler (weniger ist besser!)
+        // Styling Constants
+        const COLOR_GOLD = 'text-yellow-600';
+        const BG_GOLD = 'bg-yellow-500';
+        const BG_GOLD_HOVER = 'hover:bg-yellow-600';
+        const BG_DARK = 'bg-slate-900';
+
+        // Players Data
         const initialPlayers = [
             { id: 'diego', name: 'Diego', score: 311, color: 'bg-red-500' },
             { id: 'toni', name: 'Toni', score: 208, color: 'bg-blue-500' },
             { id: 'laurent', name: 'Laurent', score: 218, color: 'bg-green-500' },
-            { id: 'jerome', name: 'Jérôme', score: 199, color: 'bg-yellow-500' },
+            { id: 'jerome', name: 'Jérôme', score: 199, color: 'bg-amber-500' },
         ];
 
-
-        // --- Utility Functions ---
-        
-        const renderErrorState = (message, details = "") => `
-            <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
-                <i data-lucide="alert-triangle" class="text-red-500 w-12 h-12 mb-4"></i>
-                <h1 class="text-2xl font-bold text-red-700 mb-2">Website Fehler</h1>
-                <p class="text-slate-600 max-w-md">${message}</p>
-                ${details ? `<p class="text-sm text-slate-500 mt-3 p-3 bg-red-100 rounded-lg">${details}</p>` : ''}
-                <p class="text-xs text-slate-400 mt-4">Prüfen Sie Ihre 'index.html' und die Firebase Konsole.</p>
-            </div>
-        `;
-
-
-        // --- Firebase Initialization ---
+        // --- State Management ---
         let app, auth, db;
         let isConfigured = false;
-        
-        // CHECK if any key is provided
-        if (!firebaseConfig.apiKey) {
-            document.getElementById('app').innerHTML = renderErrorState(
-                "Fehler: Firebase Konfiguration fehlt.",
-                "Bitte fügen Sie Ihre Firebase Schlüssel in die 'firebaseConfig'-Variable in der 'index.html' ein."
-            );
-        } else {
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                isConfigured = true;
-            } catch (e) {
-                console.error("Firebase Init Error:", e);
-                document.getElementById('app').innerHTML = renderErrorState("Fehler beim Initialisieren von Firebase.", e.message);
-            }
-        }
-        
         let user = null;
         let games = [];
         let activeTab = 'leaderboard';
         let leaderboard = [];
-        
-        // --- Utility Functions (continued) ---
 
-        /** Renders a common card component */
-        const renderCard = (content, className = "") => `
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ${className}">
-                ${content}
+        // Calculator State
+        let calculatorState = {
+            team1: [],
+            team2: [],
+            rounds: [], // { pointsA, pointsB, weisA, weisB, multiplier, winner: 'team1'|'team2' }
+            penalties: [], // Pending penalties to be submitted
+            activeStep: 'setup', // 'setup', 'play', 'finish'
+            bergReached: false, // track if 1500 was hit
+            startTime: null
+        };
+        
+        // Bulk Entry State
+        let bulkEntryState = {}; // { diego: 0, toni: 2 ... }
+
+        // --- UI Components ---
+
+        const renderErrorState = (message, details = "") => `
+            <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
+                <i data-lucide="alert-triangle" class="text-red-500 w-12 h-12 mb-4"></i>
+                <h1 class="text-2xl font-bold text-red-700 mb-2">Systemfehler</h1>
+                <p class="text-slate-600 max-w-md">${message}</p>
+                ${details ? `<p class="text-xs text-slate-500 mt-3 p-3 bg-red-100 rounded-lg font-mono break-all">${details}</p>` : ''}
             </div>
         `;
-        
+
         const renderLoading = () => `
-            <div class="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-4 ${PRIMARY_GOLD.replace('bg-', 'border-')} loading-spinner"></div>
+            <div class="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
+                <div class="w-24 h-24 relative animate-bounce">
+                    <img src="${LOGO_URL}" class="w-full h-full object-contain drop-shadow-lg" alt="Loading...">
+                </div>
+                <div class="text-slate-400 text-sm font-medium animate-pulse">Lade Schällebur...</div>
             </div>
         `;
 
         const renderHeader = () => `
-            <header class="${PRIMARY_BLACK_HEADER} header-bg-pattern text-white pt-8 pb-16 px-4 shadow-lg relative overflow-hidden">
-                
-                <!-- Logo mit der vollen Bildgröße -->
+            <header class="schalle-bg-pattern ${BG_DARK} text-white pt-10 pb-20 px-4 shadow-xl relative overflow-hidden">
+                <div class="absolute inset-0 bg-black/60"></div> <!-- Overlay for readability -->
                 <div class="max-w-md mx-auto text-center relative z-10">
-                    <div id="logo-container" class="bg-white/90 w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-4 p-2 shadow-xl">
-                        <!-- Logo-Bild -->
+                    <div id="logo-container" class="bg-white/10 backdrop-blur-sm w-32 h-32 rounded-2xl flex items-center justify-center mx-auto mb-4 p-2 shadow-2xl border border-white/20 transform rotate-3 hover:rotate-0 transition-all duration-500">
                         <img 
                             src="${LOGO_URL}" 
-                            alt="Jassgenossen Schällebur Logo" 
-                            class="w-full h-full object-contain rounded-full"
+                            alt="Jassgenossen Logo" 
+                            class="w-full h-full object-contain filter drop-shadow-md"
                         />
                     </div>
-                    <h1 class="text-2xl font-bold tracking-tight mb-1">Jassgenossen Schällebur</h1>
-                    <p class="text-gray-100 text-sm font-medium opacity-90">Est. 2020 • Zürich</p>
+                    <h1 class="text-3xl font-bold tracking-tight mb-1 text-white text-shadow-lg font-serif">Jassgenossen</h1>
+                    <h2 class="text-xl text-yellow-400 font-medium tracking-widest uppercase text-shadow-sm font-serif">Schällebur</h2>
                 </div>
             </header>
         `;
 
-        const renderNavigation = () => `
-            ${activeTab !== 'about' ? renderCard(`
-                <div class="flex p-1 bg-slate-100 border-none">
-                    <button onclick="setActiveTab('leaderboard')" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'leaderboard' ? `${PRIMARY_GOLD.replace('bg-', 'bg-')} ${PRIMARY_BLACK_TEXT} shadow-sm` : 'text-slate-500'}">Rankings</button>
-                    <button onclick="setActiveTab('add')" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'add' ? `${PRIMARY_GOLD.replace('bg-', 'bg-')} ${PRIMARY_BLACK_TEXT} shadow-sm` : 'text-slate-500'}">Punkte eintragen</button>
-                    <button onclick="setActiveTab('history')" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'history' ? `${PRIMARY_GOLD.replace('bg-', 'bg-')} ${PRIMARY_BLACK_TEXT} shadow-sm` : 'text-slate-500'}">History</button>
-                </div>
-            `, "flex p-1 bg-slate-100 border-none") : ''}
+        // Desktop Navigation (Hidden on mobile)
+        const renderDesktopNav = () => `
+            <div class="hidden md:flex justify-center gap-4 -mt-8 relative z-20 mb-8 px-4">
+                ${['leaderboard', 'add', 'calculator', 'history'].map(tab => `
+                    <button onclick="setActiveTab('${tab}')" 
+                        class="px-6 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-1 ${activeTab === tab 
+                        ? 'bg-yellow-500 text-slate-900 ring-4 ring-yellow-500/30' 
+                        : 'bg-white text-slate-600 hover:bg-slate-50'}">
+                        ${getTabLabel(tab)}
+                    </button>
+                `).join('')}
+            </div>
         `;
-        
-        const getLeaderboard = (gameResults) => {
-            // Kopieren der initialen Spielerdaten, um sie nicht zu überschreiben
-            const leaderboard = JSON.parse(JSON.stringify(initialPlayers));
 
-            // Punkte aus Firestore auf die Startpunkte addieren
-            gameResults.forEach(result => {
-                const player = leaderboard.find(p => p.id === result.playerId);
-                if (player) {
-                    // Strafpunkte werden addiert (da weniger Punkte besser ist)
-                    player.score += result.points;
-                }
-            });
-
-            // LOGIK: Sortieren nach aufsteigender Punktzahl (weniger Punkte = besser/Platz 1)
-            leaderboard.sort((a, b) => a.score - b.score);
-
-            // Rang zuweisen
-            leaderboard.forEach((player, index) => {
-                player.rank = index + 1;
-            });
-
-            return leaderboard;
+        const getTabLabel = (tab) => {
+            const labels = {
+                leaderboard: '<span class="flex items-center gap-2"><i data-lucide="crown" class="w-4 h-4"></i> Rangliste</span>',
+                add: '<span class="flex items-center gap-2"><i data-lucide="list-plus" class="w-4 h-4"></i> Direkt-Eintrag</span>',
+                calculator: '<span class="flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4"></i> Jass-Tafel</span>',
+                history: '<span class="flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Verlauf</span>'
+            };
+            return labels[tab];
         };
 
-        const renderLeaderboard = () => `
-            <div class="space-y-4">
-                <ul id="leaderboard-list" class="grid gap-3">
+        // --- View: Leaderboard ---
+        const renderLeaderboard = () => {
+            return `
+            <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="flex items-center justify-between px-2">
+                    <h3 class="text-lg font-bold text-slate-700 font-serif">Aktueller Stand</h3>
+                    <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">Saison 2024/25</span>
+                </div>
+                <ul class="grid gap-4">
                     ${leaderboard.map((player) => {
                         const isLeader = player.rank === 1;
                         const isLast = player.rank === initialPlayers.length;
-
-                        const rankText = isLeader ? 
-                            `<span class="text-yellow-500" data-lucide="crown"></span>` : 
-                            `#${player.rank}`;
-                        
                         return `
-                            <li class="p-4 flex items-center justify-between rounded-xl shadow-lg mb-3 ${isLeader ? 'bg-yellow-50 border-yellow-300 border-2 scale-[1.02]' : isLast ? 'bg-gray-100 border-gray-300 border' : 'bg-white border-gray-200 border'} transition-all duration-300">
-                                <!-- Rang & Name -->
-                                <div class="flex items-center space-x-4">
-                                    <div class="font-bold text-xl w-8 text-center ${isLeader ? 'text-yellow-700' : 'text-gray-500'}">
-                                        <i data-lucide="${isLeader ? 'crown' : 'hash'}" class="w-6 h-6 inline-block align-middle"></i>
+                            <li class="relative group">
+                                <div class="absolute inset-0 bg-gradient-to-r ${isLeader ? 'from-yellow-200 to-yellow-100' : 'from-slate-100 to-slate-50'} rounded-2xl transform transition-transform group-hover:scale-[1.02] duration-300 shadow-sm"></div>
+                                <div class="relative p-5 flex items-center justify-between z-10">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 flex items-center justify-center rounded-full font-bold text-xl ${isLeader ? 'bg-yellow-500 text-white shadow-yellow-500/50 shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}">
+                                            ${isLeader ? '<i data-lucide="trophy" class="w-6 h-6"></i>' : player.rank}
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-lg text-slate-800">${player.name}</div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Rang ${player.rank}</div>
+                                        </div>
                                     </div>
-                                    <span class="text-lg font-semibold text-gray-800">${player.name}</span>
-                                </div>
-                                
-                                <!-- Punkte -->
-                                <div class="text-2xl font-extrabold ${isLeader ? 'text-amber-700' : 'text-gray-700'}">
-                                    ${player.score} <span class="text-sm font-normal text-gray-500">CHF</span>
+                                    <div class="text-right">
+                                        <div class="text-3xl font-black ${isLeader ? 'text-yellow-600' : 'text-slate-700'} tabular-nums tracking-tight">
+                                            ${player.score}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 uppercase font-bold">CHF Strafe</div>
+                                    </div>
                                 </div>
                             </li>
                         `;
                     }).join('')}
                 </ul>
                 
-                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-6">
-                    <h4 class="text-blue-800 font-semibold text-sm mb-1 flex items-center gap-2">
-                        <i data-lucide="users" class="w-4 h-4"></i> Club Zweck
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden mt-8">
+                    <i data-lucide="scale" class="absolute right-[-20px] bottom-[-20px] w-32 h-32 text-white/5 rotate-12"></i>
+                    <h4 class="font-serif text-xl mb-2 text-yellow-400 flex items-center gap-2">
+                        <i data-lucide="gavel" class="w-5 h-5"></i>
+                        Strafenkatalog
                     </h4>
-                    <p class="text-blue-900/80 text-sm leading-relaxed">
-                        Wir sind Jassgenossen Schällebur. Wir pflegen die Kunst des Jassens, die Freundschaft und die Vereinskasse (durch Strafen für schlechtes Spiel!). Weniger Punkte = Bester Spieler!
-                    </p>
+                    <ul class="space-y-2 text-sm text-slate-300 relative z-10">
+                        <li class="flex justify-between border-b border-white/10 pb-1"><span>Spiel zu 0 verlieren (Match)</span> <span class="text-white font-bold">+1.00 CHF</span></li>
+                        <li class="flex justify-between border-b border-white/10 pb-1"><span>Zuletzt über den Berg (1500)</span> <span class="text-white font-bold">+1.00 CHF</span></li>
+                        <li class="flex justify-between"><span>Spiel verlieren (2500)</span> <span class="text-white font-bold">+2.00 CHF</span></li>
+                    </ul>
+                </div>
+            </div>
+            `;
+        };
+
+        // --- View: Direct Entry (Bulk) ---
+        const renderBulkEntry = () => {
+            // Initialize state if empty
+            if (Object.keys(bulkEntryState).length === 0) {
+                initialPlayers.forEach(p => bulkEntryState[p.id] = 0);
+            }
+
+            return `
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="list-plus" class="text-yellow-500"></i> Direkteingabe
+                    </h2>
+                    <button onclick="resetBulkState()" class="text-xs text-slate-400 hover:text-red-500">Reset</button>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <div id="bulk-message-box" class="hidden p-3 rounded-lg text-sm"></div>
+
+                    <div class="space-y-3">
+                        ${initialPlayers.map(p => `
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <label class="font-semibold text-slate-700 flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full ${p.color} flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                        ${p.name.charAt(0)}
+                                    </div>
+                                    ${p.name}
+                                </label>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="updateBulkScore('${p.id}', -1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors">
+                                        <i data-lucide="minus" class="w-4 h-4"></i>
+                                    </button>
+                                    <input type="number" id="bulk-${p.id}" value="${bulkEntryState[p.id]}" readonly 
+                                        class="w-12 text-center font-bold text-lg bg-transparent border-none focus:ring-0 p-0 text-slate-800 tabular-nums">
+                                    <button onclick="updateBulkScore('${p.id}', 1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 text-yellow-600 hover:bg-yellow-50 hover:border-yellow-300 flex items-center justify-center transition-colors shadow-sm">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Autorisierung</label>
+                        <div class="flex gap-2">
+                            <input type="password" id="bulk-code" placeholder="Code eingeben" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-mono text-center focus:ring-2 focus:ring-yellow-500 focus:outline-none transition-all">
+                            <button onclick="submitBulkEntry()" id="bulk-submit-btn" class="flex-1 bg-slate-900 text-white font-bold rounded-xl py-3 shadow-lg shadow-slate-900/20 hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                <span>Speichern</span>
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4 text-xs text-slate-400 max-w-xs mx-auto">
+                Verwende diese Ansicht um schnell Strafen für mehrere Spieler gleichzeitig einzutragen.
+            </div>
+            `;
+        };
+
+        // --- View: Jass Calculator ---
+        const renderCalculator = () => {
+            if (calculatorState.activeStep === 'setup') {
+                return renderCalcSetup();
+            } else if (calculatorState.activeStep === 'play') {
+                return renderCalcPlay();
+            } else {
+                return renderCalcFinish();
+            }
+        };
+
+        const renderCalcSetup = () => `
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95">
+                <div class="bg-slate-900 text-white p-6 text-center relative overflow-hidden">
+                    <div class="absolute inset-0 schalle-bg-pattern opacity-20"></div>
+                    <h2 class="text-xl font-serif font-bold relative z-10">Neue Jass-Runde</h2>
+                    <p class="text-slate-400 text-xs mt-1 relative z-10">Teams definieren</p>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- Team 1 Selection -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i> Team 1
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${initialPlayers.map(p => `
+                                <button onclick="toggleTeamSelection('${p.id}', 1)" 
+                                    class="p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-medium text-sm
+                                    ${calculatorState.team1.includes(p.id) 
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-inner' 
+                                        : calculatorState.team2.includes(p.id) 
+                                            ? 'opacity-30 cursor-not-allowed border-slate-100 bg-slate-50' 
+                                            : 'border-slate-100 hover:border-blue-200 text-slate-600'}">
+                                    ${p.name}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Team 2 Selection -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-red-600 uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i> Team 2
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${initialPlayers.map(p => `
+                                <button onclick="toggleTeamSelection('${p.id}', 2)" 
+                                    class="p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-medium text-sm
+                                    ${calculatorState.team2.includes(p.id) 
+                                        ? 'border-red-500 bg-red-50 text-red-700 shadow-inner' 
+                                        : calculatorState.team1.includes(p.id) 
+                                            ? 'opacity-30 cursor-not-allowed border-slate-100 bg-slate-50' 
+                                            : 'border-slate-100 hover:border-red-200 text-slate-600'}">
+                                    ${p.name}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <button onclick="startCalculatorGame()" 
+                        ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? 'disabled' : ''}
+                        class="w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2
+                        ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) 
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:shadow-yellow-500/30 hover:scale-[1.02]'}">
+                        Spiel starten
+                    </button>
                 </div>
             </div>
         `;
 
-        const renderAddScore = () => `
-            ${renderCard(`
-                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="${PRIMARY_GOLD.replace('bg-', 'text-')} w-5 h-5"></i> Neue Punkte (Strafen) eintragen
-                </h2>
-                <div id="message-box" class="hidden p-3 rounded-lg text-sm mb-4"></div>
-                <form id="score-form" class="space-y-4">
-                    
-                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 mb-4">
-                        <label for="security-code" class="block text-xs font-semibold uppercase text-gray-500 mb-1">Zugangscode</label>
-                        <input
-                            type="password"
-                            id="security-code"
-                            placeholder="Code: ${ACCESS_CODE}"
-                            class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 font-mono text-lg focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all"
-                        />
+        const renderCalcPlay = () => {
+            // Totals calculation
+            const totalA = calculatorState.rounds.reduce((sum, r) => sum + r.pointsA + (r.weisA || 0), 0);
+            const totalB = calculatorState.rounds.reduce((sum, r) => sum + r.pointsB + (r.weisB || 0), 0);
+            
+            const team1Names = calculatorState.team1.map(id => initialPlayers.find(p => p.id === id).name).join(' & ');
+            const team2Names = calculatorState.team2.map(id => initialPlayers.find(p => p.id === id).name).join(' & ');
+
+            return `
+            <div class="flex flex-col h-full animate-in fade-in duration-300">
+                <!-- Scoreboard -->
+                <div class="bg-slate-900 rounded-2xl p-4 text-white shadow-2xl mb-4 relative overflow-hidden">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-white/10"></div>
+                    <div class="flex justify-between items-end relative z-10">
+                        <div class="text-center w-1/2 pr-2">
+                            <div class="text-[10px] text-blue-300 uppercase tracking-widest font-bold mb-1 truncate">${team1Names}</div>
+                            <div class="text-4xl font-black font-mono text-blue-400 leading-none">${totalA}</div>
+                            <div class="text-xs text-slate-500 mt-1">/ 2500</div>
+                        </div>
+                        <div class="text-center w-1/2 pl-2">
+                            <div class="text-[10px] text-red-300 uppercase tracking-widest font-bold mb-1 truncate">${team2Names}</div>
+                            <div class="text-4xl font-black font-mono text-red-400 leading-none">${totalB}</div>
+                            <div class="text-xs text-slate-500 mt-1">/ 2500</div>
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label for="player-select" class="block text-sm font-medium text-slate-700 mb-1">Spieler wählen</label>
-                        <select id="player-select" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-lg font-semibold focus:outline-none focus:ring-2 ${PRIMARY_GOLD.replace('bg-', 'focus:ring-')}">
-                            ${initialPlayers.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                        </select>
+                </div>
+
+                <!-- Input Area -->
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-4 mb-4">
+                    <div class="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
+                        <button onclick="setMultiplier(1)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 1 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Trumpf (x1)</button>
+                        <button onclick="setMultiplier(3)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 3 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Obenabe (x3)</button>
+                        <button onclick="setMultiplier(3)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 3 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Uneufe (x3)</button>
+                        <button onclick="setMultiplier(2)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 2 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Andere (x2)</button>
                     </div>
 
-                    <div>
-                        <label for="points-input" class="block text-sm font-medium text-slate-700 mb-1">Strafpunkte (CHF)</label>
-                        <input
-                            type="number"
-                            id="points-input"
-                            placeholder="z.B. 5"
-                            min="1"
-                            class="flex-1 w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-lg font-semibold focus:outline-none focus:ring-2 ${PRIMARY_GOLD.replace('bg-', 'focus:ring-')} focus:border-transparent transition-all"
-                        />
+                    <div class="grid grid-cols-[1fr,auto,1fr] gap-4 items-end mb-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Team 1 Karten</label>
+                            <input type="number" id="input-points-a" inputmode="numeric" oninput="calculatePoints('a')" placeholder="0" 
+                                class="w-full h-12 text-center text-xl font-bold border-b-2 border-blue-200 focus:border-blue-500 outline-none bg-slate-50 rounded-t-lg">
+                        </div>
+                        <div class="text-slate-300 font-light pb-3">vs</div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Team 2 Karten</label>
+                            <input type="number" id="input-points-b" inputmode="numeric" oninput="calculatePoints('b')" placeholder="157" 
+                                class="w-full h-12 text-center text-xl font-bold border-b-2 border-red-200 focus:border-red-500 outline-none bg-slate-50 rounded-t-lg">
+                        </div>
                     </div>
                     
-                    <div class="pt-4">
-                        <button type="submit" id="submitBtn" class="w-full text-lg px-4 py-3 rounded-lg font-medium transition-all active:scale-95 flex items-center justify-center gap-2 ${PRIMARY_GOLD} ${PRIMARY_BLACK_TEXT} ${PRIMARY_GOLD_HOVER} shadow-xl shadow-yellow-800/20">
-                            Punkte speichern
-                        </button>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                         <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Weis T1</label>
+                            <input type="number" id="input-weis-a" inputmode="numeric" placeholder="0" class="w-full text-center text-sm border border-slate-200 rounded-lg py-2">
+                        </div>
+                         <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Weis T2</label>
+                            <input type="number" id="input-weis-b" inputmode="numeric" placeholder="0" class="w-full text-center text-sm border border-slate-200 rounded-lg py-2">
+                        </div>
                     </div>
-                </form>
-            `, "p-6")}
-        `;
+
+                    <button onclick="submitRound()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
+                        Runde schreiben
+                    </button>
+                </div>
+
+                <!-- Last Rounds List -->
+                <div class="flex-1 overflow-auto custom-scrollbar bg-slate-50 rounded-xl border border-slate-200 p-2">
+                    <table class="w-full text-sm">
+                        <thead class="text-xs text-slate-400 uppercase sticky top-0 bg-slate-50">
+                            <tr>
+                                <th class="pb-2 text-left">Runde</th>
+                                <th class="pb-2 text-right text-blue-600">Team 1</th>
+                                <th class="pb-2 text-right text-red-600">Team 2</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${[...calculatorState.rounds].reverse().map((r, i) => `
+                                <tr class="text-slate-600">
+                                    <td class="py-2 text-xs font-mono text-slate-400">#${calculatorState.rounds.length - i} (${r.multiplier}x)</td>
+                                    <td class="py-2 text-right font-medium">${r.pointsA + (r.weisA||0)}</td>
+                                    <td class="py-2 text-right font-medium">${r.pointsB + (r.weisB||0)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button onclick="abortGame()" class="mt-4 text-xs text-red-400 text-center w-full hover:underline">
+                    Spiel abbrechen
+                </button>
+            </div>
+            `;
+        };
+
+        const renderCalcFinish = () => {
+             const totalA = calculatorState.rounds.reduce((sum, r) => sum + r.pointsA + (r.weisA || 0), 0);
+             const totalB = calculatorState.rounds.reduce((sum, r) => sum + r.pointsB + (r.weisB || 0), 0);
+             const winnerTeam = totalA >= 2500 ? 1 : 2;
+             
+             return `
+             <div class="bg-white rounded-2xl shadow-xl overflow-hidden text-center p-8 animate-in zoom-in-95">
+                <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 animate-bounce">
+                    <i data-lucide="trophy" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-2xl font-serif font-bold text-slate-800 mb-2">Spiel beendet!</h2>
+                <p class="text-slate-500 mb-6">
+                    Sieger: <span class="font-bold text-slate-800">${winnerTeam === 1 ? 'Team 1' : 'Team 2'}</span> (${Math.max(totalA, totalB)} Punkte)
+                </p>
+
+                <div class="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 text-left">
+                    <h3 class="font-bold text-red-800 text-sm uppercase tracking-wide mb-2 flex items-center gap-2">
+                        <i data-lucide="alert-octagon" class="w-4 h-4"></i> Zu vergebende Strafen
+                    </h3>
+                    ${calculatorState.penalties.length > 0 ? `
+                        <ul class="space-y-2">
+                            ${calculatorState.penalties.map(p => `
+                                <li class="flex justify-between items-center text-sm border-b border-red-100 last:border-0 pb-1 last:pb-0">
+                                    <span class="text-slate-700 font-medium">
+                                        ${initialPlayers.find(pl => pl.id === p.playerId).name}
+                                    </span>
+                                    <div class="text-right">
+                                        <div class="font-bold text-red-600">+${p.amount} CHF</div>
+                                        <div class="text-[10px] text-red-400">${p.reason}</div>
+                                    </div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<div class="text-sm text-slate-400 italic">Keine Strafen angefallen. Gut gespielt!</div>'}
+                </div>
+
+                <div class="space-y-3">
+                    <input type="password" id="finish-code" placeholder="Code: ${ACCESS_CODE}" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-center font-mono">
+                    <button onclick="saveCalculatedGame()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-slate-800 transition-all">
+                        Spiel & Strafen speichern
+                    </button>
+                     <button onclick="abortGame()" class="w-full text-slate-400 text-sm hover:text-slate-600">
+                        Verwerfen
+                    </button>
+                </div>
+             </div>
+             `;
+        };
 
         const renderHistory = () => `
-            <div class="space-y-4">
-                <h2 class="font-bold text-slate-500 text-sm uppercase tracking-wider ml-1">Letzte Einträge</h2>
+            <div class="space-y-4 animate-in fade-in duration-500">
+                 <div class="flex items-center justify-between px-2">
+                    <h3 class="text-lg font-bold text-slate-700 font-serif">Verlauf</h3>
+                </div>
                 ${games.length === 0 ? `
-                    <div class="text-center py-12 text-slate-400">
+                    <div class="text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-100">
                         <i data-lucide="history" class="mx-auto mb-3 opacity-20 w-12 h-12"></i>
-                        <p>Noch keine Punkte eingetragen.</p>
+                        <p>Noch keine Einträge.</p>
                     </div>
                 ` : games.map(game => {
                     const player = initialPlayers.find(p => p.id === game.playerId);
                     const playerName = player ? player.name : 'Unbekannt';
                     return `
-                        ${renderCard(`
-                            <div class="flex justify-between items-start mb-3 border-b border-slate-100 pb-2">
-                                <div class="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-slate-700">${playerName}</div>
+                                <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                                     <i data-lucide="calendar" class="w-3 h-3"></i>
-                                    ${game.timestamp?.toDate ? game.timestamp.toDate().toLocaleDateString('de-CH') : 'Gerade jetzt'}
+                                    ${game.timestamp?.toDate ? game.timestamp.toDate().toLocaleDateString('de-CH') + ' ' + game.timestamp.toDate().toLocaleTimeString('de-CH', {hour: '2-digit', minute:'2-digit'}) : 'Gerade jetzt'}
                                 </div>
-                                <button 
-                                    onclick="handleDeleteGame('${game.id}')"
-                                    class="text-xs text-red-300 hover:text-red-600 px-2">
-                                    Löschen
-                                </button>
                             </div>
-                            <div class="flex justify-between pr-4 text-lg font-bold">
-                                <span class="text-slate-600">${playerName}</span>
-                                <span class="text-red-600">+${game.points} CHF</span>
+                            <div class="flex flex-col items-end">
+                                <span class="font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg text-sm mb-1">+${game.points} CHF</span>
+                                <button onclick="handleDeleteGame('${game.id}')" class="text-[10px] text-slate-300 hover:text-red-400 underline">Löschen</button>
                             </div>
-                            <div class="text-xs text-slate-400 mt-1">Eingetragen von: ${game.recordedBy.substring(0, 8)}...</div>
-                        `, "p-4")}
+                        </div>
                     `;
                 }).join('')}
             </div>
         `;
 
+        // Mobile Nav
         const renderMobileNav = () => `
-            <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center z-50 md:hidden">
-                <button onclick="setActiveTab('leaderboard')" class="flex flex-col items-center gap-1 ${activeTab === 'leaderboard' ? PRIMARY_BLACK_TEXT : 'text-slate-400'}">
-                    <i data-lucide="trophy" class="w-5 h-5 ${activeTab === 'leaderboard' ? 'stroke-[2.5]' : ''}"></i>
-                    <span class="text-[10px] font-medium">Rankings</span>
-                </button>
-                <button onclick="setActiveTab('add')" class="${PRIMARY_GOLD} ${PRIMARY_BLACK_TEXT} p-3 rounded-full shadow-lg shadow-yellow-800/30 -mt-6 border-4 border-slate-50">
-                    <i data-lucide="plus-circle" class="w-6 h-6"></i>
-                </button>
-                <button onclick="setActiveTab('history')" class="flex flex-col items-center gap-1 ${activeTab === 'history' ? PRIMARY_BLACK_TEXT : 'text-slate-400'}">
-                    <i data-lucide="history" class="w-5 h-5 ${activeTab === 'history' ? 'stroke-[2.5]' : ''}"></i>
-                    <span class="text-[10px] font-medium">History</span>
-                </button>
+            <nav id="mobile-nav" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex justify-between items-end z-50 md:hidden pb-safe nav-fade">
+                ${['leaderboard', 'calculator', 'add', 'history'].map(tab => {
+                    const isActive = activeTab === tab;
+                    const icons = {
+                        leaderboard: 'trophy',
+                        calculator: 'calculator',
+                        add: 'list-plus',
+                        history: 'history'
+                    };
+                    const labels = {
+                        leaderboard: 'Rangliste',
+                        calculator: 'Tafel',
+                        add: 'Eintrag',
+                        history: 'Verlauf'
+                    };
+                    
+                    return `
+                        <button onclick="setActiveTab('${tab}')" class="flex flex-col items-center gap-1 w-16 py-2 transition-all ${isActive ? 'text-yellow-600' : 'text-slate-400'}">
+                            <div class="relative">
+                                <i data-lucide="${icons[tab]}" class="w-6 h-6 ${isActive ? 'fill-current opacity-20 stroke-[2.5]' : ''}"></i>
+                                ${isActive ? '<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-yellow-600 rounded-full"></div>' : ''}
+                            </div>
+                            <span class="text-[10px] font-medium tracking-tight">${labels[tab]}</span>
+                        </button>
+                    `;
+                }).join('')}
             </nav>
+            <style>
+                .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+            </style>
         `;
 
         const renderApp = () => {
             let content = '';
-            if (activeTab === 'leaderboard') {
-                content = renderLeaderboard();
-            } else if (activeTab === 'add') {
-                content = renderAddScore();
-            } else if (activeTab === 'history') {
-                content = renderHistory();
+            switch(activeTab) {
+                case 'leaderboard': content = renderLeaderboard(); break;
+                case 'add': content = renderBulkEntry(); break;
+                case 'calculator': content = renderCalculator(); break;
+                case 'history': content = renderHistory(); break;
             }
 
             document.getElementById('app').innerHTML = `
                 ${renderHeader()}
-                <main class="max-w-md mx-auto px-4 -mt-8 relative z-10 space-y-6">
-                    ${renderNavigation()}
+                <main class="max-w-2xl mx-auto px-4 -mt-6 relative z-10 pb-20">
+                    ${renderDesktopNav()}
                     ${content}
                 </main>
                 ${renderMobileNav()}
             `;
-            // Re-render Lucide icons after DOM update
+            
+            // Re-render Icons
             lucide.createIcons();
-            attachEventListeners();
+
+            // Re-attach scroll listener for mobile nav
+            window.removeEventListener('scroll', handleScroll);
+            window.addEventListener('scroll', handleScroll);
         };
 
-        // --- Controller Functions ---
 
-        window.setActiveTab = (tab) => {
-            activeTab = tab;
-            renderApp();
-        };
-        
-        window.handleDeleteGame = async (gameId) => {
-            if(!confirm("Sind Sie sicher, dass Sie diesen Spieleintrag löschen möchten?")) return; 
-            try {
-                // Nur registrierte User dürfen löschen
-                if (!user) return alert("Fehler: Keine Berechtigung zum Löschen.");
-                
-                const fullPath = collection(db, COLLECTION_NAME); 
-                await deleteDoc(doc(fullPath, gameId));
-            } catch (error) {
-                console.error("Error deleting:", error);
-                alert("Der Spieleintrag konnte nicht gelöscht werden.");
-            }
+        // --- Logic: Bulk Entry ---
+        window.updateBulkScore = (playerId, change) => {
+            const current = bulkEntryState[playerId] || 0;
+            const newVal = Math.max(0, current + change); // No negative penalties
+            bulkEntryState[playerId] = newVal;
+            
+            // Update input UI only
+            const input = document.getElementById(`bulk-${playerId}`);
+            if(input) input.value = newVal;
         };
 
-        const attachEventListeners = () => {
-            const form = document.getElementById('score-form');
-            if (form) {
-                form.onsubmit = handleAddGame;
-            }
+        window.resetBulkState = () => {
+             initialPlayers.forEach(p => bulkEntryState[p.id] = 0);
+             renderApp();
         };
-        
-        const handleAddGame = async (e) => {
-            e.preventDefault();
-            const accessCodeInput = document.getElementById('security-code');
-            const playerId = document.getElementById('player-select').value;
-            const pointsInput = document.getElementById('points-input').value;
-            const messageBox = document.getElementById('message-box');
-            messageBox.classList.add('hidden');
 
-            const points = parseInt(pointsInput, 10);
+        window.submitBulkEntry = async () => {
+            const codeInput = document.getElementById('bulk-code');
+            const msgBox = document.getElementById('bulk-message-box');
+            const btn = document.getElementById('bulk-submit-btn');
 
-            // 1. Check Access Code
-            if (accessCodeInput.value !== ACCESS_CODE) {
-                messageBox.textContent = 'Falscher Zugangscode. Bitte versuchen Sie es erneut.';
-                messageBox.classList.remove('hidden');
-                messageBox.classList.add('bg-red-100', 'text-red-800');
-                accessCodeInput.value = '';
+            if (codeInput.value !== ACCESS_CODE) {
+                msgBox.innerHTML = '<span class="font-bold text-red-600">Falscher Code!</span>';
+                msgBox.className = 'bg-red-50 border border-red-100 p-3 rounded-lg text-sm text-center block mb-4 animate-pulse';
+                codeInput.value = '';
                 return;
             }
 
-            // 2. Check Points
-            if (points <= 0 || isNaN(points)) {
-                 messageBox.textContent = 'Bitte eine gültige positive Punktzahl (>0) eingeben.';
-                 messageBox.classList.remove('hidden');
-                 messageBox.classList.add('bg-red-100', 'text-red-800');
-                 return;
-            }
+            // Filter entries with points > 0
+            const entries = Object.entries(bulkEntryState).filter(([pid, pts]) => pts > 0);
             
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.textContent = 'Speichern...';
-            submitBtn.disabled = true;
+            if (entries.length === 0) {
+                msgBox.innerHTML = '<span class="text-slate-500">Bitte zuerst Punkte vergeben.</span>';
+                msgBox.className = 'bg-slate-100 p-3 rounded-lg text-sm text-center block mb-4';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = 'Speichere...';
 
             try {
-                const fullPath = collection(db, COLLECTION_NAME); 
-                await addDoc(fullPath, {
-                    playerId: playerId,
-                    points: points,
-                    timestamp: serverTimestamp(),
-                    recordedBy: user ? user.uid : 'anonymous',
+                const batch = writeBatch(db);
+                const collectionRef = collection(db, COLLECTION_NAME);
+
+                entries.forEach(([pid, pts]) => {
+                    const docRef = doc(collectionRef); // Generate new ID
+                    batch.set(docRef, {
+                        playerId: pid,
+                        points: pts,
+                        timestamp: serverTimestamp(),
+                        recordedBy: user ? user.uid : 'bulk-entry',
+                        type: 'direct'
+                    });
                 });
 
-                // Reset form and go to leaderboard
-                document.getElementById('points-input').value = '';
-                accessCodeInput.value = ''; 
+                await batch.commit();
+
+                // Success Reset
+                resetBulkState();
                 setActiveTab('leaderboard');
-            } catch (error) {
-                console.error("Error adding game:", error);
-                messageBox.textContent = `Speicherfehler: ${error.message}. Haben Sie Ihre Firebase-Regeln korrekt gesetzt?`;
-                messageBox.classList.remove('hidden');
-                messageBox.classList.add('bg-red-100', 'text-red-800');
-            } finally {
-                submitBtn.textContent = 'Punkte speichern';
-                submitBtn.disabled = false;
+
+            } catch (e) {
+                console.error(e);
+                alert("Fehler beim Speichern: " + e.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Speichern';
             }
         };
 
-        // ------------------------------------------------------------------
-        // KORRIGIERTER STARTUP-BLOCK: Erzwingt die anonyme Anmeldung direkt.
-        // ------------------------------------------------------------------
+
+        // --- Logic: Calculator ---
+        let currentMultiplier = 1;
+
+        window.toggleTeamSelection = (pid, teamNum) => {
+            const t1 = calculatorState.team1;
+            const t2 = calculatorState.team2;
+
+            if (teamNum === 1) {
+                if (t1.includes(pid)) calculatorState.team1 = t1.filter(id => id !== pid);
+                else if (!t2.includes(pid) && t1.length < 2) calculatorState.team1.push(pid);
+            } else {
+                if (t2.includes(pid)) calculatorState.team2 = t2.filter(id => id !== pid);
+                else if (!t1.includes(pid) && t2.length < 2) calculatorState.team2.push(pid);
+            }
+            renderApp();
+        };
+
+        window.startCalculatorGame = () => {
+            calculatorState.activeStep = 'play';
+            calculatorState.rounds = [];
+            calculatorState.penalties = [];
+            calculatorState.bergReached = false;
+            calculatorState.startTime = new Date();
+            renderApp();
+        };
+
+        window.setMultiplier = (m) => {
+            currentMultiplier = m;
+            renderApp();
+            // Refocus input A
+            setTimeout(() => document.getElementById('input-points-a')?.focus(), 50);
+        };
+
+        window.calculatePoints = (source) => {
+            const inputA = document.getElementById('input-points-a');
+            const inputB = document.getElementById('input-points-b');
+            
+            let val = parseInt(source === 'a' ? inputA.value : inputB.value);
+            if (isNaN(val)) val = 0;
+            if (val > 157) val = 157; // Cap at 157
+
+            if (source === 'a') {
+                inputB.value = 157 - val;
+            } else {
+                inputA.value = 157 - val;
+            }
+        };
+
+        window.submitRound = () => {
+            const pA = parseInt(document.getElementById('input-points-a').value) || 0;
+            const pB = parseInt(document.getElementById('input-points-b').value) || 0;
+            const wA = parseInt(document.getElementById('input-weis-a').value) || 0;
+            const wB = parseInt(document.getElementById('input-weis-b').value) || 0;
+
+            if (pA + pB !== 157) {
+                alert("Kartenpunkte müssen 157 ergeben!");
+                return;
+            }
+
+            // Calculation Logic
+            // Check for Match (opponent 0 points in cards)
+            // Note: In Schieber, Match counts 257 (157 + 100).
+            // Logic: If one team has 157 points, they get +100 bonus. 
+            // The Penalty rule: "Spiel zu 0 verlieren (+1 CHF)". This implies if a team gets 0 CARD points in a round.
+            
+            let roundPointsA = (pA * currentMultiplier) + (wA * currentMultiplier);
+            let roundPointsB = (pB * currentMultiplier) + (wB * currentMultiplier);
+            
+            // Match Detection (157 points)
+            if (pA === 157) {
+                roundPointsA += (100 * currentMultiplier); 
+                // Penalty Team B: Lost to 0
+                addPenalty(calculatorState.team2, 1, "Match kassiert (zu 0 verloren)");
+            }
+            if (pB === 157) {
+                roundPointsB += (100 * currentMultiplier);
+                // Penalty Team A: Lost to 0
+                addPenalty(calculatorState.team1, 1, "Match kassiert (zu 0 verloren)");
+            }
+
+            // Add round
+            calculatorState.rounds.push({
+                pointsA: roundPointsA,
+                pointsB: roundPointsB,
+                weisA: wA * currentMultiplier,
+                weisB: wB * currentMultiplier,
+                multiplier: currentMultiplier
+            });
+
+            // Check "Über den Berg" (1500)
+            checkBergLogic();
+
+            // Check Game End (2500)
+            const totalA = calculatorState.rounds.reduce((s,r) => s + r.pointsA, 0);
+            const totalB = calculatorState.rounds.reduce((s,r) => s + r.pointsB, 0);
+
+            if (totalA >= 2500 || totalB >= 2500) {
+                // Game Over
+                // Add Loser Penalty (+2 CHF)
+                if (totalA > totalB) {
+                    addPenalty(calculatorState.team2, 2, "Spiel verloren");
+                } else {
+                    addPenalty(calculatorState.team1, 2, "Spiel verloren");
+                }
+                calculatorState.activeStep = 'finish';
+            } else {
+                 // Reset inputs
+                currentMultiplier = 1;
+            }
+            
+            renderApp();
+            // Focus Input A again for next round
+            if (calculatorState.activeStep === 'play') {
+                setTimeout(() => {
+                    const el = document.getElementById('input-points-a');
+                    if(el) { el.value = ''; document.getElementById('input-points-b').value = '157'; el.focus(); }
+                    document.getElementById('input-weis-a').value = '';
+                    document.getElementById('input-weis-b').value = '';
+                }, 100);
+            }
+        };
+
+        const addPenalty = (teamIds, amount, reason) => {
+            teamIds.forEach(pid => {
+                calculatorState.penalties.push({ playerId: pid, amount, reason });
+            });
+        };
+
+        const checkBergLogic = () => {
+            if (calculatorState.bergReached) return; // Already triggered
+
+            const totalA = calculatorState.rounds.reduce((s,r) => s + r.pointsA, 0);
+            const totalB = calculatorState.rounds.reduce((s,r) => s + r.pointsB, 0);
+
+            // "CHF 1.00 für die Spieler, welche zuletzt über den Berg sind bei 1500 Punkten 
+            // (also sobald das andere Team diesen Punktestand erreicht hat"
+            // Means: If Team A hits 1500, Team B gets penalized immediately.
+            
+            if (totalA >= 1500 && totalB < 1500) {
+                addPenalty(calculatorState.team2, 1, "Zuletzt über den Berg (Gegner hat 1500 erreicht)");
+                calculatorState.bergReached = true;
+            } else if (totalB >= 1500 && totalA < 1500) {
+                addPenalty(calculatorState.team1, 1, "Zuletzt über den Berg (Gegner hat 1500 erreicht)");
+                calculatorState.bergReached = true;
+            } else if (totalA >= 1500 && totalB >= 1500) {
+                // Both over 1500 same round? Rare but possible with Weis.
+                // Usually the one with MORE points wins the Berg race.
+                // Let's assume no penalty if both cross same round, or strict logic?
+                // strict: lower score gets penalty.
+                if (totalA > totalB) addPenalty(calculatorState.team2, 1, "Zuletzt über den Berg");
+                else if (totalB > totalA) addPenalty(calculatorState.team1, 1, "Zuletzt über den Berg");
+                calculatorState.bergReached = true;
+            }
+        };
+
+        window.saveCalculatedGame = async () => {
+            const code = document.getElementById('finish-code').value;
+            if (code !== ACCESS_CODE) {
+                alert("Falscher Code!");
+                return;
+            }
+
+            try {
+                const batch = writeBatch(db);
+                const col = collection(db, COLLECTION_NAME);
+
+                calculatorState.penalties.forEach(p => {
+                    const ref = doc(col);
+                    batch.set(ref, {
+                        playerId: p.playerId,
+                        points: p.amount,
+                        reason: p.reason,
+                        timestamp: serverTimestamp(),
+                        recordedBy: user ? user.uid : 'calculator',
+                        type: 'game-penalty'
+                    });
+                });
+                
+                await batch.commit();
+                alert("Spiel gespeichert & Strafen verteilt!");
+                abortGame(); // Reset
+            } catch (e) {
+                console.error(e);
+                alert("Fehler beim Speichern");
+            }
+        };
+
+        window.abortGame = () => {
+            if(confirm("Spiel wirklich abbrechen? Alle Daten gehen verloren.")) {
+                calculatorState.activeStep = 'setup';
+                calculatorState.team1 = [];
+                calculatorState.team2 = [];
+                setActiveTab('leaderboard');
+            }
+        };
+
+        // --- General Utils ---
+        window.setActiveTab = (tab) => {
+            activeTab = tab;
+            renderApp();
+            window.scrollTo(0,0);
+        };
+        
+        window.handleDeleteGame = async (gameId) => {
+            if(!confirm("Eintrag löschen?")) return;
+            const code = prompt("Bitte Code eingeben:", "");
+            if (code !== ACCESS_CODE) { alert("Falscher Code"); return; }
+            
+            try {
+                await deleteDoc(doc(db, COLLECTION_NAME, gameId));
+            } catch (e) {
+                alert("Fehler: " + e.message);
+            }
+        };
+
+        // Scroll Handler for Mobile Nav Transparency
+        const handleScroll = () => {
+            const nav = document.getElementById('mobile-nav');
+            if (!nav) return;
+            
+            if (window.scrollY > 50) {
+                nav.classList.add('nav-scrolled');
+            } else {
+                nav.classList.remove('nav-scrolled');
+            }
+        };
+
+        // --- Initialization ---
         async function startApp() {
-            if (!isConfigured) return;
+            if (!firebaseConfig.apiKey || firebaseConfig.apiKey === '*') {
+                document.getElementById('app').innerHTML = renderErrorState("Firebase nicht konfiguriert", "Bitte API Keys in der Datei eintragen.");
+                return;
+            }
 
             document.getElementById('app').innerHTML = renderLoading();
 
             try {
-                // ERZWINGT ANONYME ANMELDUNG
-                const userCredential = await signInAnonymously(auth);
-                user = userCredential.user;
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                await signInAnonymously(auth);
+                user = auth.currentUser;
 
-                // Start listening for data ONLY after successful sign-in
-                const gamesRef = collection(db, COLLECTION_NAME);
-                const q = query(gamesRef);
-
+                const q = query(collection(db, COLLECTION_NAME));
                 onSnapshot(q, (snapshot) => {
-                    // Startpunkte der Spieler
-                    let playerTotals = {};
-                    initialPlayers.forEach(p => playerTotals[p.id] = p.score);
-
-                    games = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    games.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-
-                    // Akkumulieren der neuen Punkte
-                    games.forEach(game => {
-                        if (game.playerId && game.points) {
-                             // Füge die Punkte der Strafkasse hinzu
-                            playerTotals[game.playerId] += game.points;
-                        }
+                    games = snapshot.docs.map(d => ({id: d.id, ...d.data()}))
+                                         .sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                    
+                    // Calc Leaderboard
+                    const stats = {};
+                    initialPlayers.forEach(p => stats[p.id] = p.score);
+                    
+                    games.forEach(g => {
+                        if(stats[g.playerId] !== undefined) stats[g.playerId] += g.points;
                     });
 
-                    // Erstellung der finalen Bestenliste
-                    const finalLeaderboard = initialPlayers.map(initial => ({
-                        id: initial.id,
-                        name: initial.name,
-                        color: initial.color,
-                        score: playerTotals[initial.id] || initial.score,
-                    }));
-
-
-                    leaderboard = getLeaderboard(finalLeaderboard.map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        score: p.score,
-                        color: p.color
-                    })));
+                    leaderboard = initialPlayers.map(p => ({
+                        ...p,
+                        score: stats[p.id]
+                    })).sort((a,b) => a.score - b.score); // Lowest score is best (fewer penalties)? 
+                    // Wait, user said "Diego +2". Usually penalties imply HIGHER score is BAD.
+                    // Or is it Points = Good? 
+                    // User said: "Weniger Punkte = Bester Spieler!" in previous text.
+                    // So sorting ascending is correct (Lowest first).
+                    // BUT: "Diego +2" ADDS points. So adding points makes you lose ranks.
+                    // Correct: sort((a,b) => a.score - b.score). Lowest score is Rank 1.
                     
+                    // Assign Ranks
+                    leaderboard.forEach((p, i) => p.rank = i + 1);
+
                     renderApp();
-                }, (error) => {
-                    console.error("Firestore error:", error);
-                    document.getElementById('app').innerHTML = renderErrorState(
-                        "Datenbankverbindung fehlgeschlagen.",
-                        "Mögliche Ursachen: 1) Firebase-Schlüssel fehlen/falsch, 2) Firestore-Sicherheitsregeln erlauben keinen Zugriff, 3) Autorisierte Domain fehlt in Firebase Auth."
-                    );
                 });
 
-            } catch (error) {
-                console.error("Critical Auth Error:", error);
-                document.getElementById('app').innerHTML = renderErrorState(
-                    "Kritischer Anmeldefehler.",
-                    `Der Browser/Server blockiert die Authentifizierung. Bitte prüfen Sie die **Autorisierten Domains** und aktivieren Sie **Anonyme Anmeldung** in Firebase Auth.`
-                );
+            } catch (e) {
+                console.error(e);
+                document.getElementById('app').innerHTML = renderErrorState("Verbindungsfehler", e.message);
             }
         }
 
