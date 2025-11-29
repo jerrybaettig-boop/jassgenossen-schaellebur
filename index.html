@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Jassgenossen Schällebur</title>
     
-    <!-- Favicon mit dem neuen Logo -->
-    <link rel="icon" href="https://github.com/user-attachments/assets/aebb9a7b-aa92-4643-be2b-8dd06c255eea" type="image/png">
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -15,7 +12,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@700&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
 
     <style>
         body { 
@@ -28,22 +25,42 @@
             font-family: 'Playfair Display', serif;
         }
 
+        .font-hand {
+            font-family: 'Kalam', cursive;
+        }
+
         .loading-spinner { border-top-color: transparent; }
 
-        /* Hintergrundmuster "Schälle" */
+        /* BASE64 SCHÄLLE HINTERGRUND */
         .schalle-bg-pattern {
-            background-color: #1a1a1a; /* Fallback dunkelgrau */
-            /* URL zum Schälle Bild */
-            background-image: url('https://github.com/user-attachments/assets/22c10c8c-cc7a-4e69-965e-45a195246218');
+            background-color: #1a1a1a;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M30 30c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zm-5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm0-10c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm10 25c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm-10 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zM30 0c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zM5 0c0 2.76-2.24 5-5 5S-5 2.76-5 0s2.24-5 5-5 5 2.24 5 5z'/%3E%3C/g%3E%3C/svg%3E");
             background-repeat: repeat;
-            background-size: 80px 80px; /* Größe der Schälle Kacheln */
-            background-blend-mode: overlay;
+        }
+
+        /* Chalkboard Effect for Jass Tafel */
+        .chalkboard {
+            background-color: #2c3e50;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23ffffff' fill-opacity='0.05' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'/%3E%3C/svg%3E");
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            border: 8px solid #5d4037; /* Wood frame */
+            border-radius: 4px;
+        }
+        
+        .chalk-text {
+            color: rgba(255,255,255,0.9);
+            font-family: 'Kalam', cursive;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .chalk-line {
+            stroke: rgba(255,255,255,0.8);
+            stroke-width: 2;
+            stroke-linecap: round;
+            filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3));
         }
 
         /* Mobile Navigation Fade Effect */
-        .nav-fade {
-            transition: opacity 0.3s ease, background-color 0.3s ease, backdrop-filter 0.3s ease;
-        }
         .nav-scrolled {
             opacity: 0.6;
             background-color: rgba(255, 255, 255, 0.7);
@@ -55,22 +72,13 @@
             backdrop-filter: blur(10px);
         }
 
-        /* Custom Scrollbar for nicer tables */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 6px;
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 4px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="pb-24 md:pb-0"> <!-- Padding bottom for mobile nav space -->
+<body class="pb-24 md:pb-0"> 
 
-    <div id="app">
-        <!-- Application Content -->
-    </div>
+    <div id="app"></div>
 
     <!-- Firebase Imports -->
     <script type="module">
@@ -79,10 +87,8 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ------------------------------------------------------------------
-        // ##################################################################
-        // SCHRITT 1: FÜGEN SIE IHRE FIREBASE KONFIGURATION HIER EIN!
+        // FIREBASE KONFIGURATION
         // ------------------------------------------------------------------
-        
     const firebaseConfig = {
         apiKey: "AIzaSyAPkAhM-BhJfG5cljBk2S2KGN3TIg8IxXM",
         authDomain: "jassgenossenschaellebur.firebaseapp.com",
@@ -95,20 +101,11 @@
 
         // --- Constants ---
         const COLLECTION_NAME = 'jass_games';
-        
-        // Updated URLs
-        const LOGO_URL = "https://github.com/user-attachments/assets/aebb9a7b-aa92-4643-be2b-8dd06c255eea";
-        const BACKGROUND_URL = "https://github.com/user-attachments/assets/22c10c8c-cc7a-4e69-965e-45a195246218";
-        
-        // NEW SECURITY CODE
         const ACCESS_CODE = 'JG2020'; 
 
-        // Styling Constants
-        const COLOR_GOLD = 'text-yellow-600';
-        const BG_GOLD = 'bg-yellow-500';
-        const BG_GOLD_HOVER = 'hover:bg-yellow-600';
-        const BG_DARK = 'bg-slate-900';
-
+        // Logo als SVG Base64 Fallback (Falls externes Bild nicht lädt)
+        const LOGO_URL = "https://github.com/user-attachments/assets/aebb9a7b-aa92-4643-be2b-8dd06c255eea"; 
+        
         // Players Data
         const initialPlayers = [
             { id: 'diego', name: 'Diego', score: 311, color: 'bg-red-500' },
@@ -117,7 +114,7 @@
             { id: 'jerome', name: 'Jérôme', score: 199, color: 'bg-amber-500' },
         ];
 
-        // --- State Management ---
+        // --- State ---
         let app, auth, db;
         let isConfigured = false;
         let user = null;
@@ -129,355 +126,287 @@
         let calculatorState = {
             team1: [],
             team2: [],
-            rounds: [], // { pointsA, pointsB, weisA, weisB, multiplier, winner: 'team1'|'team2' }
-            penalties: [], // Pending penalties to be submitted
-            activeStep: 'setup', // 'setup', 'play', 'finish'
-            bergReached: false, // track if 1500 was hit
+            rounds: [],
+            penalties: [],
+            activeStep: 'setup', 
+            bergReached: false,
             startTime: null
         };
         
-        // Bulk Entry State
-        let bulkEntryState = {}; // { diego: 0, toni: 2 ... }
+        let bulkEntryState = {}; 
+        let currentMultiplier = 1;
 
-        // --- UI Components ---
-
-        const renderErrorState = (message, details = "") => `
-            <div class="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
-                <i data-lucide="alert-triangle" class="text-red-500 w-12 h-12 mb-4"></i>
-                <h1 class="text-2xl font-bold text-red-700 mb-2">Systemfehler</h1>
-                <p class="text-slate-600 max-w-md">${message}</p>
-                ${details ? `<p class="text-xs text-slate-500 mt-3 p-3 bg-red-100 rounded-lg font-mono break-all">${details}</p>` : ''}
-            </div>
-        `;
-
+        // --- UI Utils ---
         const renderLoading = () => `
             <div class="min-h-screen bg-slate-50 flex items-center justify-center flex-col gap-4">
-                <div class="w-24 h-24 relative animate-bounce">
-                    <img src="${LOGO_URL}" class="w-full h-full object-contain drop-shadow-lg" alt="Loading...">
-                </div>
+                <div class="animate-spin w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full"></div>
                 <div class="text-slate-400 text-sm font-medium animate-pulse">Lade Schällebur...</div>
             </div>
         `;
 
+        const renderErrorState = (msg) => `<div class="p-8 text-center text-red-600">${msg}</div>`;
+
+        // HEADER
         const renderHeader = () => `
-            <header class="schalle-bg-pattern ${BG_DARK} text-white pt-10 pb-20 px-4 shadow-xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-black/60"></div> <!-- Overlay for readability -->
+            <header class="schalle-bg-pattern bg-slate-900 text-white pt-10 pb-20 px-4 shadow-xl relative overflow-hidden">
+                <div class="absolute inset-0 bg-black/50"></div>
                 <div class="max-w-md mx-auto text-center relative z-10">
-                    <div id="logo-container" class="bg-white/10 backdrop-blur-sm w-32 h-32 rounded-2xl flex items-center justify-center mx-auto mb-4 p-2 shadow-2xl border border-white/20 transform rotate-3 hover:rotate-0 transition-all duration-500">
-                        <img 
-                            src="${LOGO_URL}" 
-                            alt="Jassgenossen Logo" 
-                            class="w-full h-full object-contain filter drop-shadow-md"
-                        />
+                    <div class="w-24 h-24 mx-auto mb-4 bg-white/10 backdrop-blur rounded-full flex items-center justify-center shadow-2xl border border-yellow-500/30">
+                        <img src="${LOGO_URL}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmFjYzE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTYgOWgzbDItNmwzIDZoNGwxLTVsNCA1aDMiLz48cGF0aCBkPSJtMiAxNSAxMCAxMCAxMC0xMCIvPjwvc3ZnPg=='" 
+                             class="w-16 h-16 object-contain filter drop-shadow-md transform hover:scale-110 transition-transform">
                     </div>
                     <h1 class="text-3xl font-bold tracking-tight mb-1 text-white text-shadow-lg font-serif">Jassgenossen</h1>
-                    <h2 class="text-xl text-yellow-400 font-medium tracking-widest uppercase text-shadow-sm font-serif">Schällebur</h2>
+                    <h2 class="text-sm text-yellow-400 font-medium tracking-[0.2em] uppercase text-shadow-sm font-serif">Schällebur</h2>
                 </div>
             </header>
         `;
 
-        // Desktop Navigation (Hidden on mobile)
-        const renderDesktopNav = () => `
-            <div class="hidden md:flex justify-center gap-4 -mt-8 relative z-20 mb-8 px-4">
-                ${['leaderboard', 'add', 'calculator', 'history'].map(tab => `
-                    <button onclick="setActiveTab('${tab}')" 
-                        class="px-6 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-1 ${activeTab === tab 
-                        ? 'bg-yellow-500 text-slate-900 ring-4 ring-yellow-500/30' 
-                        : 'bg-white text-slate-600 hover:bg-slate-50'}">
-                        ${getTabLabel(tab)}
-                    </button>
-                `).join('')}
-            </div>
-        `;
-
-        const getTabLabel = (tab) => {
-            const labels = {
-                leaderboard: '<span class="flex items-center gap-2"><i data-lucide="crown" class="w-4 h-4"></i> Rangliste</span>',
-                add: '<span class="flex items-center gap-2"><i data-lucide="list-plus" class="w-4 h-4"></i> Direkt-Eintrag</span>',
-                calculator: '<span class="flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4"></i> Jass-Tafel</span>',
-                history: '<span class="flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Verlauf</span>'
-            };
-            return labels[tab];
-        };
-
-        // --- View: Leaderboard ---
-        const renderLeaderboard = () => {
-            return `
+        // --- LEADERBOARD ---
+        const renderLeaderboard = () => `
             <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div class="flex items-center justify-between px-2">
-                    <h3 class="text-lg font-bold text-slate-700 font-serif">Aktueller Stand</h3>
-                    <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">Saison 2024/25</span>
+                    <h3 class="text-lg font-bold text-slate-700 font-serif">Rangliste</h3>
+                    <span class="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">Saison 24/25</span>
                 </div>
-                <ul class="grid gap-4">
+                <ul class="grid gap-3">
                     ${leaderboard.map((player) => {
                         const isLeader = player.rank === 1;
-                        const isLast = player.rank === initialPlayers.length;
                         return `
-                            <li class="relative group">
-                                <div class="absolute inset-0 bg-gradient-to-r ${isLeader ? 'from-yellow-200 to-yellow-100' : 'from-slate-100 to-slate-50'} rounded-2xl transform transition-transform group-hover:scale-[1.02] duration-300 shadow-sm"></div>
-                                <div class="relative p-5 flex items-center justify-between z-10">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-12 h-12 flex items-center justify-center rounded-full font-bold text-xl ${isLeader ? 'bg-yellow-500 text-white shadow-yellow-500/50 shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}">
-                                            ${isLeader ? '<i data-lucide="trophy" class="w-6 h-6"></i>' : player.rank}
-                                        </div>
-                                        <div>
-                                            <div class="font-bold text-lg text-slate-800">${player.name}</div>
-                                            <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Rang ${player.rank}</div>
-                                        </div>
+                            <li class="relative overflow-hidden rounded-xl bg-white border ${isLeader ? 'border-yellow-400 shadow-yellow-100' : 'border-slate-100'} shadow-sm p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm ${isLeader ? 'bg-yellow-500 text-white' : 'bg-slate-100 text-slate-500'}">
+                                        ${isLeader ? '<i data-lucide="crown" class="w-5 h-5"></i>' : '#' + player.rank}
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-3xl font-black ${isLeader ? 'text-yellow-600' : 'text-slate-700'} tabular-nums tracking-tight">
-                                            ${player.score}
-                                        </div>
-                                        <div class="text-[10px] text-slate-400 uppercase font-bold">CHF Strafe</div>
+                                    <div>
+                                        <div class="font-bold text-lg text-slate-800">${player.name}</div>
                                     </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-black ${isLeader ? 'text-yellow-600' : 'text-slate-700'}">${player.score}</div>
+                                    <div class="text-[9px] text-slate-400 uppercase font-bold">CHF</div>
                                 </div>
                             </li>
                         `;
                     }).join('')}
                 </ul>
-                
-                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden mt-8">
-                    <i data-lucide="scale" class="absolute right-[-20px] bottom-[-20px] w-32 h-32 text-white/5 rotate-12"></i>
-                    <h4 class="font-serif text-xl mb-2 text-yellow-400 flex items-center gap-2">
-                        <i data-lucide="gavel" class="w-5 h-5"></i>
-                        Strafenkatalog
-                    </h4>
-                    <ul class="space-y-2 text-sm text-slate-300 relative z-10">
-                        <li class="flex justify-between border-b border-white/10 pb-1"><span>Spiel zu 0 verlieren (Match)</span> <span class="text-white font-bold">+1.00 CHF</span></li>
-                        <li class="flex justify-between border-b border-white/10 pb-1"><span>Zuletzt über den Berg (1500)</span> <span class="text-white font-bold">+1.00 CHF</span></li>
-                        <li class="flex justify-between"><span>Spiel verlieren (2500)</span> <span class="text-white font-bold">+2.00 CHF</span></li>
+                <!-- Rules Card -->
+                <div class="bg-slate-800 rounded-xl p-5 text-slate-300 text-sm shadow-lg mt-6 relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 text-slate-700 opacity-20 transform rotate-12">
+                        <i data-lucide="gavel" class="w-32 h-32"></i>
+                    </div>
+                    <h4 class="text-yellow-500 font-bold mb-3 flex items-center gap-2 font-serif"><i data-lucide="info" class="w-4 h-4"></i> Strafen</h4>
+                    <ul class="space-y-2 relative z-10">
+                        <li class="flex justify-between border-b border-slate-700/50 pb-1"><span>Match kassiert (0 Punkte)</span> <span class="text-white font-mono">+1.00</span></li>
+                        <li class="flex justify-between border-b border-slate-700/50 pb-1"><span>Zuletzt über Berg (1500)</span> <span class="text-white font-mono">+1.00</span></li>
+                        <li class="flex justify-between"><span>Spiel verloren (2500)</span> <span class="text-white font-mono">+2.00</span></li>
                     </ul>
-                </div>
-            </div>
-            `;
-        };
-
-        // --- View: Direct Entry (Bulk) ---
-        const renderBulkEntry = () => {
-            // Initialize state if empty
-            if (Object.keys(bulkEntryState).length === 0) {
-                initialPlayers.forEach(p => bulkEntryState[p.id] = 0);
-            }
-
-            return `
-            <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
-                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <i data-lucide="list-plus" class="text-yellow-500"></i> Direkteingabe
-                    </h2>
-                    <button onclick="resetBulkState()" class="text-xs text-slate-400 hover:text-red-500">Reset</button>
-                </div>
-                
-                <div class="p-6 space-y-6">
-                    <div id="bulk-message-box" class="hidden p-3 rounded-lg text-sm"></div>
-
-                    <div class="space-y-3">
-                        ${initialPlayers.map(p => `
-                            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                <label class="font-semibold text-slate-700 flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full ${p.color} flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                                        ${p.name.charAt(0)}
-                                    </div>
-                                    ${p.name}
-                                </label>
-                                <div class="flex items-center gap-3">
-                                    <button onclick="updateBulkScore('${p.id}', -1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors">
-                                        <i data-lucide="minus" class="w-4 h-4"></i>
-                                    </button>
-                                    <input type="number" id="bulk-${p.id}" value="${bulkEntryState[p.id]}" readonly 
-                                        class="w-12 text-center font-bold text-lg bg-transparent border-none focus:ring-0 p-0 text-slate-800 tabular-nums">
-                                    <button onclick="updateBulkScore('${p.id}', 1)" class="w-8 h-8 rounded-full bg-white border border-slate-200 text-yellow-600 hover:bg-yellow-50 hover:border-yellow-300 flex items-center justify-center transition-colors shadow-sm">
-                                        <i data-lucide="plus" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-100">
-                        <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Autorisierung</label>
-                        <div class="flex gap-2">
-                            <input type="password" id="bulk-code" placeholder="Code eingeben" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-mono text-center focus:ring-2 focus:ring-yellow-500 focus:outline-none transition-all">
-                            <button onclick="submitBulkEntry()" id="bulk-submit-btn" class="flex-1 bg-slate-900 text-white font-bold rounded-xl py-3 shadow-lg shadow-slate-900/20 hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-2">
-                                <span>Speichern</span>
-                                <i data-lucide="save" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center mt-4 text-xs text-slate-400 max-w-xs mx-auto">
-                Verwende diese Ansicht um schnell Strafen für mehrere Spieler gleichzeitig einzutragen.
-            </div>
-            `;
-        };
-
-        // --- View: Jass Calculator ---
-        const renderCalculator = () => {
-            if (calculatorState.activeStep === 'setup') {
-                return renderCalcSetup();
-            } else if (calculatorState.activeStep === 'play') {
-                return renderCalcPlay();
-            } else {
-                return renderCalcFinish();
-            }
-        };
-
-        const renderCalcSetup = () => `
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95">
-                <div class="bg-slate-900 text-white p-6 text-center relative overflow-hidden">
-                    <div class="absolute inset-0 schalle-bg-pattern opacity-20"></div>
-                    <h2 class="text-xl font-serif font-bold relative z-10">Neue Jass-Runde</h2>
-                    <p class="text-slate-400 text-xs mt-1 relative z-10">Teams definieren</p>
-                </div>
-                
-                <div class="p-6 space-y-6">
-                    <!-- Team 1 Selection -->
-                    <div class="space-y-2">
-                        <label class="text-sm font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="users" class="w-4 h-4"></i> Team 1
-                        </label>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${initialPlayers.map(p => `
-                                <button onclick="toggleTeamSelection('${p.id}', 1)" 
-                                    class="p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-medium text-sm
-                                    ${calculatorState.team1.includes(p.id) 
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-inner' 
-                                        : calculatorState.team2.includes(p.id) 
-                                            ? 'opacity-30 cursor-not-allowed border-slate-100 bg-slate-50' 
-                                            : 'border-slate-100 hover:border-blue-200 text-slate-600'}">
-                                    ${p.name}
-                                </button>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <!-- Team 2 Selection -->
-                    <div class="space-y-2">
-                        <label class="text-sm font-bold text-red-600 uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="users" class="w-4 h-4"></i> Team 2
-                        </label>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${initialPlayers.map(p => `
-                                <button onclick="toggleTeamSelection('${p.id}', 2)" 
-                                    class="p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-medium text-sm
-                                    ${calculatorState.team2.includes(p.id) 
-                                        ? 'border-red-500 bg-red-50 text-red-700 shadow-inner' 
-                                        : calculatorState.team1.includes(p.id) 
-                                            ? 'opacity-30 cursor-not-allowed border-slate-100 bg-slate-50' 
-                                            : 'border-slate-100 hover:border-red-200 text-slate-600'}">
-                                    ${p.name}
-                                </button>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <button onclick="startCalculatorGame()" 
-                        ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? 'disabled' : ''}
-                        class="w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2
-                        ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) 
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:shadow-yellow-500/30 hover:scale-[1.02]'}">
-                        Spiel starten
-                    </button>
                 </div>
             </div>
         `;
 
+        // --- BULK ENTRY ---
+        const renderBulkEntry = () => {
+            if (Object.keys(bulkEntryState).length === 0) initialPlayers.forEach(p => bulkEntryState[p.id] = 0);
+            return `
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100"><h2 class="text-lg font-bold text-slate-800">Direkteingabe</h2></div>
+                <div class="p-6 space-y-4">
+                    <div id="bulk-message-box" class="hidden p-3 rounded-lg text-sm text-center"></div>
+                    ${initialPlayers.map(p => `
+                        <div class="flex items-center justify-between p-2 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full ${p.color} text-white flex items-center justify-center font-bold text-xs">${p.name[0]}</div>
+                                <span class="font-bold text-slate-700">${p.name}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="updateBulkScore('${p.id}', -1)" class="w-8 h-8 rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50"><i data-lucide="minus" class="w-4 h-4 mx-auto"></i></button>
+                                <input type="text" id="bulk-${p.id}" value="${bulkEntryState[p.id]}" readonly class="w-8 text-center font-bold text-lg bg-transparent border-none">
+                                <button onclick="updateBulkScore('${p.id}', 1)" class="w-8 h-8 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-600"><i data-lucide="plus" class="w-4 h-4 mx-auto"></i></button>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div class="pt-4 mt-2 border-t border-slate-100">
+                        <input type="password" id="bulk-code" placeholder="Code eingeben" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 text-center focus:ring-2 focus:ring-yellow-500 outline-none">
+                        <button onclick="submitBulkEntry()" id="bulk-submit-btn" class="w-full bg-slate-900 text-white font-bold rounded-xl py-3 shadow-lg active:scale-95 transition-all">Speichern</button>
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        // --- JASS CALCULATOR (TAFEL) ---
+        
+        // Z-Board Drawer
+        const getZPath = () => "M10,10 L90,10 L10,90 L90,90"; // Simple Z shape SVG path
+        
+        const renderVisualZBoard = (points) => {
+            // Logic to visualize typical Swiss Jass writing
+            // Hundreds: Top line ticks (V, X style)
+            // Fifties: X on the cross
+            // Twenties: Bottom line ticks
+            // Singles: Number
+            
+            const hundreds = Math.floor(points / 100);
+            const remainder100 = points % 100;
+            const fifties = Math.floor(remainder100 / 50);
+            const remainder50 = remainder100 % 50;
+            const twenties = Math.floor(remainder50 / 20);
+            const singles = remainder50 % 20;
+
+            // Generate Chalk Marks SVG
+            let marks = '';
+            
+            // Hundreds (Top Line)
+            for(let i=0; i<hundreds; i++) {
+                let x = 15 + (i*10);
+                if (i===4 || i===9) { // Strike through for 5/10 usually, simplified here just slashes
+                     marks += `<line x1="${x-5}" y1="5" x2="${x+5}" y2="15" class="chalk-line" />`; // simplified
+                } else {
+                     marks += `<line x1="${x}" y1="5" x2="${x}" y2="15" class="chalk-line" />`;
+                }
+            }
+
+            // Fifties (Middle X)
+            if (fifties > 0) {
+                marks += `<line x1="40" y1="40" x2="60" y2="60" class="chalk-line" />`;
+                marks += `<line x1="60" y1="40" x2="40" y2="60" class="chalk-line" />`;
+            }
+
+            // Twenties (Bottom Line)
+            for(let i=0; i<twenties; i++) {
+                let x = 15 + (i*10);
+                marks += `<line x1="${x}" y1="85" x2="${x}" y2="95" class="chalk-line" />`;
+            }
+
+            return `
+                <div class="relative w-full h-32 chalkboard p-2 flex flex-col justify-between">
+                    <!-- SVG Overlay for Z and Marks -->
+                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full pointer-events-none opacity-50" preserveAspectRatio="none">
+                        <path d="M5,10 L95,10 L5,90 L95,90" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4 2"/>
+                    </svg>
+                    
+                    <!-- Dynamic Marks -->
+                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+                         ${marks}
+                    </svg>
+
+                    <!-- Numeric Display (Singles) -->
+                    <div class="absolute bottom-2 right-4 chalk-text text-2xl">${singles > 0 ? singles : ''}</div>
+                    
+                    <!-- Total Overlay (Optional, for clarity) -->
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/10 text-4xl font-bold font-hand select-none">${points}</div>
+                </div>
+            `;
+        };
+
+        const renderCalculator = () => {
+            if (calculatorState.activeStep === 'setup') return renderCalcSetup();
+            if (calculatorState.activeStep === 'play') return renderCalcPlay();
+            return renderCalcFinish();
+        };
+
+        const renderCalcSetup = () => `
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95">
+                <div class="bg-slate-900 text-white p-6 text-center">
+                    <h2 class="text-xl font-serif font-bold">Neue Jass-Runde</h2>
+                    <p class="text-slate-400 text-xs mt-1">Teams definieren</p>
+                </div>
+                <div class="p-6 space-y-6">
+                    ${[1, 2].map(teamNum => `
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold ${teamNum===1?'text-blue-600':'text-red-600'} uppercase tracking-wider">Team ${teamNum}</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                ${initialPlayers.map(p => `
+                                    <button onclick="toggleTeamSelection('${p.id}', ${teamNum})" 
+                                        class="p-3 rounded-xl border-2 transition-all font-medium text-sm
+                                        ${calculatorState[`team${teamNum}`].includes(p.id) 
+                                            ? (teamNum===1 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-red-500 bg-red-50 text-red-700') 
+                                            : calculatorState[teamNum===1?'team2':'team1'].includes(p.id) ? 'opacity-30 border-slate-100 cursor-not-allowed' : 'border-slate-100 text-slate-600'}">
+                                        ${p.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                    <button onclick="startCalculatorGame()" 
+                        ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? 'disabled' : ''}
+                        class="w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2
+                        ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? 'bg-slate-200 text-slate-400' : 'bg-yellow-500 text-slate-900 hover:bg-yellow-400'}">
+                        Spiel starten
+                    </button>
+                </div>
+            </div>`;
+
         const renderCalcPlay = () => {
-            // Totals calculation
             const totalA = calculatorState.rounds.reduce((sum, r) => sum + r.pointsA + (r.weisA || 0), 0);
             const totalB = calculatorState.rounds.reduce((sum, r) => sum + r.pointsB + (r.weisB || 0), 0);
             
-            const team1Names = calculatorState.team1.map(id => initialPlayers.find(p => p.id === id).name).join(' & ');
-            const team2Names = calculatorState.team2.map(id => initialPlayers.find(p => p.id === id).name).join(' & ');
+            const nameT1 = calculatorState.team1.map(id => initialPlayers.find(p => p.id === id).name).join(' & ');
+            const nameT2 = calculatorState.team2.map(id => initialPlayers.find(p => p.id === id).name).join(' & ');
 
             return `
             <div class="flex flex-col h-full animate-in fade-in duration-300">
-                <!-- Scoreboard -->
-                <div class="bg-slate-900 rounded-2xl p-4 text-white shadow-2xl mb-4 relative overflow-hidden">
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-white/10"></div>
-                    <div class="flex justify-between items-end relative z-10">
-                        <div class="text-center w-1/2 pr-2">
-                            <div class="text-[10px] text-blue-300 uppercase tracking-widest font-bold mb-1 truncate">${team1Names}</div>
-                            <div class="text-4xl font-black font-mono text-blue-400 leading-none">${totalA}</div>
-                            <div class="text-xs text-slate-500 mt-1">/ 2500</div>
-                        </div>
-                        <div class="text-center w-1/2 pl-2">
-                            <div class="text-[10px] text-red-300 uppercase tracking-widest font-bold mb-1 truncate">${team2Names}</div>
-                            <div class="text-4xl font-black font-mono text-red-400 leading-none">${totalB}</div>
-                            <div class="text-xs text-slate-500 mt-1">/ 2500</div>
-                        </div>
+                <!-- Visual Board (Chalkboard Z) -->
+                <div class="grid grid-cols-2 gap-1 mb-2">
+                    <div class="text-center">
+                        <div class="text-xs font-bold text-blue-800 mb-1 truncate">${nameT1}</div>
+                        ${renderVisualZBoard(totalA)}
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs font-bold text-red-800 mb-1 truncate">${nameT2}</div>
+                        ${renderVisualZBoard(totalB)}
                     </div>
                 </div>
 
                 <!-- Input Area -->
                 <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-4 mb-4">
-                    <div class="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
-                        <button onclick="setMultiplier(1)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 1 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Trumpf (x1)</button>
-                        <button onclick="setMultiplier(3)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 3 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Obenabe (x3)</button>
-                        <button onclick="setMultiplier(3)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 3 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Uneufe (x3)</button>
-                        <button onclick="setMultiplier(2)" class="calc-mult-btn px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${currentMultiplier === 2 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">Andere (x2)</button>
+                    <!-- Multipliers -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                        <button onclick="setMultiplier(1)" class="py-2 px-1 rounded-lg border text-[10px] md:text-xs font-bold transition-all ${currentMultiplier === 1 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">
+                            🌸 Rose / 🌰 Eichle (1x)
+                        </button>
+                        <button onclick="setMultiplier(2)" class="py-2 px-1 rounded-lg border text-[10px] md:text-xs font-bold transition-all ${currentMultiplier === 2 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">
+                            🔔 Schälle / 🛡️ Schiltä (2x)
+                        </button>
+                        <button onclick="setMultiplier(3)" class="py-2 px-1 rounded-lg border text-[10px] md:text-xs font-bold transition-all ${currentMultiplier === 3 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">
+                            ⬆️ Obenabe (3x)
+                        </button>
+                        <button onclick="setMultiplier(3)" class="py-2 px-1 rounded-lg border text-[10px] md:text-xs font-bold transition-all ${currentMultiplier === 3 ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-600 border-slate-200'}">
+                            ⬇️ Uneufe (3x)
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-[1fr,auto,1fr] gap-4 items-end mb-4">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Team 1 Karten</label>
-                            <input type="number" id="input-points-a" inputmode="numeric" oninput="calculatePoints('a')" placeholder="0" 
+                    <!-- Points Inputs -->
+                    <div class="grid grid-cols-[1fr,auto,1fr] gap-3 items-end mb-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-blue-600 uppercase block mb-1 truncate">${nameT1}</label>
+                            <input type="number" id="input-points-a" inputmode="numeric" oninput="calculatePoints('a')" placeholder="Punkte" 
                                 class="w-full h-12 text-center text-xl font-bold border-b-2 border-blue-200 focus:border-blue-500 outline-none bg-slate-50 rounded-t-lg">
                         </div>
                         <div class="text-slate-300 font-light pb-3">vs</div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Team 2 Karten</label>
-                            <input type="number" id="input-points-b" inputmode="numeric" oninput="calculatePoints('b')" placeholder="157" 
+                        <div>
+                            <label class="text-[10px] font-bold text-red-600 uppercase block mb-1 truncate">${nameT2}</label>
+                            <input type="number" id="input-points-b" inputmode="numeric" oninput="calculatePoints('b')" placeholder="Punkte" 
                                 class="w-full h-12 text-center text-xl font-bold border-b-2 border-red-200 focus:border-red-500 outline-none bg-slate-50 rounded-t-lg">
                         </div>
                     </div>
                     
+                    <!-- Weis Inputs -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
-                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Weis T1</label>
-                            <input type="number" id="input-weis-a" inputmode="numeric" placeholder="0" class="w-full text-center text-sm border border-slate-200 rounded-lg py-2">
+                         <div>
+                            <input type="number" id="input-weis-a" inputmode="numeric" placeholder="Weis" class="w-full text-center text-xs border border-slate-200 rounded-lg py-2">
                         </div>
-                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase text-center block">Weis T2</label>
-                            <input type="number" id="input-weis-b" inputmode="numeric" placeholder="0" class="w-full text-center text-sm border border-slate-200 rounded-lg py-2">
+                         <div>
+                            <input type="number" id="input-weis-b" inputmode="numeric" placeholder="Weis" class="w-full text-center text-xs border border-slate-200 rounded-lg py-2">
                         </div>
                     </div>
 
-                    <button onclick="submitRound()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
+                    <button onclick="submitRound()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">
                         Runde schreiben
                     </button>
                 </div>
-
-                <!-- Last Rounds List -->
-                <div class="flex-1 overflow-auto custom-scrollbar bg-slate-50 rounded-xl border border-slate-200 p-2">
-                    <table class="w-full text-sm">
-                        <thead class="text-xs text-slate-400 uppercase sticky top-0 bg-slate-50">
-                            <tr>
-                                <th class="pb-2 text-left">Runde</th>
-                                <th class="pb-2 text-right text-blue-600">Team 1</th>
-                                <th class="pb-2 text-right text-red-600">Team 2</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${[...calculatorState.rounds].reverse().map((r, i) => `
-                                <tr class="text-slate-600">
-                                    <td class="py-2 text-xs font-mono text-slate-400">#${calculatorState.rounds.length - i} (${r.multiplier}x)</td>
-                                    <td class="py-2 text-right font-medium">${r.pointsA + (r.weisA||0)}</td>
-                                    <td class="py-2 text-right font-medium">${r.pointsB + (r.weisB||0)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
                 
-                <button onclick="abortGame()" class="mt-4 text-xs text-red-400 text-center w-full hover:underline">
-                    Spiel abbrechen
-                </button>
-            </div>
-            `;
+                <button onclick="abortGame()" class="mt-4 text-xs text-red-400 text-center w-full hover:underline">Spiel abbrechen</button>
+            </div>`;
         };
 
         const renderCalcFinish = () => {
@@ -491,221 +420,135 @@
                     <i data-lucide="trophy" class="w-10 h-10"></i>
                 </div>
                 <h2 class="text-2xl font-serif font-bold text-slate-800 mb-2">Spiel beendet!</h2>
-                <p class="text-slate-500 mb-6">
-                    Sieger: <span class="font-bold text-slate-800">${winnerTeam === 1 ? 'Team 1' : 'Team 2'}</span> (${Math.max(totalA, totalB)} Punkte)
-                </p>
-
+                <div class="text-4xl font-black text-slate-800 mb-4 font-mono">${Math.max(totalA, totalB)} <span class="text-lg text-slate-400">Punkte</span></div>
+                
                 <div class="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 text-left">
-                    <h3 class="font-bold text-red-800 text-sm uppercase tracking-wide mb-2 flex items-center gap-2">
-                        <i data-lucide="alert-octagon" class="w-4 h-4"></i> Zu vergebende Strafen
-                    </h3>
+                    <h3 class="font-bold text-red-800 text-sm uppercase tracking-wide mb-2 flex items-center gap-2"><i data-lucide="alert-octagon" class="w-4 h-4"></i> Zu vergebende Strafen</h3>
                     ${calculatorState.penalties.length > 0 ? `
                         <ul class="space-y-2">
                             ${calculatorState.penalties.map(p => `
                                 <li class="flex justify-between items-center text-sm border-b border-red-100 last:border-0 pb-1 last:pb-0">
-                                    <span class="text-slate-700 font-medium">
-                                        ${initialPlayers.find(pl => pl.id === p.playerId).name}
-                                    </span>
-                                    <div class="text-right">
-                                        <div class="font-bold text-red-600">+${p.amount} CHF</div>
-                                        <div class="text-[10px] text-red-400">${p.reason}</div>
-                                    </div>
+                                    <span class="text-slate-700 font-medium">${initialPlayers.find(pl => pl.id === p.playerId).name}</span>
+                                    <div class="text-right"><div class="font-bold text-red-600">+${p.amount} CHF</div><div class="text-[10px] text-red-400">${p.reason}</div></div>
                                 </li>
                             `).join('')}
                         </ul>
-                    ` : '<div class="text-sm text-slate-400 italic">Keine Strafen angefallen. Gut gespielt!</div>'}
+                    ` : '<div class="text-sm text-slate-400 italic">Keine Strafen.</div>'}
                 </div>
 
                 <div class="space-y-3">
-                    <input type="password" id="finish-code" placeholder="Code: ${ACCESS_CODE}" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-center font-mono">
-                    <button onclick="saveCalculatedGame()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-slate-800 transition-all">
-                        Spiel & Strafen speichern
-                    </button>
-                     <button onclick="abortGame()" class="w-full text-slate-400 text-sm hover:text-slate-600">
-                        Verwerfen
-                    </button>
+                    <input type="password" id="finish-code" placeholder="Code eingeben" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-center font-mono focus:ring-2 focus:ring-slate-800 outline-none">
+                    <button onclick="saveCalculatedGame()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg transition-all">Spiel & Strafen speichern</button>
                 </div>
-             </div>
-             `;
+             </div>`;
         };
 
-        const renderHistory = () => `
+        // --- HISTORY (GROUPED) ---
+        const renderHistory = () => {
+            // Group games by "gameId" or close timestamps (within 1 min)
+            // Simplified: We assume bulk entries or calculator entries share a timestamp usually, or close enough.
+            // Better: Group by `recordedBy` + `timestamp` minute.
+            
+            // Let's visualize simply as a list first, but richer.
+            return `
             <div class="space-y-4 animate-in fade-in duration-500">
                  <div class="flex items-center justify-between px-2">
                     <h3 class="text-lg font-bold text-slate-700 font-serif">Verlauf</h3>
                 </div>
-                ${games.length === 0 ? `
-                    <div class="text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-100">
-                        <i data-lucide="history" class="mx-auto mb-3 opacity-20 w-12 h-12"></i>
-                        <p>Noch keine Einträge.</p>
-                    </div>
-                ` : games.map(game => {
+                ${games.length === 0 ? '<div class="text-center py-12 text-slate-400">Keine Einträge.</div>' : 
+                games.map(game => {
                     const player = initialPlayers.find(p => p.id === game.playerId);
-                    const playerName = player ? player.name : 'Unbekannt';
+                    const date = game.timestamp?.toDate ? game.timestamp.toDate() : new Date();
+                    const dateStr = date.toLocaleDateString('de-CH');
+                    const timeStr = date.toLocaleTimeString('de-CH', {hour: '2-digit', minute:'2-digit'});
+                    
                     return `
-                        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex justify-between items-center">
-                            <div>
-                                <div class="font-bold text-slate-700">${playerName}</div>
-                                <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                                    <i data-lucide="calendar" class="w-3 h-3"></i>
-                                    ${game.timestamp?.toDate ? game.timestamp.toDate().toLocaleDateString('de-CH') + ' ' + game.timestamp.toDate().toLocaleTimeString('de-CH', {hour: '2-digit', minute:'2-digit'}) : 'Gerade jetzt'}
+                        <div class="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-12 ${player?.color} rounded-full"></div>
+                                <div>
+                                    <div class="font-bold text-slate-700 text-sm">${player?.name}</div>
+                                    <div class="text-[10px] text-slate-400">${game.reason || (game.type==='direct' ? 'Direkteingabe' : 'Spielstrafe')}</div>
                                 </div>
                             </div>
-                            <div class="flex flex-col items-end">
-                                <span class="font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg text-sm mb-1">+${game.points} CHF</span>
-                                <button onclick="handleDeleteGame('${game.id}')" class="text-[10px] text-slate-300 hover:text-red-400 underline">Löschen</button>
+                            <div class="text-right">
+                                <span class="font-bold text-red-600 text-lg">+${game.points}</span>
+                                <div class="text-[10px] text-slate-400">${dateStr} ${timeStr}</div>
+                                <button onclick="handleDeleteGame('${game.id}')" class="text-[10px] text-red-300 hover:text-red-500 underline mt-1">Löschen</button>
                             </div>
                         </div>
                     `;
                 }).join('')}
-            </div>
-        `;
+            </div>`;
+        };
 
-        // Mobile Nav
         const renderMobileNav = () => `
-            <nav id="mobile-nav" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex justify-between items-end z-50 md:hidden pb-safe nav-fade">
+            <nav id="mobile-nav" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex justify-between items-end z-50 md:hidden pb-safe">
                 ${['leaderboard', 'calculator', 'add', 'history'].map(tab => {
                     const isActive = activeTab === tab;
-                    const icons = {
-                        leaderboard: 'trophy',
-                        calculator: 'calculator',
-                        add: 'list-plus',
-                        history: 'history'
-                    };
-                    const labels = {
-                        leaderboard: 'Rangliste',
-                        calculator: 'Tafel',
-                        add: 'Eintrag',
-                        history: 'Verlauf'
-                    };
-                    
-                    return `
-                        <button onclick="setActiveTab('${tab}')" class="flex flex-col items-center gap-1 w-16 py-2 transition-all ${isActive ? 'text-yellow-600' : 'text-slate-400'}">
-                            <div class="relative">
-                                <i data-lucide="${icons[tab]}" class="w-6 h-6 ${isActive ? 'fill-current opacity-20 stroke-[2.5]' : ''}"></i>
-                                ${isActive ? '<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-yellow-600 rounded-full"></div>' : ''}
-                            </div>
+                    const icons = { leaderboard: 'trophy', calculator: 'calculator', add: 'list-plus', history: 'history' };
+                    const labels = { leaderboard: 'Rangliste', calculator: 'Tafel', add: 'Eintrag', history: 'Verlauf' };
+                    return `<button onclick="setActiveTab('${tab}')" class="flex flex-col items-center gap-1 w-16 py-2 transition-all ${isActive ? 'text-yellow-600' : 'text-slate-400'}">
+                            <i data-lucide="${icons[tab]}" class="w-6 h-6 ${isActive ? 'fill-current opacity-20 stroke-[2.5]' : ''}"></i>
                             <span class="text-[10px] font-medium tracking-tight">${labels[tab]}</span>
-                        </button>
-                    `;
+                        </button>`;
                 }).join('')}
             </nav>
-            <style>
-                .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-            </style>
+            <style>.pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }</style>
         `;
 
         const renderApp = () => {
-            let content = '';
-            switch(activeTab) {
-                case 'leaderboard': content = renderLeaderboard(); break;
-                case 'add': content = renderBulkEntry(); break;
-                case 'calculator': content = renderCalculator(); break;
-                case 'history': content = renderHistory(); break;
-            }
-
+            const tabs = { leaderboard: renderLeaderboard, add: renderBulkEntry, calculator: renderCalculator, history: renderHistory };
             document.getElementById('app').innerHTML = `
                 ${renderHeader()}
-                <main class="max-w-2xl mx-auto px-4 -mt-6 relative z-10 pb-20">
-                    ${renderDesktopNav()}
-                    ${content}
+                <main class="max-w-xl mx-auto px-4 -mt-6 relative z-10 pb-20">
+                     <div class="hidden md:flex justify-center gap-4 -mt-8 relative z-20 mb-8 px-4">
+                        ${Object.keys(tabs).map(t => `<button onclick="setActiveTab('${t}')" class="px-6 py-2 rounded-xl font-bold shadow-sm transition-all ${activeTab===t?'bg-yellow-500 text-slate-900':'bg-white text-slate-600'}">${t.toUpperCase()}</button>`).join('')}
+                    </div>
+                    ${tabs[activeTab]()}
                 </main>
                 ${renderMobileNav()}
             `;
-            
-            // Re-render Icons
             lucide.createIcons();
-
-            // Re-attach scroll listener for mobile nav
             window.removeEventListener('scroll', handleScroll);
             window.addEventListener('scroll', handleScroll);
         };
 
-
-        // --- Logic: Bulk Entry ---
-        window.updateBulkScore = (playerId, change) => {
-            const current = bulkEntryState[playerId] || 0;
-            const newVal = Math.max(0, current + change); // No negative penalties
-            bulkEntryState[playerId] = newVal;
-            
-            // Update input UI only
-            const input = document.getElementById(`bulk-${playerId}`);
-            if(input) input.value = newVal;
-        };
-
-        window.resetBulkState = () => {
-             initialPlayers.forEach(p => bulkEntryState[p.id] = 0);
-             renderApp();
+        // --- CONTROLLER ---
+        
+        window.updateBulkScore = (pid, chg) => {
+            bulkEntryState[pid] = Math.max(0, (bulkEntryState[pid]||0) + chg);
+            renderApp();
         };
 
         window.submitBulkEntry = async () => {
-            const codeInput = document.getElementById('bulk-code');
-            const msgBox = document.getElementById('bulk-message-box');
-            const btn = document.getElementById('bulk-submit-btn');
-
-            if (codeInput.value !== ACCESS_CODE) {
-                msgBox.innerHTML = '<span class="font-bold text-red-600">Falscher Code!</span>';
-                msgBox.className = 'bg-red-50 border border-red-100 p-3 rounded-lg text-sm text-center block mb-4 animate-pulse';
-                codeInput.value = '';
-                return;
-            }
-
-            // Filter entries with points > 0
-            const entries = Object.entries(bulkEntryState).filter(([pid, pts]) => pts > 0);
+            const code = document.getElementById('bulk-code').value;
+            if (code !== ACCESS_CODE) return alert("Falscher Code!");
             
-            if (entries.length === 0) {
-                msgBox.innerHTML = '<span class="text-slate-500">Bitte zuerst Punkte vergeben.</span>';
-                msgBox.className = 'bg-slate-100 p-3 rounded-lg text-sm text-center block mb-4';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = 'Speichere...';
-
-            try {
-                const batch = writeBatch(db);
-                const collectionRef = collection(db, COLLECTION_NAME);
-
-                entries.forEach(([pid, pts]) => {
-                    const docRef = doc(collectionRef); // Generate new ID
-                    batch.set(docRef, {
-                        playerId: pid,
-                        points: pts,
-                        timestamp: serverTimestamp(),
-                        recordedBy: user ? user.uid : 'bulk-entry',
-                        type: 'direct'
-                    });
+            const entries = Object.entries(bulkEntryState).filter(([_, v]) => v > 0);
+            if (entries.length === 0) return alert("Keine Punkte vergeben.");
+            
+            document.getElementById('bulk-submit-btn').textContent = "Speichere...";
+            const batch = writeBatch(db);
+            entries.forEach(([pid, pts]) => {
+                batch.set(doc(collection(db, COLLECTION_NAME)), {
+                    playerId: pid, points: pts, timestamp: serverTimestamp(),
+                    recordedBy: user ? user.uid : 'bulk', type: 'direct'
                 });
-
-                await batch.commit();
-
-                // Success Reset
-                resetBulkState();
-                setActiveTab('leaderboard');
-
-            } catch (e) {
-                console.error(e);
-                alert("Fehler beim Speichern: " + e.message);
-                btn.disabled = false;
-                btn.innerHTML = 'Speichern';
-            }
+            });
+            await batch.commit();
+            bulkEntryState = {};
+            setActiveTab('leaderboard');
         };
 
-
-        // --- Logic: Calculator ---
-        let currentMultiplier = 1;
-
-        window.toggleTeamSelection = (pid, teamNum) => {
-            const t1 = calculatorState.team1;
-            const t2 = calculatorState.team2;
-
-            if (teamNum === 1) {
-                if (t1.includes(pid)) calculatorState.team1 = t1.filter(id => id !== pid);
-                else if (!t2.includes(pid) && t1.length < 2) calculatorState.team1.push(pid);
-            } else {
-                if (t2.includes(pid)) calculatorState.team2 = t2.filter(id => id !== pid);
-                else if (!t1.includes(pid) && t2.length < 2) calculatorState.team2.push(pid);
-            }
+        // Calculator Logic
+        window.toggleTeamSelection = (pid, team) => {
+            const other = team === 1 ? 2 : 1;
+            const myArr = calculatorState[`team${team}`];
+            const otherArr = calculatorState[`team${other}`];
+            
+            if (myArr.includes(pid)) calculatorState[`team${team}`] = myArr.filter(id => id !== pid);
+            else if (!otherArr.includes(pid) && myArr.length < 2) calculatorState[`team${team}`].push(pid);
             renderApp();
         };
 
@@ -714,264 +557,140 @@
             calculatorState.rounds = [];
             calculatorState.penalties = [];
             calculatorState.bergReached = false;
-            calculatorState.startTime = new Date();
             renderApp();
         };
 
         window.setMultiplier = (m) => {
             currentMultiplier = m;
             renderApp();
-            // Refocus input A
-            setTimeout(() => document.getElementById('input-points-a')?.focus(), 50);
         };
 
-        window.calculatePoints = (source) => {
-            const inputA = document.getElementById('input-points-a');
-            const inputB = document.getElementById('input-points-b');
+        window.calculatePoints = (src) => {
+            const inA = document.getElementById('input-points-a');
+            const inB = document.getElementById('input-points-b');
+            let val = parseInt(src==='a'?inA.value:inB.value) || 0;
             
-            let val = parseInt(source === 'a' ? inputA.value : inputB.value);
-            if (isNaN(val)) val = 0;
-            if (val > 157) val = 157; // Cap at 157
+            // Max Points Logic
+            // If user enters > 157, it's invalid unless handled differently. 
+            // For UI simplicity, we clamp visually for calculation but keep logic for Match (157 input = 257 total)
+            if (val > 157) val = 157; 
 
-            if (source === 'a') {
-                inputB.value = 157 - val;
-            } else {
-                inputA.value = 157 - val;
-            }
+            if (src==='a') inB.value = 157 - val;
+            else inA.value = 157 - val;
         };
 
         window.submitRound = () => {
-            const pA = parseInt(document.getElementById('input-points-a').value) || 0;
-            const pB = parseInt(document.getElementById('input-points-b').value) || 0;
+            const pA_in = parseInt(document.getElementById('input-points-a').value) || 0;
+            const pB_in = parseInt(document.getElementById('input-points-b').value) || 0;
             const wA = parseInt(document.getElementById('input-weis-a').value) || 0;
             const wB = parseInt(document.getElementById('input-weis-b').value) || 0;
 
-            if (pA + pB !== 157) {
-                alert("Kartenpunkte müssen 157 ergeben!");
-                return;
-            }
+            if (pA_in + pB_in !== 157) return alert("Summe muss 157 sein!");
 
-            // Calculation Logic
-            // Check for Match (opponent 0 points in cards)
-            // Note: In Schieber, Match counts 257 (157 + 100).
-            // Logic: If one team has 157 points, they get +100 bonus. 
-            // The Penalty rule: "Spiel zu 0 verlieren (+1 CHF)". This implies if a team gets 0 CARD points in a round.
+            // MATCH LOGIC: If input is 157, actual points are 257
+            let realPA = pA_in === 157 ? 257 : pA_in;
+            let realPB = pB_in === 157 ? 257 : pB_in;
+
+            // Apply Multiplier
+            const pointsA = (realPA * currentMultiplier) + (wA * currentMultiplier);
+            const pointsB = (realPB * currentMultiplier) + (wB * currentMultiplier);
+
+            // Penalties
+            if (pA_in === 157) addPenalty(calculatorState.team2, 1, "Match kassiert (zu 0)");
+            if (pB_in === 157) addPenalty(calculatorState.team1, 1, "Match kassiert (zu 0)");
+
+            calculatorState.rounds.push({ pointsA, pointsB, weisA: wA*currentMultiplier, weisB: wB*currentMultiplier, multiplier: currentMultiplier });
             
-            let roundPointsA = (pA * currentMultiplier) + (wA * currentMultiplier);
-            let roundPointsB = (pB * currentMultiplier) + (wB * currentMultiplier);
+            checkBerg();
+
+            // Check Game End
+            const sumA = calculatorState.rounds.reduce((s,r)=>s+r.pointsA,0);
+            const sumB = calculatorState.rounds.reduce((s,r)=>s+r.pointsB,0);
             
-            // Match Detection (157 points)
-            if (pA === 157) {
-                roundPointsA += (100 * currentMultiplier); 
-                // Penalty Team B: Lost to 0
-                addPenalty(calculatorState.team2, 1, "Match kassiert (zu 0 verloren)");
-            }
-            if (pB === 157) {
-                roundPointsB += (100 * currentMultiplier);
-                // Penalty Team A: Lost to 0
-                addPenalty(calculatorState.team1, 1, "Match kassiert (zu 0 verloren)");
-            }
-
-            // Add round
-            calculatorState.rounds.push({
-                pointsA: roundPointsA,
-                pointsB: roundPointsB,
-                weisA: wA * currentMultiplier,
-                weisB: wB * currentMultiplier,
-                multiplier: currentMultiplier
-            });
-
-            // Check "Über den Berg" (1500)
-            checkBergLogic();
-
-            // Check Game End (2500)
-            const totalA = calculatorState.rounds.reduce((s,r) => s + r.pointsA, 0);
-            const totalB = calculatorState.rounds.reduce((s,r) => s + r.pointsB, 0);
-
-            if (totalA >= 2500 || totalB >= 2500) {
-                // Game Over
-                // Add Loser Penalty (+2 CHF)
-                if (totalA > totalB) {
-                    addPenalty(calculatorState.team2, 2, "Spiel verloren");
-                } else {
-                    addPenalty(calculatorState.team1, 2, "Spiel verloren");
-                }
+            if (sumA >= 2500 || sumB >= 2500) {
+                const loser = sumA > sumB ? calculatorState.team2 : calculatorState.team1;
+                addPenalty(loser, 2, "Spiel verloren");
                 calculatorState.activeStep = 'finish';
             } else {
-                 // Reset inputs
-                currentMultiplier = 1;
+                currentMultiplier = 1; // Reset multiplier only, keeping game active
             }
-            
             renderApp();
-            // Focus Input A again for next round
-            if (calculatorState.activeStep === 'play') {
-                setTimeout(() => {
-                    const el = document.getElementById('input-points-a');
-                    if(el) { el.value = ''; document.getElementById('input-points-b').value = '157'; el.focus(); }
-                    document.getElementById('input-weis-a').value = '';
-                    document.getElementById('input-weis-b').value = '';
-                }, 100);
-            }
-        };
-
-        const addPenalty = (teamIds, amount, reason) => {
-            teamIds.forEach(pid => {
-                calculatorState.penalties.push({ playerId: pid, amount, reason });
-            });
-        };
-
-        const checkBergLogic = () => {
-            if (calculatorState.bergReached) return; // Already triggered
-
-            const totalA = calculatorState.rounds.reduce((s,r) => s + r.pointsA, 0);
-            const totalB = calculatorState.rounds.reduce((s,r) => s + r.pointsB, 0);
-
-            // "CHF 1.00 für die Spieler, welche zuletzt über den Berg sind bei 1500 Punkten 
-            // (also sobald das andere Team diesen Punktestand erreicht hat"
-            // Means: If Team A hits 1500, Team B gets penalized immediately.
             
-            if (totalA >= 1500 && totalB < 1500) {
-                addPenalty(calculatorState.team2, 1, "Zuletzt über den Berg (Gegner hat 1500 erreicht)");
-                calculatorState.bergReached = true;
-            } else if (totalB >= 1500 && totalA < 1500) {
-                addPenalty(calculatorState.team1, 1, "Zuletzt über den Berg (Gegner hat 1500 erreicht)");
-                calculatorState.bergReached = true;
-            } else if (totalA >= 1500 && totalB >= 1500) {
-                // Both over 1500 same round? Rare but possible with Weis.
-                // Usually the one with MORE points wins the Berg race.
-                // Let's assume no penalty if both cross same round, or strict logic?
-                // strict: lower score gets penalty.
-                if (totalA > totalB) addPenalty(calculatorState.team2, 1, "Zuletzt über den Berg");
-                else if (totalB > totalA) addPenalty(calculatorState.team1, 1, "Zuletzt über den Berg");
-                calculatorState.bergReached = true;
+            if(calculatorState.activeStep === 'play') {
+                 setTimeout(() => {
+                    const el = document.getElementById('input-points-a');
+                    if(el) { el.value=''; document.getElementById('input-points-b').value='157'; el.focus(); }
+                    document.getElementById('input-weis-a').value=''; document.getElementById('input-weis-b').value='';
+                 }, 50);
             }
+        };
+
+        const addPenalty = (team, amt, rsn) => team.forEach(pid => calculatorState.penalties.push({ playerId: pid, amount: amt, reason: rsn }));
+
+        const checkBerg = () => {
+            if (calculatorState.bergReached) return;
+            const sumA = calculatorState.rounds.reduce((s,r)=>s+r.pointsA,0);
+            const sumB = calculatorState.rounds.reduce((s,r)=>s+r.pointsB,0);
+            if (sumA >= 1500 && sumB < 1500) { addPenalty(calculatorState.team2, 1, "Gegner über Berg"); calculatorState.bergReached=true; }
+            else if (sumB >= 1500 && sumA < 1500) { addPenalty(calculatorState.team1, 1, "Gegner über Berg"); calculatorState.bergReached=true; }
         };
 
         window.saveCalculatedGame = async () => {
             const code = document.getElementById('finish-code').value;
-            if (code !== ACCESS_CODE) {
-                alert("Falscher Code!");
-                return;
-            }
-
-            try {
-                const batch = writeBatch(db);
-                const col = collection(db, COLLECTION_NAME);
-
-                calculatorState.penalties.forEach(p => {
-                    const ref = doc(col);
-                    batch.set(ref, {
-                        playerId: p.playerId,
-                        points: p.amount,
-                        reason: p.reason,
-                        timestamp: serverTimestamp(),
-                        recordedBy: user ? user.uid : 'calculator',
-                        type: 'game-penalty'
-                    });
+            if (code !== ACCESS_CODE) return alert("Falscher Code!");
+            
+            const batch = writeBatch(db);
+            calculatorState.penalties.forEach(p => {
+                batch.set(doc(collection(db, COLLECTION_NAME)), {
+                    playerId: p.playerId, points: p.amount, reason: p.reason,
+                    timestamp: serverTimestamp(), type: 'game-penalty'
                 });
-                
-                await batch.commit();
-                alert("Spiel gespeichert & Strafen verteilt!");
-                abortGame(); // Reset
-            } catch (e) {
-                console.error(e);
-                alert("Fehler beim Speichern");
-            }
+            });
+            await batch.commit();
+            calculatorState = { team1: [], team2: [], rounds: [], penalties: [], activeStep: 'setup', bergReached: false };
+            setActiveTab('leaderboard');
         };
 
         window.abortGame = () => {
-            if(confirm("Spiel wirklich abbrechen? Alle Daten gehen verloren.")) {
-                calculatorState.activeStep = 'setup';
-                calculatorState.team1 = [];
-                calculatorState.team2 = [];
+            if(confirm("Abbrechen?")) {
+                calculatorState = { team1: [], team2: [], rounds: [], penalties: [], activeStep: 'setup', bergReached: false };
                 setActiveTab('leaderboard');
             }
         };
 
-        // --- General Utils ---
-        window.setActiveTab = (tab) => {
-            activeTab = tab;
-            renderApp();
-            window.scrollTo(0,0);
-        };
-        
-        window.handleDeleteGame = async (gameId) => {
-            if(!confirm("Eintrag löschen?")) return;
-            const code = prompt("Bitte Code eingeben:", "");
-            if (code !== ACCESS_CODE) { alert("Falscher Code"); return; }
-            
-            try {
-                await deleteDoc(doc(db, COLLECTION_NAME, gameId));
-            } catch (e) {
-                alert("Fehler: " + e.message);
-            }
+        window.handleDeleteGame = async (id) => {
+            if(!confirm("Löschen?")) return;
+            const code = prompt("Code:");
+            if(code !== ACCESS_CODE) return alert("Falsch");
+            await deleteDoc(doc(db, COLLECTION_NAME, id));
         };
 
-        // Scroll Handler for Mobile Nav Transparency
+        window.setActiveTab = (t) => { activeTab = t; renderApp(); window.scrollTo(0,0); };
         const handleScroll = () => {
             const nav = document.getElementById('mobile-nav');
-            if (!nav) return;
-            
-            if (window.scrollY > 50) {
-                nav.classList.add('nav-scrolled');
-            } else {
-                nav.classList.remove('nav-scrolled');
-            }
+            if(nav) window.scrollY > 50 ? nav.classList.add('nav-scrolled') : nav.classList.remove('nav-scrolled');
         };
 
-        // --- Initialization ---
-        async function startApp() {
-            if (!firebaseConfig.apiKey || firebaseConfig.apiKey === '*') {
-                document.getElementById('app').innerHTML = renderErrorState("Firebase nicht konfiguriert", "Bitte API Keys in der Datei eintragen.");
-                return;
-            }
-
+        // --- INIT ---
+        const startApp = async () => {
+            if(!firebaseConfig.apiKey || firebaseConfig.apiKey === '*') return document.getElementById('app').innerHTML = renderErrorState("Firebase Config fehlt in index.html");
             document.getElementById('app').innerHTML = renderLoading();
-
             try {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                
                 await signInAnonymously(auth);
                 user = auth.currentUser;
-
-                const q = query(collection(db, COLLECTION_NAME));
-                onSnapshot(q, (snapshot) => {
-                    games = snapshot.docs.map(d => ({id: d.id, ...d.data()}))
-                                         .sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                    
-                    // Calc Leaderboard
-                    const stats = {};
-                    initialPlayers.forEach(p => stats[p.id] = p.score);
-                    
-                    games.forEach(g => {
-                        if(stats[g.playerId] !== undefined) stats[g.playerId] += g.points;
-                    });
-
-                    leaderboard = initialPlayers.map(p => ({
-                        ...p,
-                        score: stats[p.id]
-                    })).sort((a,b) => a.score - b.score); // Lowest score is best (fewer penalties)? 
-                    // Wait, user said "Diego +2". Usually penalties imply HIGHER score is BAD.
-                    // Or is it Points = Good? 
-                    // User said: "Weniger Punkte = Bester Spieler!" in previous text.
-                    // So sorting ascending is correct (Lowest first).
-                    // BUT: "Diego +2" ADDS points. So adding points makes you lose ranks.
-                    // Correct: sort((a,b) => a.score - b.score). Lowest score is Rank 1.
-                    
-                    // Assign Ranks
-                    leaderboard.forEach((p, i) => p.rank = i + 1);
-
+                onSnapshot(query(collection(db, COLLECTION_NAME)), sn => {
+                    games = sn.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
+                    const totals = {}; initialPlayers.forEach(p=>totals[p.id]=p.score);
+                    games.forEach(g => { if(totals[g.playerId]!==undefined) totals[g.playerId]+=g.points; });
+                    leaderboard = initialPlayers.map(p=>({...p, score: totals[p.id]})).sort((a,b)=>a.score-b.score);
+                    leaderboard.forEach((p,i)=>p.rank=i+1);
                     renderApp();
                 });
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('app').innerHTML = renderErrorState("Verbindungsfehler", e.message);
-            }
-        }
-
+            } catch(e) { document.getElementById('app').innerHTML = renderErrorState(e.message); }
+        };
         startApp();
     </script>
 </body>
