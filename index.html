@@ -17,8 +17,8 @@
                         'jass-gold': '#908059',
                         'jass-dark': '#1a1a1a',
                         'swiss-red': '#D80018',
-                        'amber-600': '#d97706', // Dunkelgold für Icons
-                        'amber-200': '#fde68a', // Hellgold für Icons
+                        'amber-600': '#d97706',
+                        'amber-200': '#fde68a',
                     },
                     fontFamily: {
                         'comic': ['Bangers', 'cursive'],
@@ -93,7 +93,7 @@
         .header-pattern-img {
             position: absolute; inset: 0;
             background-repeat: repeat;
-            background-size: 80px 80px; /* Grösseres Muster für den Teppich */
+            background-size: 80px 80px; 
             opacity: 0.4; mix-blend-mode: multiply; 
         }
 
@@ -151,7 +151,8 @@
         import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- A. KONFIGURATION (WICHTIG: HIER DATEN EINFÜGEN!) ---
+        // --- A. KONFIGURATION ---
+        // WICHTIG: Ersetze die Sternchen (*) mit deinen echten Firebase-Daten!
     const firebaseConfig = {
         apiKey: "AIzaSyAPkAhM-BhJfG5cljBk2S2KGN3TIg8IxXM",
         authDomain: "jassgenossenschaellebur.firebaseapp.com",
@@ -167,7 +168,7 @@
             "jassgenossenschallebur@gmail.com"
         ];
 
-        // --- B. ASSETS (GitHub Raw Links) ---
+        // --- B. ASSETS (Via GitHub Raw Links) ---
         const LOGO_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/6b6be0b76b1deaa9524af5f522e6addb15da85dc/img/jass%20file_gold1.png"; 
         const BG_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/6b6be0b76b1deaa9524af5f522e6addb15da85dc/img/Sch%C3%A4lle.png";   
         
@@ -202,11 +203,11 @@
         ];
 
         const URL_FALLBACK = "https://ui-avatars.com/api/?background=000&color=fff";
-        const BG_FALLBACK = "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 30c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zm-5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5 2.24-5 5zm0-10c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm10 25c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm-10 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zM30 0c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zM5 0c0 2.76-2.24 5-5 5S-5 2.76-5 0s2.24-5 5-5 5 2.24 5 5z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E";
+        const BG_FALLBACK = "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 30c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zm-5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm0-10c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm10 25c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm-10 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zM30 0c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zM5 0c0 2.76-2.24 5-5 5S-5 2.76-5 0s2.24-5 5-5 5 2.24 5 5z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E";
 
         const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings' };
         
-        // --- STATE ---
+        // --- C. STATE ---
         let app, auth, db, user;
         let userData = null; 
         let games = [], users = [], events = [], pendingUsers = [];
@@ -226,7 +227,7 @@
         let currentSeasonId = '2025';
         let registrationRole = 'active';
 
-        // --- TRANSLATIONS ---
+        // --- D. TEXTS ---
         const translations = {
             de: {
                 subtitle: "Liga der Jass-Legenden",
@@ -285,12 +286,56 @@
             return val || key;
         };
 
-        // --- RENDER FUNCTIONS (gekürzt für Übersicht, Logik ist identisch) ---
-        // (Die Funktionen renderHeader, renderLoginModal, renderRegistration, renderPendingScreen, 
-        //  renderMemberModal, renderStatistics, renderEvents, renderMembers, renderCalculator, renderAdminPanel
-        //  sind im vollständigen Block oben enthalten - hier der Übersichtlichkeit halber nur referenziert)
-        
-        // ... (Render Functions as defined in previous messages, kept intact in the full file below) ...
+        const getAvatarUrl = (u) => {
+            if (!u) return URL_FALLBACK;
+            const name = u.name;
+            if (AVATARS[name] && AVATARS[name].length > 10) return AVATARS[name]; // Use custom avatar if available
+            if (u.avatar && u.avatar.length > 50) return u.avatar;
+            if (u.photoURL) return u.photoURL;
+            return URL_FALLBACK + `&name=${name || 'User'}`;
+        };
+
+        const getTitle = (u) => {
+            if (u.roleKey) return t(u.roleKey); 
+            const legacy = LEGACY_DEBTS.find(l => u.name.includes(l.name));
+            if (legacy && legacy.roleKey) return t(legacy.roleKey);
+            return u.roleName || t('memberStandard');
+        };
+
+        const isMember = () => userData && (userData.role === 'active' || userData.role === 'patron' || userData.role === 'admin');
+        const isActiveMember = () => userData && (userData.role === 'active' || userData.role === 'admin');
+        const isAdmin = () => userData && userData.role === 'admin';
+
+        const getLegacyDebt = (u) => {
+            const match = LEGACY_DEBTS.find(l => 
+                (u.email && l.email && u.email.toLowerCase() === l.email.toLowerCase()) || 
+                (u.name && u.name.toLowerCase().includes(l.name.toLowerCase()))
+            );
+            return match ? match.amount : 0;
+        };
+
+        const getAllPlayers = () => {
+            let combined = [...users];
+            LEGACY_DEBTS.forEach(legacy => {
+                const exists = combined.find(u => 
+                    (u.email && legacy.email && u.email.toLowerCase() === legacy.email.toLowerCase()) || 
+                    (u.name && u.name.toLowerCase().includes(legacy.name.toLowerCase()))
+                );
+                if (!exists) {
+                    combined.push({
+                        id: 'legacy-' + legacy.name, 
+                        name: legacy.name, email: legacy.email,
+                        role: 'active', roleKey: legacy.roleKey, avatar: '', isVirtual: true, bio: t('bioPlaceholder')
+                    });
+                } else {
+                    const existingUser = combined.find(u => u.name.includes(legacy.name));
+                    if(existingUser && !existingUser.roleKey) existingUser.roleKey = legacy.roleKey;
+                }
+            });
+            return combined;
+        };
+
+        // --- E. RENDER FUNCTIONS ---
 
         const renderHeader = () => `
             <header class="relative text-white pt-10 pb-20 px-4 overflow-hidden border-b-4 border-black">
@@ -552,6 +597,7 @@
             const scores = {};
             const debts = {};
             
+            // Get all unique seasons
             const allSeasons = [...new Set(games.map(g => g.season).filter(s => s))].sort().reverse();
             const viewingSeason = leaderboardFilter === 'season' ? currentSeasonId : null;
 
@@ -585,6 +631,7 @@
             }
             displayData = displayData.filter(d => allPlayers.find(u=>u.id===d.uid));
 
+            // Helper to get winner of a specific season
             const getSeasonWinner = (sId) => {
                 const sScores = {};
                 games.filter(g => g.season === sId && g.type !== 'game-penalty').forEach(g => {
@@ -616,6 +663,7 @@
                     <button onclick="setFilter('history')" class="flex-1 py-2 text-xs font-bold uppercase transition-colors ${leaderboardFilter==='history'?'bg-white text-black shadow-sm rounded-lg':'text-slate-500 hover:text-black'}">${t('filters.history')}</button>
                 </div>
 
+                <!-- RANGLISTE (Aktuelle Auswahl) -->
                 ${leaderboardFilter === 'season' ? `<h4 class="text-center font-bold text-lg uppercase text-slate-800 -mb-2">Aktuelle Saison: ${currentSeasonId}</h4>` : ''}
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -625,6 +673,7 @@
                         const isLeader = idx === 0 && item.val > 0 && leaderboardFilter !== 'debt';
                         const isDebt = leaderboardFilter === 'debt';
                         
+                        // CLICKABLE CARD
                         return `
                             <div onclick="openMemberModal('${u.id}')" class="retro-card p-3 flex items-center gap-4 cursor-pointer hover:scale-[1.02] hover:shadow-xl transition-all active:scale-100 ${isLeader ? 'bg-yellow-50 border-yellow-500' : ''}">
                                 <div class="absolute top-0 right-0 bg-black text-white px-2 py-1 rounded-bl-lg text-xs font-bold font-mono z-10">#${idx+1}</div>
@@ -647,6 +696,7 @@
                     }).join('')}
                 </div>
 
+                <!-- SAISON ARCHIV (Nur sichtbar wenn Filter = Season) -->
                 ${leaderboardFilter === 'season' ? `
                     <div class="mt-12 pt-6 border-t-4 border-slate-200">
                         <h4 class="font-comic text-2xl text-slate-400 uppercase mb-4 text-center">Saison Archiv</h4>
@@ -666,6 +716,7 @@
                     </div>
                 ` : ''}
 
+                <!-- HISTORIE -->
                 ${(leaderboardFilter !== 'debt' && leaderboardFilter !== 'season') ? `
                     <div class="mt-8 border-t-2 border-slate-200 pt-4">
                         <h4 class="font-bold text-sm uppercase text-slate-500 mb-3">${t('filters.history')}</h4>
@@ -779,6 +830,37 @@
             </div>`;
         };
 
+        const renderMembers = () => {
+            const allPlayers = getAllPlayers();
+            return `
+            <div class="space-y-4 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
+                <div class="flex items-center justify-between px-1 mb-2"><h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">${t('tabs.members')}</h3></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    ${allPlayers.filter(u => u.role !== 'pending').map(u => `
+                        <div class="retro-card p-2 flex flex-col items-center text-center cursor-pointer hover:border-yellow-400 hover:shadow-lg transition-all" onclick="openMemberModal('${u.id}')">
+                            <div class="avatar-card-frame mb-2"><img src="${getAvatarUrl(u)}" class="avatar-img-pinned"></div>
+                            <div class="font-bold text-sm uppercase leading-tight">${u.name}</div>
+                            <div class="text-[10px] text-slate-500 mt-1 px-2 py-0.5 bg-slate-100 rounded-full">${getTitle(u)}</div>
+                            <div class="text-[9px] text-yellow-600 font-bold mt-1 uppercase">${u.role === 'patron' ? t('rolePatron').split(' ')[0] : t('roleActive').split(' ')[0]}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                ${isMember() ? `
+                <div class="retro-card bg-slate-100 p-4 mt-8 !border-slate-300 md:w-1/2 md:mx-auto">
+                    <h4 class="font-bold text-sm uppercase mb-2 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> ${t('paymentInfo')}</h4>
+                    <div class="text-xs font-mono space-y-1 text-slate-600"><p>Twint: 078 816 63 50</p><p>IBAN: CH39 0878 1000 2448 0910 0</p><p>Beitrag Aktiv: CHF 30.00 pro Monat</p><p>Beitrag Gönner: CHF 1000.00 pro Jahr</p></div>
+                </div>` : `
+                <div class="px-4 py-6 text-center animate-in fade-in">
+                    <div class="retro-card p-4 bg-slate-50 border-dashed md:w-1/2 md:mx-auto">
+                        <h3 class="font-comic text-xl text-slate-800 mb-2">${t('memberRestricted')}</h3>
+                        <p class="text-sm text-slate-500 mb-2">${t('memberRestrictedText')}</p>
+                        <button onclick="openLoginModal()" class="text-xs font-bold text-blue-600 underline">${t('guestHint')}</button>
+                    </div>
+                </div>
+                `}
+            </div>`;
+        };
+
         const renderCalculator = () => {
             const allPlayers = getAllPlayers();
             if (!isActiveMember()) return `
@@ -823,9 +905,10 @@
                 
                 const sumPoints = (teamIdx) => calculatorState.rounds.reduce((acc, r) => {
                     const cardPts = teamIdx === 1 ? r.pA : r.pB;
+                    // Standard Jass: If 157, count 257. Else raw points.
                     const val = cardPts === 157 ? 257 : cardPts;
                     const weis = teamIdx === 1 ? r.wA : r.wB;
-                    return acc + (val * r.mult) + (weis * r.mult); 
+                    return acc + (val * r.mult) + (weis * r.mult); // Weis is also multiplied
                 }, 0);
 
                 const totalA = sumPoints(1);
@@ -834,7 +917,9 @@
                 return `
                 <div class="flex flex-col h-full animate-in fade-in duration-300 pb-24 px-2 max-w-2xl mx-auto w-full items-center">
                     
+                    <!-- TOP: Scores & Avatars (LARGER SIZE: w-16 h-16) -->
                     <div class="w-full grid grid-cols-2 gap-3 mb-4">
+                        <!-- TEAM 1 (Blue) -->
                         <div class="flex flex-col gap-1 items-center">
                             <div class="flex justify-center gap-1 mb-1">
                                 ${t1Members.map(m => `
@@ -849,6 +934,7 @@
                             </div>
                         </div>
 
+                        <!-- TEAM 2 (Red) -->
                         <div class="flex flex-col gap-1 items-center">
                             <div class="flex justify-center gap-1 mb-1">
                                 ${t2Members.map(m => `
@@ -864,7 +950,9 @@
                         </div>
                     </div>
 
+                    <!-- INPUT AREA -->
                     <div class="retro-card p-4 mb-4 bg-white w-full">
+                        <!-- Trumpf Selector -->
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             ${TRUMP_MODES.map(t => `
                                 <button onclick="selectTrump('${t.id}')" 
@@ -887,6 +975,7 @@
                             </div>
                         </div>
                         
+                        <!-- Range Slider for easy input -->
                         <div class="mb-4 px-2">
                             <input type="range" id="slider-points" min="0" max="157" value="0" oninput="updateFromSlider(this.value)">
                         </div>
@@ -905,6 +994,7 @@
                         <button onclick="submitRound()" class="w-full retro-btn text-xl py-4 shadow-lg hover:translate-y-[-2px] transition-transform">Punkte Buchen</button>
                     </div>
 
+                    <!-- HISTORY & UNDO -->
                     <div class="w-full mb-20">
                         <div class="flex justify-between items-center mb-2 px-1">
                             <h4 class="font-bold text-xs uppercase text-slate-400">Verlauf</h4>
@@ -944,6 +1034,7 @@
                 </div>`;
             }
             
+            // Finish Screen
             return `
              <div class="retro-card p-8 animate-in zoom-in-95 mx-2 text-center border-t-8 border-t-yellow-400">
                 <h2 class="text-4xl font-comic text-slate-900 mb-2 uppercase">${t('finish')}</h2>
@@ -1064,6 +1155,7 @@
             window.addEventListener('scroll', handleScroll);
         };
 
+        // --- F. ACTIONS ---
         window.openLoginModal = () => { document.getElementById('modal-container').innerHTML = renderLoginModal(); if (window.lucide) window.lucide.createIcons(); };
         window.closeModal = (e, force) => { if (force || e.target.id === 'modal-container') document.getElementById('modal-container').innerHTML = ''; };
         window.toggleDate = (date) => { expandedHistoryDates[date] = !expandedHistoryDates[date]; renderApp(); };
@@ -1258,7 +1350,6 @@
                 if(document.getElementById('slider-points')) document.getElementById('slider-points').value = r.pA;
             }, 50);
             
-            // Set Trump & remove
             calculatorState.selectedTrump = r.trumpId;
             calculatorState.rounds.splice(index, 1);
             renderApp();
