@@ -98,10 +98,10 @@
             background-size: 60px 60px; /* Größe der Schellen */
             
             /* WICHTIG: Sichtbarkeit */
-            opacity: 0.8; /* 0.1 = ganz schwach, 1.0 = voll sichtbar. Probier 0.2 oder 0.3 */
+            opacity: 0.2; /* 0.1 = ganz schwach, 1.0 = voll sichtbar. Probier 0.2 oder 0.3 */
             
            /* Macht das Bild schwarz, damit es sich gut vom Gold abhebt */
-           /* filter: brightness(100) grayscale(5%); */
+           filter: brightness(10) grayscale(60%); */
         }
 
         .avatar-card-frame {
@@ -365,9 +365,8 @@
         const renderHeader = () => `
             <header class="relative text-white pt-10 pb-20 px-4 overflow-hidden border-b-4 border-black">
                 <div class="header-pattern-container">
-                <div class="header-pattern-img" style="background-image: url('...');"></div>
-                <img src="${BG_BASE64} onerror="this.style.display='none'"
-                <div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/100"></div> 
+                <div class="header-pattern-img" style="background-image: url('${BG_BASE64}');"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80"></div> 
                 </div>
                 <div class="max-w-4xl mx-auto text-center relative z-10">
                     <div class="w-64 h-64 mx-auto mb-2 relative group">
@@ -390,7 +389,7 @@
                     ` : `
                         <button onclick="openLoginModal()" class="absolute top-4 right-4 flex flex-col items-center group z-50">
                             <div class="w-12 h-16 border-2 border-black rounded-lg flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all card-back-pattern" 
-                                 style="background-image: url('${BG_BASE64}'), url('${BG_FALLBACK}');">
+                                 style="background-image: url('${BG_BASE64}');">
                                 <div class="bg-black/50 p-1 rounded-full"><i data-lucide="key" class="w-4 h-4 text-white"></i></div>
                             </div>
                             <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-500 uppercase">${t('loginTitle')}</div>
@@ -566,7 +565,7 @@
                     
                     <div class="bg-gradient-to-r from-red-800 to-red-950 h-32 relative mb-12 border-b-4 border-black">
                          <!-- UPDATE: opacity-20 zu opacity-40 geändert und Filter hinzugefügt -->
-                         <div class="absolute inset-0 opacity-40" style="background-image: url('${BG_BASE64}'), url('${BG_FALLBACK}'); filter: grayscale(100%) brightness(0.5);"></div>
+                         <div class="absolute inset-0 opacity-40" style="background-image: url('${BG_BASE64}'); filter: grayscale(100%) brightness(0.5);"></div>
                          <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full border-4 border-white shadow-xl bg-white overflow-hidden">
                             <img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
                          </div>
