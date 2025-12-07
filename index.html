@@ -87,14 +87,21 @@
 
         .header-pattern-container {
             position: absolute; inset: 0; z-index: 0;
-            background-color: var(--gold-base); 
+            background-color: var(--gold-base);
             border-bottom: 4px solid var(--ink-black);
         }
+        
+        /* --- HIER KANNST DU DAS MUSTER ANPASSEN --- */
         .header-pattern-img {
-            position: absolute; inset: 0;
+            position: absolute; inset: 0; z-index: 0;
             background-repeat: repeat;
-            background-size: 80px 80px; 
-            opacity: 0.4; mix-blend-mode: multiply; 
+            background-size: 60px 60px; /* Größe der Schellen */
+            
+            /* WICHTIG: Sichtbarkeit */
+            opacity: 0.8; /* 0.1 = ganz schwach, 1.0 = voll sichtbar. Probier 0.2 oder 0.3 */
+            
+           /* Macht das Bild schwarz, damit es sich gut vom Gold abhebt */
+           /* filter: brightness(100) grayscale(5%); */
         }
 
         .avatar-card-frame {
@@ -105,7 +112,7 @@
         }
         .avatar-img-pinned {
             width: 100%; height: 100%; object-fit: cover; object-position: bottom;
-            transform: translateY(12%) scale(1.15); transform-origin: bottom center;
+            transform: translateY(14%) scale(1.2); transform-origin: bottom center;
         }
         
         .tab-btn-active {
@@ -124,6 +131,18 @@
             opacity: 0.8; pointer-events: none; mix-blend-mode: multiply; z-index: 10;
         }
 
+        /* --- MUSTER LOGIN KARTE --- */
+        .card-back-pattern {
+            background-color: var(--gold-base);
+            background-size: 40px 40px; 
+            background-repeat: repeat;
+            /* Hier kein Filter, da es ein background-image ist. Das Bild wird so genommen wie es ist */
+        }
+        
+        /* Animation Utilities */
+        .animate-in { animation: animateIn 0.3s ease-out forwards; }
+        @keyframes animateIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
         /* Range Slider Styling */
         input[type=range] {
             -webkit-appearance: none; 
@@ -152,7 +171,7 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- A. KONFIGURATION ---
-        // WICHTIG: Ersetze die Sternchen (*) mit deinen echten Firebase-Daten!
+        // !!! WICHTIG !!! Hier deine echten Daten von Firebase einfügen!
     const firebaseConfig = {
         apiKey: "AIzaSyAPkAhM-BhJfG5cljBk2S2KGN3TIg8IxXM",
         authDomain: "jassgenossenschaellebur.firebaseapp.com",
@@ -170,7 +189,9 @@
 
         // --- B. ASSETS (Via GitHub Raw Links) ---
         const LOGO_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/6b6be0b76b1deaa9524af5f522e6addb15da85dc/img/jass%20file_gold1.png"; 
-        const BG_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/6b6be0b76b1deaa9524af5f522e6addb15da85dc/img/Sch%C3%A4lle.png";   
+        
+        // HINTERGRUNDBILD (Schelle)
+        const BG_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/1749f1b1e5a0e6f2c98a0e2de1e9e2a54eb2aa0a/img/Sch%C3%A4lle.png";   
         
         // Jass Icon Fallback (SVG)
         const JASS_ICON_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M12 2C12 2 16 6 16 9C16 11.2 14.2 13 12 13C9.8 13 8 11.2 8 9C8 6 12 2 12 2ZM12 15C15.3 15 18 17.7 18 21C18 21.6 17.6 22 17 22H7C6.4 22 6 21.6 6 21C6 17.7 8.7 15 12 15Z" /><circle cx="12" cy="14" r="1.5" /></svg>`;
@@ -203,6 +224,7 @@
         ];
 
         const URL_FALLBACK = "https://ui-avatars.com/api/?background=000&color=fff";
+        // Fallback Pattern falls das Bild nicht lädt
         const BG_FALLBACK = "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 30c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zm-5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm0-10c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm10 25c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm-10 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zM30 0c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zM5 0c0 2.76-2.24 5-5 5S-5 2.76-5 0s2.24-5 5-5 5 2.24 5 5z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E";
 
         const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings' };
@@ -288,8 +310,11 @@
 
         const getAvatarUrl = (u) => {
             if (!u) return URL_FALLBACK;
-            const name = u.name;
-            if (AVATARS[name] && AVATARS[name].length > 10) return AVATARS[name]; // Use custom avatar if available
+            const name = u.name || 'User';
+            // Robust check: Look for partial match in AVATARS keys
+            const key = Object.keys(AVATARS).find(k => name.includes(k));
+            if (key) return AVATARS[key];
+            
             if (u.avatar && u.avatar.length > 50) return u.avatar;
             if (u.photoURL) return u.photoURL;
             return URL_FALLBACK + `&name=${name || 'User'}`;
@@ -340,13 +365,14 @@
         const renderHeader = () => `
             <header class="relative text-white pt-10 pb-20 px-4 overflow-hidden border-b-4 border-black">
                 <div class="header-pattern-container">
-                    <div class="header-pattern-img" style="background-image: url('${BG_BASE64 || BG_FALLBACK}');"></div>
-                    <div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/40"></div>
+                <div class="header-pattern-img" style="background-image: url('...');"></div>
+                <img src="${BG_BASE64} onerror="this.style.display='none'"
+                <div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/100"></div> 
                 </div>
                 <div class="max-w-4xl mx-auto text-center relative z-10">
                     <div class="w-64 h-64 mx-auto mb-2 relative group">
                         <div class="absolute inset-0 bg-yellow-100 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
-                        <img src="${LOGO_BASE64 || 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Wappen_Schweiz_matt.svg/1200px-Wappen_Schweiz_matt.svg.png'}" 
+                        <img src="${LOGO_BASE64}" onerror="this.style.display='none'"
                              class="w-full h-full object-contain relative z-10 transform group-hover:scale-105 transition-all duration-500 drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)]" alt="Logo">
                     </div>
                     <div class="inline-block bg-black/80 backdrop-blur-sm border-2 border-yellow-500 px-4 py-2 rounded-lg transform -rotate-1 shadow-[4px_4px_0_rgba(0,0,0,0.5)] mb-2">
@@ -356,7 +382,7 @@
                     ${userData && userData.role !== 'pending' ? `
                         <button onclick="signOutUser()" class="absolute top-4 right-4 flex flex-col items-center group z-50">
                             <div class="w-12 h-16 bg-white border-2 border-black rounded-lg overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all relative">
-                                <img src="${getAvatarUrl(userData)}" class="w-full h-full object-cover">
+                                <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
                                 <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition"><i data-lucide="log-out" class="w-4 h-4 text-white"></i></div>
                             </div>
                             <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-500 uppercase">${userData.name.split(' ')[0]}</div>
@@ -364,7 +390,7 @@
                     ` : `
                         <button onclick="openLoginModal()" class="absolute top-4 right-4 flex flex-col items-center group z-50">
                             <div class="w-12 h-16 border-2 border-black rounded-lg flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all card-back-pattern" 
-                                 style="background-image: url('${BG_BASE64 || BG_FALLBACK}');">
+                                 style="background-image: url('${BG_BASE64}'), url('${BG_FALLBACK}');">
                                 <div class="bg-black/50 p-1 rounded-full"><i data-lucide="key" class="w-4 h-4 text-white"></i></div>
                             </div>
                             <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-500 uppercase">${t('loginTitle')}</div>
@@ -512,6 +538,7 @@
             const averageRating = validSkillsCount > 0 ? (totalScore / validSkillsCount) : 0;
             const roundedRating = Math.round(averageRating);
 
+            // Icon Source: Verwende BG_BASE64 oder Fallback
             const iconSrc = BG_BASE64 || "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Schelle.svg/60px-Schelle.svg.png";
 
             const renderStars = (score, max, interactive, skillKey) => {
@@ -521,7 +548,9 @@
                     const styleClass = isActive ? '' : 'filter: grayscale(100%) opacity(30%);';
                     const clickAttr = interactive ? `onclick="updateSkill('${u.id}', '${skillKey}', ${i})"` : '';
                     const cursorClass = interactive ? 'cursor-pointer hover:scale-110 transition-transform' : '';
-                    html += `<img src="${iconSrc}" class="w-6 h-6 object-contain ${cursorClass}" style="${styleClass}" ${clickAttr} title="${i}/${max}">`;
+                    
+                    // Added onerror to fallback to built-in SVG if GitHub link fails
+                    html += `<img src="${iconSrc}" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Schelle.svg/60px-Schelle.svg.png'" class="w-6 h-6 object-contain ${cursorClass}" style="${styleClass}" ${clickAttr} title="${i}/${max}">`;
                 }
                 html += '</div>';
                 return html;
@@ -530,14 +559,16 @@
             return `
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
                 <div class="retro-card p-0 w-full max-w-lg bg-white relative max-h-[90vh] overflow-y-auto animate-in">
+                    <!-- Close Button (X) -->
                     <button onclick="closeModal(null, true)" class="absolute top-4 right-4 z-20 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition-colors duration-200 backdrop-blur-md flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                     
                     <div class="bg-gradient-to-r from-red-800 to-red-950 h-32 relative mb-12 border-b-4 border-black">
-                         <div class="absolute inset-0 opacity-20" style="background-image: url('${BG_BASE64 || BG_FALLBACK}')"></div>
+                         <!-- UPDATE: opacity-20 zu opacity-40 geändert und Filter hinzugefügt -->
+                         <div class="absolute inset-0 opacity-40" style="background-image: url('${BG_BASE64}'), url('${BG_FALLBACK}'); filter: grayscale(100%) brightness(0.5);"></div>
                          <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full border-4 border-white shadow-xl bg-white overflow-hidden">
-                            <img src="${getAvatarUrl(u)}" class="w-full h-full object-cover">
+                            <img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
                          </div>
                     </div>
 
@@ -545,6 +576,7 @@
                         <h2 class="text-3xl font-comic text-slate-900 leading-none">${u.name}</h2>
                         <p class="text-xs font-bold text-red-700 uppercase tracking-widest mb-2">${getTitle(u)}</p>
                         
+                        <!-- Overall Rating Badge -->
                         <div class="inline-flex flex-col items-center gap-1 bg-amber-50 border border-amber-200 px-5 py-2 rounded-xl mb-6 shadow-sm">
                              <span class="text-amber-800 text-[10px] font-bold uppercase tracking-wider">Jass Skill Rating</span>
                              ${renderStars(roundedRating, 5, false, null)}
@@ -556,6 +588,7 @@
                             <span class="absolute bottom-[-10px] right-2 text-4xl text-slate-200 font-serif leading-none">"</span>
                         </div>
 
+                        <!-- Stats Grid -->
                         <div class="grid grid-cols-2 gap-3 mb-6">
                             <div class="bg-slate-100 p-2 rounded border border-slate-200">
                                 <div class="text-[10px] uppercase text-slate-400 font-bold">${t('statsDebt')}</div>
@@ -567,6 +600,7 @@
                             </div>
                         </div>
 
+                        <!-- Skill Ratings -->
                         <div class="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-6">
                             <h4 class="font-bold text-xs uppercase text-slate-400 tracking-widest mb-4 text-center">Fähigkeiten</h4>
                             <div class="space-y-2 text-left">
@@ -677,7 +711,7 @@
                         return `
                             <div onclick="openMemberModal('${u.id}')" class="retro-card p-3 flex items-center gap-4 cursor-pointer hover:scale-[1.02] hover:shadow-xl transition-all active:scale-100 ${isLeader ? 'bg-yellow-50 border-yellow-500' : ''}">
                                 <div class="absolute top-0 right-0 bg-black text-white px-2 py-1 rounded-bl-lg text-xs font-bold font-mono z-10">#${idx+1}</div>
-                                <div class="avatar-card-frame shrink-0"><img src="${getAvatarUrl(u)}" class="avatar-img-pinned"></div>
+                                <div class="avatar-card-frame shrink-0"><img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="avatar-img-pinned"></div>
                                 <div class="flex-1 py-1">
                                     <div class="flex flex-col">
                                         <div class="font-comic text-2xl text-slate-900 uppercase tracking-wide leading-none mb-1">${u.name}</div>
@@ -734,7 +768,7 @@
                                             return `
                                                 <div class="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0">
                                                     <div class="flex items-center gap-2">
-                                                        <img src="${getAvatarUrl(p)}" class="w-6 h-6 rounded-full border border-black bg-black">
+                                                        <img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-6 h-6 rounded-full border border-black bg-black">
                                                         <span class="text-sm font-bold ${isPen ? 'text-red-600' : 'text-slate-800'}">${p?.name}</span>
                                                     </div>
                                                     <div class="text-right flex items-center gap-2">
@@ -789,7 +823,7 @@
                                         <div class="text-xs mt-2 font-mono bg-slate-100 px-2 py-1 rounded inline-block"><i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${e.location || 'TBD'} @ ${host}</div>
                                     </div>
                                     <div class="flex -space-x-2">
-                                        ${e.attendees.map(uid => `<img src="${getAvatarUrl(allPlayers.find(u=>u.id===uid)||{})}" class="w-8 h-8 rounded-full border-2 border-white bg-black object-cover">`).join('')}
+                                        ${e.attendees.map(uid => `<img src="${getAvatarUrl(allPlayers.find(u=>u.id===uid)||{})}" onerror="this.src='${URL_FALLBACK}'" class="w-8 h-8 rounded-full border-2 border-white bg-black object-cover">`).join('')}
                                     </div>
                                 </div>
                                 ${isAdmin() ? `<button onclick="handleDeleteEvent('${e.id}')" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 z-30"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
@@ -838,7 +872,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     ${allPlayers.filter(u => u.role !== 'pending').map(u => `
                         <div class="retro-card p-2 flex flex-col items-center text-center cursor-pointer hover:border-yellow-400 hover:shadow-lg transition-all" onclick="openMemberModal('${u.id}')">
-                            <div class="avatar-card-frame mb-2"><img src="${getAvatarUrl(u)}" class="avatar-img-pinned"></div>
+                            <div class="avatar-card-frame mb-2"><img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="avatar-img-pinned"></div>
                             <div class="font-bold text-sm uppercase leading-tight">${u.name}</div>
                             <div class="text-[10px] text-slate-500 mt-1 px-2 py-0.5 bg-slate-100 rounded-full">${getTitle(u)}</div>
                             <div class="text-[9px] text-yellow-600 font-bold mt-1 uppercase">${u.role === 'patron' ? t('rolePatron').split(' ')[0] : t('roleActive').split(' ')[0]}</div>
@@ -886,7 +920,7 @@
                                         <button onclick="toggleTeamSelection('${p.id}', ${teamNum})" 
                                             class="p-2 rounded-lg border-2 transition-all font-bold text-sm flex flex-col items-center justify-center gap-2 overflow-hidden relative
                                             ${calculatorState[`team${teamNum}`].includes(p.id) ? (teamNum===1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[2px_2px_0_#2563eb]' : 'border-red-600 bg-red-50 text-red-700 shadow-[2px_2px_0_#dc2626]') : calculatorState[teamNum===1?'team2':'team1'].includes(p.id) ? 'opacity-30 border-slate-200 cursor-not-allowed grayscale' : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:-translate-y-1'}">
-                                            <div class="w-10 h-10 rounded-full overflow-hidden border border-black bg-black"><img src="${getAvatarUrl(p)}" class="w-full h-full object-cover object-bottom"></div>
+                                            <div class="w-10 h-10 rounded-full overflow-hidden border border-black bg-black"><img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom"></div>
                                             <span class="uppercase text-[10px] truncate w-full text-center">${p.name}</span>
                                         </button>
                                     `).join('')}
@@ -924,7 +958,7 @@
                             <div class="flex justify-center gap-1 mb-1">
                                 ${t1Members.map(m => `
                                     <div class="w-16 h-16 rounded-full border-2 border-black bg-black overflow-hidden shadow-sm" title="${m?.name}">
-                                        <img src="${getAvatarUrl(m)}" class="w-full h-full object-cover object-bottom">
+                                        <img src="${getAvatarUrl(m)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom">
                                     </div>
                                 `).join('')}
                             </div>
@@ -939,7 +973,7 @@
                             <div class="flex justify-center gap-1 mb-1">
                                 ${t2Members.map(m => `
                                     <div class="w-16 h-16 rounded-full border-2 border-black bg-black overflow-hidden shadow-sm" title="${m?.name}">
-                                        <img src="${getAvatarUrl(m)}" class="w-full h-full object-cover object-bottom">
+                                        <img src="${getAvatarUrl(m)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom">
                                     </div>
                                 `).join('')}
                             </div>
