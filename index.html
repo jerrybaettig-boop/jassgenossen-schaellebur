@@ -30,6 +30,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- EMAILJS LIBRARY (WICHTIG FÜR DEN VERSAND) -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
@@ -51,7 +52,10 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+        .font-comic { 
+            font-family: 'Bangers', cursive; 
+            letter-spacing: 1px; 
+        }
 
         /* UI COMPONENTS */
         .retro-card {
@@ -63,7 +67,11 @@
             position: relative;
             overflow: hidden;
         }
-        .retro-card:active { transform: translate(2px, 2px); box-shadow: 4px 4px 0px rgba(0,0,0,1); }
+        
+        .retro-card:active { 
+            transform: translate(2px, 2px); 
+            box-shadow: 4px 4px 0px rgba(0,0,0,1); 
+        }
 
         .retro-btn {
             background-color: var(--swiss-red);
@@ -76,12 +84,30 @@
             box-shadow: 4px 4px 0px rgba(0,0,0,1);
             transition: transform 0.1s;
             cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
         }
-        .retro-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px rgba(0,0,0,1); }
-        .retro-btn-secondary { background-color: var(--gold-base); color: var(--ink-black); }
-        .retro-btn-outline { background-color: white; color: black; }
-        .retro-btn-success { background-color: #16a34a; color: white; }
+        
+        .retro-btn:active { 
+            transform: translate(2px, 2px); 
+            box-shadow: 2px 2px 0px rgba(0,0,0,1); 
+        }
+        
+        .retro-btn-secondary { 
+            background-color: var(--gold-base); 
+            color: var(--ink-black); 
+        }
+        
+        .retro-btn-outline { 
+            background-color: white; 
+            color: black; 
+        }
+        
+        .retro-btn-success { 
+            background-color: #16a34a; 
+            color: white; 
+        }
         
         .retro-input {
             background-color: #fff;
@@ -91,16 +117,23 @@
             box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
             outline: none;
         }
-        .retro-input:focus { border-color: var(--swiss-red); }
+        
+        .retro-input:focus { 
+            border-color: var(--swiss-red); 
+        }
 
         .header-pattern-container {
-            position: absolute; inset: 0; z-index: 0;
+            position: absolute; 
+            inset: 0; 
+            z-index: 0;
             background-color: var(--gold-base);
             border-bottom: 4px solid var(--ink-black);
         }
         
         .header-pattern-img {
-            position: absolute; inset: 0; z-index: 0;
+            position: absolute; 
+            inset: 0; 
+            z-index: 0;
             background-repeat: repeat;
             background-size: 60px 60px;
             opacity: 0.2;
@@ -108,14 +141,23 @@
         }
 
         .avatar-card-frame {
-            width: 70px; height: 100px; 
-            border: 3px solid var(--ink-black); background: #000; 
-            border-radius: 8px; overflow: hidden; position: relative;
+            width: 70px; 
+            height: 100px; 
+            border: 3px solid var(--ink-black); 
+            background: #000; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            position: relative;
             box-shadow: 2px 2px 0px rgba(0,0,0,1);
         }
+        
         .avatar-img-pinned {
-            width: 100%; height: 100%; object-fit: cover; object-position: bottom;
-            transform: translateY(14%) scale(1.2); transform-origin: bottom center;
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            object-position: bottom;
+            transform: translateY(14%) scale(1.2); 
+            transform-origin: bottom center;
         }
         
         .tab-btn-active {
@@ -125,21 +167,64 @@
             box-shadow: 2px 2px 0px #d80018 !important;
         }
 
-        .modal-overlay { background-color: rgba(26, 26, 26, 0.95); backdrop-filter: blur(4px); }
+        .modal-overlay { 
+            background-color: rgba(26, 26, 26, 0.95); 
+            backdrop-filter: blur(4px); 
+        }
         
         .stamp-definitiv {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
-            border: 4px solid #166534; color: #166534; padding: 5px 10px;
-            font-family: 'Bangers', cursive; font-size: 2rem; text-transform: uppercase;
-            opacity: 0.8; pointer-events: none; mix-blend-mode: multiply; z-index: 10;
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%) rotate(-15deg);
+            border: 4px solid #166534; 
+            color: #166534; 
+            padding: 5px 10px;
+            font-family: 'Bangers', cursive; 
+            font-size: 2rem; 
+            text-transform: uppercase;
+            opacity: 0.8; 
+            pointer-events: none; 
+            mix-blend-mode: multiply; 
+            z-index: 10;
         }
 
-        .animate-in { animation: animateIn 0.3s ease-out forwards; }
-        @keyframes animateIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-in { 
+            animation: animateIn 0.3s ease-out forwards; 
+        }
         
-        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #D80018; border: 2px solid black; cursor: pointer; margin-top: -10px; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 3px; border: 1px solid #94a3b8; }
+        @keyframes animateIn { 
+            from { opacity: 0; transform: scale(0.95); } 
+            to { opacity: 1; transform: scale(1); } 
+        }
+        
+        input[type=range] { 
+            -webkit-appearance: none; 
+            appearance: none; 
+            width: 100%; 
+            background: transparent; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            appearance: none; 
+            height: 24px; 
+            width: 24px; 
+            border-radius: 50%; 
+            background: #D80018; 
+            border: 2px solid black; 
+            cursor: pointer; 
+            margin-top: -10px; 
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track { 
+            width: 100%; 
+            height: 6px; 
+            cursor: pointer; 
+            background: #e2e8f0; 
+            border-radius: 3px; 
+            border: 1px solid #94a3b8; 
+        }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -194,6 +279,7 @@
         ];
 
         const SKILL_LABELS = ["skillJass", "skillWeis", "skillMatchCall", "skillMatchPlay", "skillColors", "skillCounting", "skillTrashTalk", "skillLevel"];
+        
         const TRUMP_MODES = [
             { id: 'eichel', label: 'Eichel', mult: 1, icon: '🌰' },
             { id: 'rose', label: 'Rose', mult: 1, icon: '🌹' },
@@ -212,15 +298,22 @@
         let games = [], users = [], events = [], pendingUsers = [];
         let activeTab = 'leaderboard';
         let leaderboardFilter = 'season'; 
-        let calculatorState = { team1: [], team2: [], rounds: [], penalties: [], activeStep: 'setup', selectedTrump: 'eichel' };
+        let calculatorState = { 
+            team1: [], 
+            team2: [], 
+            rounds: [], 
+            penalties: [], 
+            activeStep: 'setup', 
+            selectedTrump: 'eichel' 
+        };
         let expandedHistoryDates = {}; 
         let selectedArchiveSeason = null;
         let currentLang = 'de';
         let currentSeasonId = '2025';
         let registrationRole = 'active';
-        let editEventId = null; // Für Admin Edit Mode
+        let editEventId = null; 
 
-        // --- D. TEXTS & HELPERS ---
+        // --- D. TRANSLATIONS ---
         const translations = {
             de: {
                 subtitle: "Liga der Jass-Legenden",
@@ -230,13 +323,13 @@
                 registerTitle: "Mitgliedschaft beantragen", registerBtn: "Registrieren", guestBtn: "Ich bleibe als Gast",
                 roleActive: "Aktivmitglied (CHF 30/Mt)", rolePatron: "Gönner (CHF 1000/Jr)",
                 pendingTitle: "Anfrage gesendet", pendingText: "Deine Mitgliedschaft wird geprüft.",
-                nextEvents: "Nächste Events", pollEvents: "Termin-Abfrage", definitive: "BESTÄTIGT",
-                noEntries: "Keine Daten.", createEvent: "Neuer Termin",
+                nextEvents: "Definitive Events", pollEvents: "Offene Termine (Anmeldung)", definitive: "BESTÄTIGT",
+                noEntries: "Keine Einträge.", createEvent: "Neuer Termin",
                 join: "Dabei", decline: "Absagen", leave: "Abmelden",
                 calcTitle: "Match Center", start: "Start", save: "Speichern", cancel: "Abbruch",
                 penalties: "Strafen", points: "Punkte", weis: "Weis",
                 paymentInfo: "Mitgliederbeiträge & Spenden", matchRestricted: "Resultate erfassen nur für Aktivmitglieder.",
-                guestHint: "Login für Vollzugriff",
+                guestHint: "Login für Vollzugriff", memberRestricted: "Nur für Mitglieder", memberRestrictedText: "Bitte einloggen um Mitglieder zu sehen.",
                 roleToni: "Der Eroberer", roleDiego: "Der Baron", roleLaurent: "Der Bube", roleJerome: "Der Charmeur", memberStandard: "Mitglied",
                 host: "Host / Gastgeber", timeFrom: "Zeit Von", timeTo: "Zeit Bis", location: "Ort / Stadt",
                 totalDebt: "Strafen Total (Alle Zeiten)", paidDebt: "Getilgt", openDebt: "Offen",
@@ -244,13 +337,59 @@
                 statsWins: "Siege", statsLosses: "Niederlagen", statsWeis: "Weis Total", statsDebt: "Schulden Akt.",
                 skillJass: "Jassfertigkeit", skillWeis: "Weisen", skillMatchCall: "Match ansagen", skillMatchPlay: "Match durchführen",
                 skillColors: "Farben angeben", skillCounting: "Karten zählen", skillTrashTalk: "Jasssprüche", skillLevel: "Schällebur-Level",
-                editProfile: "Profil bearbeiten", updateProfile: "Profil Speichern"
+                editProfile: "Profil bearbeiten", updateProfile: "Profil Speichern",
+                calendarEntry: "Kalender Eintrag", finish: "Abrechnung", adminArea: "Admin Bereich",
+                emailSubjectNew: "Neue Jass-Runde", emailBodyNew: "Ein neuer Termin steht!",
+                emailSubjectUpdate: "UPDATE Jass-Runde", emailBodyUpdate: "Termin wurde angepasst.",
+                emailSubjectConfirm: "DEFINITIV: Jass-Runde", emailBodyConfirm: "Die Runde ist komplett!",
+                deleteEvent: "Event komplett löschen", editEvent: "Event bearbeiten",
+                saveEmail: "Speichern & Email", cancelBtn: "Abbruch",
+                team1: "Team 1", team2: "Team 2", cards: "Karten", gameAbort: "Spiel Abbrechen",
+                seasonArchive: "Saison Archiv", currentSeason: "Aktuelle Saison", newSeasonStart: "Neue Saison Starten",
+                requests: "Anfragen", approve: "Aktiv", approvePatron: "Gönner", reject: "Löschen"
+            },
+            en: {
+                subtitle: "League of Jass-Legends",
+                tabs: { leaderboard: "Stats", events: "Events", calculator: "Match", members: "Members", admin: "Admin" },
+                filters: { debt: "Debts", season: "Current Season", history: "History" },
+                loginTitle: "Jass Login", loginMemberBtn: "Member Login", loginGuest: "Guest Access",
+                registerTitle: "Apply for Membership", registerBtn: "Register", guestBtn: "Stay as Guest",
+                roleActive: "Active Member (CHF 30/mo)", rolePatron: "Patron (CHF 1000/yr)",
+                pendingTitle: "Request Sent", pendingText: "Your membership is pending approval.",
+                nextEvents: "Confirmed Events", pollEvents: "Open Polls", definitive: "CONFIRMED",
+                noEntries: "No data.", createEvent: "New Event",
+                join: "Join", decline: "Decline", leave: "Sign Out",
+                calcTitle: "Match Center", start: "Start", save: "Save", cancel: "Cancel",
+                penalties: "Penalties", points: "Points", weis: "Weis",
+                paymentInfo: "Membership Fees & Donations", matchRestricted: "Results entry for active members only.",
+                guestHint: "Login for full access", memberRestricted: "Members Only", memberRestrictedText: "Please login to view members.",
+                roleToni: "The Conqueror", roleDiego: "The Baron", roleLaurent: "The Farmer", roleJerome: "The Charmer", memberStandard: "Member",
+                host: "Host", timeFrom: "Time From", timeTo: "Time To", location: "Location",
+                totalDebt: "Total Penalties", paidDebt: "Paid", openDebt: "Open",
+                profileTitle: "Player Profile", bioPlaceholder: "A true Jass legend...",
+                statsWins: "Wins", statsLosses: "Losses", statsWeis: "Weis Total", statsDebt: "Debt Curr.",
+                skillJass: "Jass Skills", skillWeis: "Weis Calls", skillMatchCall: "Match Calling", skillMatchPlay: "Match Playing",
+                skillColors: "Color Picking", skillCounting: "Card Counting", skillTrashTalk: "Trash Talk", skillLevel: "Schällebur Level",
+                editProfile: "Edit Profile", updateProfile: "Save Profile",
+                calendarEntry: "Calendar Entry", finish: "Settlement", adminArea: "Admin Area",
+                emailSubjectNew: "New Jass Event", emailBodyNew: "A new event is scheduled!",
+                emailSubjectUpdate: "UPDATE Jass Event", emailBodyUpdate: "Event details changed.",
+                emailSubjectConfirm: "CONFIRMED: Jass Event", emailBodyConfirm: "We are ready to play!",
+                deleteEvent: "Delete Event", editEvent: "Edit Event",
+                saveEmail: "Save & Email", cancelBtn: "Cancel",
+                team1: "Team 1", team2: "Team 2", cards: "Cards", gameAbort: "Abort Game",
+                seasonArchive: "Season Archive", currentSeason: "Current Season", newSeasonStart: "Start New Season",
+                requests: "Requests", approve: "Active", approvePatron: "Patron", reject: "Reject"
             }
         };
 
-        const t = (key) => translations['de'][key] || key;
+        const t = (key) => {
+            const keys = key.split('.');
+            let val = translations[currentLang];
+            for (let k of keys) val = val?.[k];
+            return val || key; 
+        };
         
-        // NEU: Vorname Only Logic
         const getFirstName = (u) => {
             if (!u || !u.name) return 'Gast';
             return u.name.split(' ')[0];
@@ -258,7 +397,6 @@
 
         const getAvatarUrl = (u) => {
             if (!u) return URL_FALLBACK;
-            // Nutze Vornamen für Key Match
             const name = getFirstName(u);
             const key = Object.keys(AVATARS).find(k => name.includes(k));
             if (key) return AVATARS[key];
@@ -367,7 +505,10 @@
 
         const renderHeader = () => `
             <header class="relative text-white pt-10 pb-20 px-4 overflow-hidden border-b-4 border-black">
-                <div class="header-pattern-container"><div class="header-pattern-img" style="background-image: url('${BG_BASE64}');"></div><div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80"></div></div>
+                <div class="header-pattern-container">
+                    <div class="header-pattern-img" style="background-image: url('${BG_BASE64}');"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80"></div>
+                </div>
                 <div class="max-w-4xl mx-auto text-center relative z-10">
                     <div class="w-64 h-64 mx-auto mb-2 relative group">
                         <div class="absolute inset-0 bg-yellow-100 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
@@ -431,19 +572,17 @@
             const declined = event.declined || [];
             const isConfirmed = event.status === 'confirmed';
             
+            const isJoined = userData && attendees.includes(userData.id);
+            const isDeclined = userData && declined.includes(userData.id);
             const activeUsers = allPlayers.filter(u => u.role === 'active' || u.role === 'admin');
             const pending = activeUsers.filter(u => !attendees.includes(u.id) && !declined.includes(u.id));
 
-            const isJoined = userData && attendees.includes(userData.id);
-            const isDeclined = userData && declined.includes(userData.id);
-            const gCalLink = isConfirmed ? generateGoogleCalendarLink(event) : '#';
-
-            // EDIT MODE?
+            // EDIT MODE
             if (editEventId === eventId) {
                 return `
                 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
                     <div class="retro-card p-6 w-full max-w-lg bg-white relative animate-in">
-                        <h2 class="text-2xl font-comic mb-4">Event Bearbeiten</h2>
+                        <h2 class="text-2xl font-comic mb-4">${t('editEvent')}</h2>
                         <div class="space-y-3">
                             <input type="date" id="edit-date" class="retro-input w-full px-3 py-2" value="${event.date.toDate().toISOString().split('T')[0]}">
                             <div class="flex gap-2">
@@ -452,8 +591,8 @@
                             </div>
                             <input type="text" id="edit-loc" class="retro-input w-full px-3 py-2" value="${event.location}">
                             <div class="flex gap-2 mt-4">
-                                <button onclick="updateEventData('${eventId}')" class="flex-1 retro-btn py-2">Speichern & Email</button>
-                                <button onclick="editEventId=null; openEventDetails('${eventId}')" class="flex-1 bg-slate-200 text-slate-500 rounded font-bold uppercase">Abbruch</button>
+                                <button onclick="updateEventData('${eventId}')" class="flex-1 retro-btn py-2">${t('saveEmail')}</button>
+                                <button onclick="editEventId=null; openEventDetails('${eventId}')" class="flex-1 bg-slate-200 text-slate-500 rounded font-bold uppercase">${t('cancelBtn')}</button>
                             </div>
                         </div>
                     </div>
@@ -473,16 +612,17 @@
                 </div>`;
             };
 
+            const gCalLink = isConfirmed ? generateGoogleCalendarLink(event) : '#';
+
             return `
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
                 <div class="retro-card p-6 w-full max-w-lg bg-white relative max-h-[90vh] overflow-y-auto animate-in">
                     <button onclick="closeModal(null, true)" class="absolute top-4 right-4 z-20 bg-slate-100 p-2 rounded-full hover:bg-red-100 hover:text-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
                     
-                    ${isConfirmed ? `<div class="absolute top-0 left-0 w-full bg-green-500 text-white text-center text-xs font-bold uppercase py-1 tracking-widest">Definitiv - Findet Statt</div>` : ''}
+                    ${isConfirmed ? `<div class="absolute top-0 left-0 w-full bg-green-500 text-white text-center text-xs font-bold uppercase py-1 tracking-widest">${t('definitive')}</div>` : ''}
 
                     <div class="flex justify-between items-start mt-4 mb-1">
                         <h2 class="text-3xl font-comic text-slate-900">${event.date.toDate().toLocaleDateString('de-CH', {weekday:'long', day:'numeric', month:'long'})}</h2>
-                        ${isAdmin() ? `<button onclick="enableEditMode('${eventId}')" class="bg-slate-100 p-2 rounded hover:bg-yellow-100"><i data-lucide="pencil" class="w-4 h-4 text-slate-500"></i></button>` : ''}
                     </div>
                     
                     <div class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 border-b-2 border-slate-200 pb-2">
@@ -491,7 +631,7 @@
                     
                     ${isConfirmed ? `
                     <div class="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                        <h4 class="font-bold text-green-800 text-sm uppercase mb-2">📅 Kalender Eintrag</h4>
+                        <h4 class="font-bold text-green-800 text-sm uppercase mb-2">📅 ${t('calendarEntry')}</h4>
                         <div class="grid grid-cols-2 gap-2">
                             <a href="${gCalLink}" target="_blank" class="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-green-300 rounded hover:bg-green-100 text-xs font-bold text-green-800 transition">
                                 <i data-lucide="calendar" class="w-4 h-4"></i> Google
@@ -545,8 +685,11 @@
                     </div>
 
                     ${isAdmin() ? `
-                        <div class="mt-8 pt-4 border-t border-slate-200">
-                            <button onclick="handleDeleteEvent('${event.id}')" class="text-red-500 text-xs font-bold hover:underline">Event komplett löschen</button>
+                        <div class="mt-8 pt-4 border-t border-slate-200 flex justify-between items-center">
+                            <button onclick="handleDeleteEvent('${event.id}')" class="text-red-500 text-xs font-bold hover:underline">${t('deleteEvent')}</button>
+                            <button onclick="enableEditMode('${eventId}')" class="bg-black text-white px-3 py-2 rounded-full hover:bg-slate-800 shadow-lg flex items-center gap-2 text-xs font-bold uppercase fixed bottom-4 right-4 md:static md:bottom-auto md:right-auto z-50">
+                                <i data-lucide="pencil" class="w-4 h-4"></i> ${t('editEvent')}
+                            </button>
                         </div>
                     ` : ''}
                 </div>
@@ -643,13 +786,11 @@
 
             let wins = 0, losses = 0;
             let currentDebt = getLegacyDebt(u); 
-            let totalDebt = getLegacyDebt(u); 
-
+            
             games.forEach(g => {
                 const isPen = g.type === 'game-penalty';
-                if (isPen && g.playerId === uid) {
-                    if (!g.paid) currentDebt += g.points;
-                    totalDebt += g.points; 
+                if (isPen && g.playerId === uid && !g.paid) {
+                    currentDebt += g.points;
                 }
             });
 
@@ -664,8 +805,7 @@
                     validSkillsCount++;
                 }
             });
-            const averageRating = validSkillsCount > 0 ? (totalScore / validSkillsCount) : 0;
-            const roundedRating = Math.round(averageRating);
+            const roundedRating = validSkillsCount > 0 ? Math.round(totalScore / validSkillsCount) : 0;
 
             const iconSrc = BG_BASE64 || "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Schelle.svg/60px-Schelle.svg.png";
 
@@ -676,6 +816,7 @@
                     const styleClass = isActive ? '' : 'filter: grayscale(100%) opacity(30%);';
                     const clickAttr = interactive ? `onclick="updateSkill('${u.id}', '${skillKey}', ${i})"` : '';
                     const cursorClass = interactive ? 'cursor-pointer hover:scale-110 transition-transform' : '';
+                    
                     html += `<img src="${iconSrc}" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Schelle.svg/60px-Schelle.svg.png'" class="w-6 h-6 object-contain ${cursorClass}" style="${styleClass}" ${clickAttr} title="${i}/${max}">`;
                 }
                 html += '</div>';
@@ -817,7 +958,7 @@
                 </div>
 
                 <!-- RANGLISTE -->
-                ${leaderboardFilter === 'season' ? `<h4 class="text-center font-bold text-lg uppercase text-slate-800 -mb-2">Aktuelle Saison: ${currentSeasonId}</h4>` : ''}
+                ${leaderboardFilter === 'season' ? `<h4 class="text-center font-bold text-lg uppercase text-slate-800 -mb-2">${t('currentSeason')}: ${currentSeasonId}</h4>` : ''}
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     ${displayData.map((item, idx) => {
@@ -851,7 +992,7 @@
                 <!-- ARCHIV & HISTORIE -->
                 ${leaderboardFilter === 'season' ? `
                     <div class="mt-12 pt-6 border-t-4 border-slate-200">
-                        <h4 class="font-comic text-2xl text-slate-400 uppercase mb-4 text-center">Saison Archiv</h4>
+                        <h4 class="font-comic text-2xl text-slate-400 uppercase mb-4 text-center">${t('seasonArchive')}</h4>
                         <div class="space-y-3">
                             ${allSeasons.filter(s => s !== currentSeasonId).map(s => {
                                 const winner = getSeasonWinner(s);
@@ -913,7 +1054,7 @@
             const allPlayers = getAllPlayers();
             const now = new Date();
             const confirmed = events.filter(e => e.status === 'confirmed' && e.date?.toDate() >= now);
-            const polls = events.filter(e => e.status === 'poll' && e.date?.toDate() >= now);
+            const polls = events.filter(e => e.status !== 'confirmed' && e.date?.toDate() >= now); // Any non-confirmed is a poll
             const canAction = isMember(); 
 
             return `
@@ -937,14 +1078,14 @@
                                 <div class="flex justify-between items-start relative z-20">
                                     <div>
                                         <div class="text-3xl font-comic text-slate-800">${date.toLocaleDateString('de-CH', {day:'2-digit', month:'2-digit'})}</div>
-                                        <div class="text-lg font-bold text-slate-600">${date.toLocaleDateString('de-CH', {weekday:'long'})} ${e.timeFrom || ''} ${e.timeTo ? '- '+e.timeTo : ''}</div>
+                                        <div class="text-lg font-bold text-slate-600">${date.toLocaleDateString('de-CH', {weekday:'long'})} ${e.timeFrom || ''}</div>
                                         <div class="text-xs mt-2 font-mono bg-slate-100 px-2 py-1 rounded inline-block"><i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${e.location || 'TBD'} @ ${getFirstName({name:host})}</div>
                                     </div>
                                     <div class="flex -space-x-2">
                                         ${e.attendees.map(uid => `<img src="${getAvatarUrl(allPlayers.find(u=>u.id===uid)||{})}" onerror="this.src='${URL_FALLBACK}'" class="w-8 h-8 rounded-full border-2 border-white bg-black object-cover">`).join('')}
                                     </div>
                                 </div>
-                                ${isAdmin() ? `<button onclick="handleDeleteEvent('${e.id}')" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 z-30"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                                ${isAdmin() ? `<button onclick="event.stopPropagation(); handleDeleteEvent('${e.id}')" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 z-30"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
                             </div>`;
                         }).join('')}
                     </div>
@@ -966,12 +1107,12 @@
                                     <div class="text-xs text-slate-500">${e.location || 'TBD'}</div>
                                     <div class="mt-1 flex items-center gap-1">
                                         ${[...Array(4)].map((_, i) => `<div class="w-2 h-2 rounded-full ${i < count ? 'bg-green-500' : 'bg-slate-200'}"></div>`).join('')}
-                                        <span class="text-[10px] text-slate-400 ml-1">${count}/?</span>
+                                        <span class="text-[10px] text-slate-400 ml-1">${count}/4</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="px-4 py-2 rounded-lg font-bold text-xs uppercase border-2 border-black shadow-[2px_2px_0_black] transition-all active:translate-y-0.5 active:shadow-none ${canAction ? (isJoined ? 'bg-green-100 text-green-700' : 'bg-white text-black') : 'bg-slate-200 text-slate-400'}">
-                                        ${isJoined ? 'Dabei' : 'Antworten'}
+                                        ${isJoined ? t('join') : 'Antworten'}
                                     </div>
                                 </div>
                             </div>`;
@@ -1035,19 +1176,19 @@
             if (allPlayers.filter(u=>u.role!=='pending').length < 4) return `<div class="p-8 text-center text-slate-500">Min. 4 Member nötig.</div>`;
             
             if (calculatorState.activeStep === 'setup') return `
-                <div class="retro-card p-0 animate-in zoom-in-95 mx-2 overflow-hidden max-w-2xl mx-auto w-full">
+                <div class="retro-card p-0 animate-in zoom-in-95 mx-2 overflow-hidden max-w-xl mx-auto w-full">
                     <div class="bg-slate-100 p-4 border-b-4 border-black text-center"><h2 class="text-3xl font-comic text-slate-800">${t('calcTitle')}</h2></div>
-                    <div class="p-6 space-y-6 bg-white flex flex-col items-center">
+                    <div class="p-6 space-y-8 bg-white flex flex-col items-center">
                         ${[1, 2].map(teamNum => `
-                            <div class="space-y-3 w-full text-center">
-                                <div class="inline-block px-4 py-1 bg-black text-white text-sm font-bold uppercase transform -rotate-1 rounded shadow-md">Team ${teamNum}</div>
-                                <div class="flex flex-wrap justify-center gap-3">
+                            <div class="w-full flex flex-col items-center">
+                                <div class="inline-block px-4 py-1 bg-black text-white text-sm font-bold uppercase transform -rotate-1 rounded shadow-md mb-4">${t('team'+teamNum)}</div>
+                                <div class="grid grid-cols-4 gap-2 w-full justify-items-center">
                                     ${allPlayers.filter(u=>u.role!=='pending').map(p => `
                                         <button onclick="toggleTeamSelection('${p.id}', ${teamNum})" 
-                                            class="w-20 h-24 p-2 rounded-xl border-2 transition-all font-bold text-sm flex flex-col items-center justify-between gap-1 overflow-hidden relative shadow-sm
-                                            ${calculatorState[`team${teamNum}`].includes(p.id) ? (teamNum===1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[2px_2px_0_#2563eb] scale-105' : 'border-red-600 bg-red-50 text-red-700 shadow-[2px_2px_0_#dc2626] scale-105') : calculatorState[teamNum===1?'team2':'team1'].includes(p.id) ? 'opacity-30 border-slate-200 cursor-not-allowed grayscale' : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:-translate-y-1 bg-white'}">
-                                            <div class="w-12 h-12 rounded-full overflow-hidden border border-black bg-black"><img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom"></div>
-                                            <span class="uppercase text-[10px] truncate w-full text-center leading-none">${getFirstName(p)}</span>
+                                            class="w-full aspect-square max-w-[80px] p-1 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1 overflow-hidden relative shadow-sm
+                                            ${calculatorState[`team${teamNum}`].includes(p.id) ? (teamNum===1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[2px_2px_0_#2563eb] scale-105' : 'border-red-600 bg-red-50 text-red-700 shadow-[2px_2px_0_#dc2626] scale-105') : calculatorState[teamNum===1?'team2':'team1'].includes(p.id) ? 'opacity-20 border-slate-100 cursor-not-allowed grayscale' : 'border-slate-200 text-slate-600 hover:border-slate-400 bg-white'}">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border border-black bg-black shrink-0"><img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom"></div>
+                                            <span class="uppercase text-[9px] md:text-[10px] truncate w-full text-center leading-none">${getFirstName(p)}</span>
                                         </button>
                                     `).join('')}
                                 </div>
@@ -1087,7 +1228,7 @@
                                 `).join('')}
                             </div>
                             <div class="retro-card w-full bg-blue-50 p-2 text-center !border-blue-800 !shadow-[4px_4px_0_#1e40af]">
-                                <div class="text-xs uppercase font-bold text-blue-300 mb-1 tracking-widest">Team Blau</div>
+                                <div class="text-xs uppercase font-bold text-blue-300 mb-1 tracking-widest">${t('team1')}</div>
                                 <div class="text-5xl font-comic text-blue-900">${totalA}</div>
                             </div>
                         </div>
@@ -1101,7 +1242,7 @@
                                 `).join('')}
                             </div>
                             <div class="retro-card w-full bg-red-50 p-2 text-center !border-red-800 !shadow-[4px_4px_0_#991b1b]">
-                                <div class="text-xs uppercase font-bold text-red-300 mb-1 tracking-widest">Team Rot</div>
+                                <div class="text-xs uppercase font-bold text-red-300 mb-1 tracking-widest">${t('team2')}</div>
                                 <div class="text-5xl font-comic text-red-900">${totalB}</div>
                             </div>
                         </div>
@@ -1120,12 +1261,12 @@
 
                         <div class="grid grid-cols-[1fr,auto,1fr] gap-3 items-end mb-4">
                             <div class="relative">
-                                <label class="block text-[10px] font-bold text-blue-900 uppercase text-center mb-1">Karten</label>
+                                <label class="block text-[10px] font-bold text-blue-900 uppercase text-center mb-1">${t('cards')}</label>
                                 <input type="number" id="input-points-a" oninput="calculatePoints('a')" placeholder="0" class="retro-input w-full h-14 text-center text-3xl text-blue-900 placeholder-blue-200">
                             </div>
                             <div class="font-comic text-2xl text-slate-400 pb-3">VS</div>
                             <div class="relative">
-                                <label class="block text-[10px] font-bold text-red-900 uppercase text-center mb-1">Karten</label>
+                                <label class="block text-[10px] font-bold text-red-900 uppercase text-center mb-1">${t('cards')}</label>
                                 <input type="number" id="input-points-b" oninput="calculatePoints('b')" placeholder="0" class="retro-input w-full h-14 text-center text-3xl text-red-900 placeholder-red-200">
                             </div>
                         </div>
@@ -1136,16 +1277,16 @@
 
                         <div class="grid grid-cols-2 gap-4 mb-6">
                             <div class="relative">
-                                <label class="block text-[10px] font-bold text-blue-400 uppercase text-center mb-1">Weis (Separat)</label>
+                                <label class="block text-[10px] font-bold text-blue-400 uppercase text-center mb-1">${t('weis')}</label>
                                 <input type="number" id="input-weis-a" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1 focus:outline-none focus:border-blue-500">
                             </div>
                             <div class="relative">
-                                <label class="block text-[10px] font-bold text-red-400 uppercase text-center mb-1">Weis (Separat)</label>
+                                <label class="block text-[10px] font-bold text-red-400 uppercase text-center mb-1">${t('weis')}</label>
                                 <input type="number" id="input-weis-b" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1 focus:outline-none focus:border-red-500">
                             </div>
                         </div>
                         
-                        <button onclick="submitRound()" class="w-full retro-btn text-xl py-4 shadow-lg hover:translate-y-[-2px] transition-transform">Punkte Buchen</button>
+                        <button onclick="submitRound()" class="w-full retro-btn text-xl py-4 shadow-lg hover:translate-y-[-2px] transition-transform">${t('save')}</button>
                     </div>
 
                     <div class="w-full mb-20">
@@ -1182,7 +1323,7 @@
                     </div>
                     
                     <div class="fixed bottom-4 left-0 right-0 px-4 text-center z-50 md:static md:px-0">
-                         <button onclick="abortGame()" class="bg-white border-2 border-slate-300 text-slate-400 px-4 py-2 rounded-full text-xs font-bold uppercase shadow-sm hover:text-red-500 hover:border-red-300 transition-colors">Spiel Abbrechen</button>
+                         <button onclick="abortGame()" class="bg-white border-2 border-slate-300 text-slate-400 px-4 py-2 rounded-full text-xs font-bold uppercase shadow-sm hover:text-red-500 hover:border-red-300 transition-colors">${t('gameAbort')}</button>
                     </div>
                 </div>`;
             }
@@ -1193,7 +1334,7 @@
                 <h2 class="text-4xl font-comic text-slate-900 mb-2 uppercase">${t('finish')}</h2>
                 
                 <div class="bg-red-50 border-2 border-dashed border-red-300 rounded-xl p-4 mb-6 text-left">
-                    <h3 class="font-black text-red-700 text-xs uppercase tracking-wide mb-3 flex items-center gap-2"><i data-lucide="alert-octagon" class="w-4 h-4"></i> Abrechnung & Strafen</h3>
+                    <h3 class="font-black text-red-700 text-xs uppercase tracking-wide mb-3 flex items-center gap-2"><i data-lucide="alert-octagon" class="w-4 h-4"></i> ${t('penalties')}</h3>
                     <ul class="space-y-2">
                         ${calculatorState.penalties.length === 0 ? '<li class="text-sm text-slate-400 italic">Keine Strafen</li>' : 
                         calculatorState.penalties.map(p => {
@@ -1212,7 +1353,7 @@
                 <div class="text-center mb-6">
                     <div class="text-xs text-slate-500 uppercase tracking-widest mb-1">Gewinner</div>
                     <div class="font-comic text-2xl text-green-600">
-                        ${calculatorState.winnerTeam === 1 ? 'Team Blau' : 'Team Rot'}
+                        ${calculatorState.winnerTeam === 1 ? t('team1') : t('team2')}
                     </div>
                 </div>
 
@@ -1232,12 +1373,12 @@
                         <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i> Saison Verwaltung</h4>
                         
                         <div class="mb-4">
-                            <div class="text-xs text-slate-500 font-bold uppercase">Aktuelle Saison</div>
+                            <div class="text-xs text-slate-500 font-bold uppercase">${t('currentSeason')}</div>
                             <div class="text-2xl font-comic text-green-600">${currentSeasonId}</div>
                         </div>
 
                         <div class="border-t pt-3">
-                            <label class="text-xs text-slate-500 font-bold uppercase block mb-1">Neue Saison Starten</label>
+                            <label class="text-xs text-slate-500 font-bold uppercase block mb-1">${t('newSeasonStart')}</label>
                             <div class="flex gap-2">
                                 <input type="text" id="new-season-input" placeholder="z.B. 2026" class="retro-input flex-1 px-3 py-2">
                                 <button onclick="updateSeason()" class="retro-btn py-2 px-3 text-xs">Eröffnen</button>
@@ -1250,13 +1391,13 @@
                     </div>
 
                     <div class="retro-card p-4 border-l-8 border-l-yellow-400 h-fit">
-                        <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Anfragen (${pendingUsers.length})</h4>
+                        <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> ${t('requests')} (${pendingUsers.length})</h4>
                         ${pendingUsers.map(u => `
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg mb-2">
                                 <div class="flex items-center gap-3"><img src="${getAvatarUrl(u)}" class="w-10 h-10 rounded-full border border-black"><div><div class="font-bold">${u.name}</div><div class="text-xs text-slate-500">${u.email || ''}</div></div></div>
                                 <div class="flex gap-2">
-                                    <button onclick="approveUser('${u.id}', 'active')" class="retro-btn retro-btn-success py-1 px-3 text-xs">Aktiv</button>
-                                    <button onclick="approveUser('${u.id}', 'patron')" class="retro-btn retro-btn-secondary py-1 px-3 text-xs">Gönner</button>
+                                    <button onclick="approveUser('${u.id}', 'active')" class="retro-btn retro-btn-success py-1 px-3 text-xs">${t('approve')}</button>
+                                    <button onclick="approveUser('${u.id}', 'patron')" class="retro-btn retro-btn-secondary py-1 px-3 text-xs">${t('approvePatron')}</button>
                                     <button onclick="rejectUser('${u.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </div>
                             </div>`).join('') || '<div class="text-sm text-slate-400">Keine.</div>'}
@@ -1266,8 +1407,8 @@
         };
 
         const renderApp = () => {
-            let tabs = { leaderboard: "Statistik", events: "Events", calculator: "Match", members: "Member" };
-            if (isAdmin()) tabs['admin'] = "Admin";
+            const tabKeys = ['leaderboard', 'events', 'calculator', 'members'];
+            if (isAdmin()) tabKeys.push('admin');
 
             document.getElementById('app').innerHTML = `
                 ${(!user && activeTab === 'members' && !window.guestMode) ? renderLoginModal() : ''} 
@@ -1276,7 +1417,7 @@
                 ${renderHeader()}
                 <main class="max-w-6xl mx-auto -mt-8 relative z-10 min-h-screen flex flex-col">
                     <div class="hidden md:flex justify-center gap-2 -mt-4 relative z-20 mb-8 px-2 flex-wrap">
-                        ${Object.keys(tabs).map(k => `<button onclick="setActiveTab('${k}')" class="px-5 py-2 rounded border-2 border-black font-comic text-lg uppercase shadow-[3px_3px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all bg-white ${activeTab===k?'tab-btn-active':''}">${t('tabs.'+k)}</button>`).join('')}
+                        ${tabKeys.map(k => `<button onclick="setActiveTab('${k}')" class="px-5 py-2 rounded border-2 border-black font-comic text-lg uppercase shadow-[3px_3px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all bg-white ${activeTab===k?'tab-btn-active':''}">${t('tabs.'+k)}</button>`).join('')}
                     </div>
                     ${
                       activeTab === 'leaderboard' ? renderStatistics() :
@@ -1294,7 +1435,7 @@
                     </footer>
                 </main>
                 <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300">
-                     ${Object.keys(tabs).map(k => {
+                     ${tabKeys.map(k => {
                         const isActive = activeTab === k;
                         const icons = { leaderboard: 'trophy', calculator: 'calculator', events: 'calendar', members: 'users', admin: 'shield' };
                         return `<button onclick="setActiveTab('${k}')" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${isActive ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="${icons[k]}" class="w-5 h-5 ${isActive ? 'fill-current' : ''}"></i></button>`;
@@ -1342,21 +1483,10 @@
             const role = registrationRole; 
             if(!name) return;
             const isAdmin = user.email && ADMIN_EMAILS.includes(user.email);
-            
             let roleKey = '';
-            const legacy = LEGACY_DEBTS.find(l => 
-                (user.email && l.email && user.email.toLowerCase() === l.email.toLowerCase()) || 
-                (name && name.toLowerCase().includes(l.name.toLowerCase()))
-            );
+            const legacy = LEGACY_DEBTS.find(l => (user.email && l.email && user.email.toLowerCase() === l.email.toLowerCase()) || (name && name.toLowerCase().includes(l.name.toLowerCase())));
             if(legacy) roleKey = legacy.roleKey;
-
-            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), {
-                id: user.uid, name, role: isAdmin ? 'admin' : 'pending',
-                roleName: role === 'active' ? 'Aktivmitglied' : 'Gönner',
-                avatar: user.photoURL || '', joined: serverTimestamp(),
-                email: user.email || '',
-                roleKey: roleKey
-            });
+            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), { id: user.uid, name, role: isAdmin ? 'admin' : 'pending', roleName: role === 'active' ? 'Aktivmitglied' : 'Gönner', avatar: user.photoURL || '', joined: serverTimestamp(), email: user.email || '', roleKey: roleKey });
         };
         
         window.approveUser = async (uid, r) => { await updateDoc(doc(db, COLLECTIONS.USERS, uid), { role: r, roleName: r === 'active' ? 'Aktivmitglied' : 'Gönner' }); };
@@ -1369,29 +1499,13 @@
              await updateDoc(doc(db, COLLECTIONS.USERS, uid), skillUpdate);
              setTimeout(() => window.openMemberModal(uid), 100); 
         };
-        window.saveProfile = async (uid) => {
-            const bio = document.getElementById('edit-bio').value;
-            await updateDoc(doc(db, COLLECTIONS.USERS, uid), { bio: bio });
-            closeModal(null, true);
-        };
-
-        window.updateSeason = async () => {
-            const newSeason = document.getElementById('new-season-input').value;
-            if(newSeason) {
-                if(confirm(`Neue Saison "${newSeason}" starten? Die aktuelle Saison wird archiviert.`)) {
-                    await setDoc(doc(db, COLLECTIONS.SETTINGS, 'config'), { currentSeason: newSeason }, { merge: true });
-                    alert("Neue Saison gestartet!");
-                }
-            }
-        };
-
+        window.saveProfile = async (uid) => { const bio = document.getElementById('edit-bio').value; await updateDoc(doc(db, COLLECTIONS.USERS, uid), { bio: bio }); closeModal(null, true); };
+        window.updateSeason = async () => { const newSeason = document.getElementById('new-season-input').value; if(newSeason) { if(confirm(`Neue Saison "${newSeason}" starten? Die aktuelle Saison wird archiviert.`)) { await setDoc(doc(db, COLLECTIONS.SETTINGS, 'config'), { currentSeason: newSeason }, { merge: true }); alert("Neue Saison gestartet!"); } } };
         window.openCreateEventModal = () => { document.getElementById('modal-container').innerHTML = renderCreateEventModal(); if (window.lucide) window.lucide.createIcons(); };
         
-        // --- NEW CALENDAR LOGIC ACTIONS ---
+        // --- CALENDAR LOGIC ACTIONS ---
         window.openEventDetails = (eid) => { document.getElementById('modal-container').innerHTML = renderEventDetailsModal(eid); if (window.lucide) window.lucide.createIcons(); };
         window.downloadICSForEvent = (eid) => { const e = events.find(x => x.id === eid); if(e) downloadICS(e); };
-
-        // ADMIN EVENT MANAGEMENT
         window.enableEditMode = (eid) => { editEventId = eid; window.openEventDetails(eid); };
         
         window.updateEventData = async (eid) => {
@@ -1399,44 +1513,35 @@
             const t1 = document.getElementById('edit-time-from').value;
             const t2 = document.getElementById('edit-time-to').value;
             const loc = document.getElementById('edit-loc').value;
-            
             if(!d || !t1) return;
-            
             const eventRef = doc(db, COLLECTIONS.EVENTS, eid);
-            await updateDoc(eventRef, {
-                date: new Date(d+'T'+t1),
-                timeFrom: t1, timeTo: t2, location: loc
-            });
-            
+            await updateDoc(eventRef, { date: new Date(d+'T'+t1), timeFrom: t1, timeTo: t2, location: loc });
             editEventId = null;
             closeModal(null,true);
-            
-            // SEND UPDATE EMAIL TO PARTICIPANTS
             const event = events.find(e => e.id === eid);
             const attendees = event.attendees || [];
             if(attendees.length > 0) {
                 const participantEmails = users.filter(u => attendees.includes(u.id) && u.email).map(u => u.email);
                 if(participantEmails.length > 0) {
-                    const subject = `UPDATE: Jass am ${new Date(d).toLocaleDateString('de-CH')}`;
-                    const body = `Hoi zäme\n\nEs gab eine Anpassung beim Termin!\n\nNeues Datum: ${new Date(d).toLocaleDateString('de-CH')}\nZeit: ${t1} Uhr\nOrt: ${loc}\n\nBitte prüfen!`;
-                    // Deep Link
+                    const subject = t('emailSubjectUpdate');
+                    const body = `${t('emailBodyUpdate')}\n\nDatum: ${new Date(d).toLocaleDateString('de-CH')}\nZeit: ${t1} Uhr\nOrt: ${loc}\n\n`;
                     const baseUrl = window.location.href.split('?')[0];
                     const link = `${baseUrl}?eid=${eid}`;
                     await sendSystemEmail(participantEmails, subject, body, link);
                 }
-            } else {
-                alert("Event aktualisiert (keine Teilnehmer zu benachrichtigen).");
-            }
+            } else { alert("Event aktualisiert."); }
         };
 
         window.forceRemoveUserFromEvent = async (eid, uid) => {
-            if(!confirm("Diesen User wirklich austragen?")) return;
+            if(!confirm("User austragen?")) return;
             const eventRef = doc(db, COLLECTIONS.EVENTS, eid);
             const snap = await getDoc(eventRef);
             let att = snap.data().attendees || [];
             att = att.filter(id => id !== uid);
-            await updateDoc(eventRef, { attendees: att, status: 'poll' }); // Set back to poll if someone is removed
-            window.openEventDetails(eid); // Refresh modal
+            // If less than 4, revert to poll
+            const newStatus = att.length < 4 ? 'poll' : snap.data().status;
+            await updateDoc(eventRef, { attendees: att, status: newStatus });
+            window.openEventDetails(eid);
         };
 
         window.submitNewEvent = async () => {
@@ -1445,29 +1550,18 @@
             const t2 = document.getElementById('new-event-time-to').value;
             const loc = document.getElementById('new-event-loc').value;
             const hostId = document.getElementById('new-event-host').value;
-            
             if(!d || !t1) return;
-            
-            // a) Save
             const docRef = await addDoc(collection(db, COLLECTIONS.EVENTS), {
-                date: new Date(d+'T'+t1),
-                timeFrom: t1, timeTo: t2, location: loc, hostId: hostId, 
-                attendees: [user.uid], declined: [], status: 'confirmed', season: currentSeasonId 
+                date: new Date(d+'T'+t1), timeFrom: t1, timeTo: t2, location: loc, hostId: hostId, 
+                attendees: [user.uid], declined: [], status: 'poll', season: currentSeasonId 
             });
-            
-            // b) Generate Link
             const baseUrl = window.location.href.split('?')[0];
             const inviteLink = `${baseUrl}?eid=${docRef.id}`;
-            
-            // c) Prepare Emails
             const allActiveEmails = users.filter(u => (u.role === 'active' || u.role === 'admin') && u.email).map(u => u.email);
             const hostName = getFirstName({name: users.find(u => u.id === hostId)?.name || 'Einem Host'});
-            const subject = `Neue Jass-Runde: ${new Date(d).toLocaleDateString('de-CH')}`;
-            const body = `Hoi Jassgenossen\n\nEin neuer Termin steht!\n\nDatum: ${new Date(d).toLocaleDateString('de-CH')}\nZeit: ${t1} Uhr\nOrt: ${loc} (bei ${hostName})\n\nBitte hier direkt an/abmelden:`;
-            
+            const subject = t('emailSubjectNew') + `: ${new Date(d).toLocaleDateString('de-CH')}`;
+            const body = `${t('emailBodyNew')}\n\nDatum: ${new Date(d).toLocaleDateString('de-CH')}\nZeit: ${t1} Uhr\nOrt: ${loc} (${t('host')}: ${hostName})\n\n`;
             closeModal(null,true); 
-            
-            // d) Automatischer Versand
             await sendSystemEmail(allActiveEmails, subject, body, inviteLink);
         };
 
@@ -1475,51 +1569,39 @@
             const ref = doc(db, COLLECTIONS.EVENTS, eid);
             const snap = await getDoc(ref);
             if(!snap.exists()) return;
-            
             let data = snap.data();
             let attendees = data.attendees || [];
             let declined = data.declined || [];
-            
             attendees = attendees.filter(id => id !== user.uid);
             declined = declined.filter(id => id !== user.uid);
-            
             if (status === 'join') attendees.push(user.uid);
             if (status === 'decline') declined.push(user.uid);
             
-            let newStatus = data.status || 'poll'; // Default to poll until full
+            let newStatus = 'poll';
             let justConfirmed = false;
-            
-            if (status === 'join' && attendees.length === 4) {
+            if (attendees.length >= 4) {
+                if (data.status !== 'confirmed') justConfirmed = true;
                 newStatus = 'confirmed';
-                justConfirmed = true; 
+            } else {
+                newStatus = 'poll';
             }
 
             await updateDoc(ref, { attendees, declined, status: newStatus });
-            
-            if(document.getElementById('modal-container').innerHTML !== '') {
-                window.openEventDetails(eid);
-            }
+            if(document.getElementById('modal-container').innerHTML !== '') { window.openEventDetails(eid); }
 
-            // AUTO-EMAIL BEI 4 SPIELERN
             if(justConfirmed) {
                 const baseUrl = window.location.href.split('?')[0];
                 const eventLink = `${baseUrl}?eid=${eid}`;
-
                 const dObj = data.date.toDate();
                 const dStr = dObj.toLocaleDateString('de-CH');
-                
-                // Empfänger: Nur die 4 Teilnehmer
                 const participantEmails = users.filter(u => attendees.includes(u.id) && u.email).map(u => u.email);
-                
-                const subject = `DEFINITIV: Jass am ${dStr}`;
-                const body = `Die Runde ist komplett!\n\nDatum: ${dStr}\nStart: ${data.timeFrom} Uhr\nLocation: ${data.location}\n\nTermin Details & Kalender-Export hier:`;
-                
+                const subject = t('emailSubjectConfirm') + `: ${dStr}`;
+                const body = `${t('emailBodyConfirm')}\n\nDatum: ${dStr}\nStart: ${data.timeFrom} Uhr\nLocation: ${data.location}\n\n`;
                 await sendSystemEmail(participantEmails, subject, body, eventLink);
             }
         };
 
         // --- CALCULATOR & OTHER ACTIONS ---
-        
         window.toggleTeamSelection = (pid, team) => {
             const other = team === 1 ? 2 : 1;
             const myArr = calculatorState[`team${team}`];
@@ -1528,175 +1610,55 @@
             else if (!otherArr.includes(pid) && myArr.length < 2) calculatorState[`team${team}`].push(pid);
             renderApp();
         };
-        window.startCalculatorGame = () => { 
-            calculatorState.activeStep = 'play'; 
-            calculatorState.rounds = []; 
-            calculatorState.penalties = []; 
-            calculatorState.selectedTrump = 'eichel';
-            renderApp(); 
-        };
+        window.startCalculatorGame = () => { calculatorState.activeStep = 'play'; calculatorState.rounds = []; calculatorState.penalties = []; calculatorState.selectedTrump = 'eichel'; renderApp(); };
         window.selectTrump = (id) => { calculatorState.selectedTrump = id; renderApp(); };
-        window.updateFromSlider = (val) => {
-            document.getElementById('input-points-a').value = val;
-            calculatePoints('a');
-        };
+        window.updateFromSlider = (val) => { document.getElementById('input-points-a').value = val; calculatePoints('a'); };
         window.calculatePoints = (src) => {
-            const inA = document.getElementById('input-points-a');
-            const inB = document.getElementById('input-points-b');
-            const slider = document.getElementById('slider-points');
-            
-            let val = parseInt(src==='a'?inA.value:inB.value);
-            if(isNaN(val)) val = 0;
-            if (val > 157) val = 157; 
-            
-            if (src==='a') {
-                inA.value = val;
-                inB.value = 157 - val;
-                if(slider) slider.value = val;
-            } else {
-                inB.value = val;
-                inA.value = 157 - val;
-                if(slider) slider.value = 157 - val;
-            }
+            const inA = document.getElementById('input-points-a'); const inB = document.getElementById('input-points-b'); const slider = document.getElementById('slider-points');
+            let val = parseInt(src==='a'?inA.value:inB.value); if(isNaN(val)) val = 0; if (val > 157) val = 157; 
+            if (src==='a') { inA.value = val; inB.value = 157 - val; if(slider) slider.value = val; } else { inB.value = val; inA.value = 157 - val; if(slider) slider.value = 157 - val; }
         };
         window.submitRound = () => {
-            const pA_in = parseInt(document.getElementById('input-points-a').value) || 0;
-            const pB_in = parseInt(document.getElementById('input-points-b').value) || 0;
-            const wA = parseInt(document.getElementById('input-weis-a').value) || 0;
-            const wB = parseInt(document.getElementById('input-weis-b').value) || 0;
-            
+            const pA_in = parseInt(document.getElementById('input-points-a').value) || 0; const pB_in = parseInt(document.getElementById('input-points-b').value) || 0;
+            const wA = parseInt(document.getElementById('input-weis-a').value) || 0; const wB = parseInt(document.getElementById('input-weis-b').value) || 0;
             if (pA_in + pB_in !== 157) return alert("Punkte müssen 157 ergeben!");
-            
             const trump = TRUMP_MODES.find(t => t.id === calculatorState.selectedTrump);
-            const mult = trump ? trump.mult : 1;
-
-            calculatorState.rounds.push({ 
-                pA: pA_in, pB: pB_in, 
-                wA: wA, wB: wB, 
-                mult: mult, 
-                trumpId: calculatorState.selectedTrump 
-            });
-
-            document.getElementById('input-points-a').value = '';
-            document.getElementById('input-points-b').value = '157';
-            document.getElementById('input-weis-a').value = '';
-            document.getElementById('input-weis-b').value = '';
-            document.getElementById('slider-points').value = 0;
-
-            checkGameEnd();
-            renderApp();
+            calculatorState.rounds.push({ pA: pA_in, pB: pB_in, wA: wA, wB: wB, mult: trump ? trump.mult : 1, trumpId: calculatorState.selectedTrump });
+            document.getElementById('input-points-a').value = ''; document.getElementById('input-points-b').value = '157'; document.getElementById('input-weis-a').value = ''; document.getElementById('input-weis-b').value = ''; document.getElementById('slider-points').value = 0;
+            checkGameEnd(); renderApp();
         };
-        
-        window.undoLastRound = () => {
-            if(calculatorState.rounds.length > 0) {
-                calculatorState.rounds.pop();
-                renderApp();
-            }
-        };
-        
+        window.undoLastRound = () => { if(calculatorState.rounds.length > 0) { calculatorState.rounds.pop(); renderApp(); } };
         window.editRound = (index) => {
             const r = calculatorState.rounds[index];
-            setTimeout(() => {
-                document.getElementById('input-points-a').value = r.pA;
-                document.getElementById('input-points-b').value = r.pB;
-                document.getElementById('input-weis-a').value = r.wA || '';
-                document.getElementById('input-weis-b').value = r.wB || '';
-                if(document.getElementById('slider-points')) document.getElementById('slider-points').value = r.pA;
-            }, 50);
-            
-            calculatorState.selectedTrump = r.trumpId;
-            calculatorState.rounds.splice(index, 1);
-            renderApp();
+            setTimeout(() => { document.getElementById('input-points-a').value = r.pA; document.getElementById('input-points-b').value = r.pB; document.getElementById('input-weis-a').value = r.wA || ''; document.getElementById('input-weis-b').value = r.wB || ''; if(document.getElementById('slider-points')) document.getElementById('slider-points').value = r.pA; }, 50);
+            calculatorState.selectedTrump = r.trumpId; calculatorState.rounds.splice(index, 1); renderApp();
         };
-
         const checkGameEnd = () => {
-            const sumPts = (tIdx) => calculatorState.rounds.reduce((acc, r) => {
-                const cardPts = tIdx === 1 ? r.pA : r.pB;
-                const val = cardPts === 157 ? 257 : cardPts;
-                const weis = tIdx === 1 ? r.wA : r.wB;
-                return acc + (val * r.mult) + (weis * r.mult);
-            }, 0);
-
-            const s1 = sumPts(1);
-            const s2 = sumPts(2);
-
+            const sumPts = (tIdx) => calculatorState.rounds.reduce((acc, r) => { const cardPts = tIdx === 1 ? r.pA : r.pB; const val = cardPts === 157 ? 257 : cardPts; const weis = tIdx === 1 ? r.wA : r.wB; return acc + (val * r.mult) + (weis * r.mult); }, 0);
+            const s1 = sumPts(1), s2 = sumPts(2);
             if (s1 >= 2500 || s2 >= 2500) {
-                calculatorState.activeStep = 'finish';
-                calculatorState.winnerTeam = s1 >= 2500 ? 1 : 2;
-                
-                calculatorState.penalties = []; 
-                
-                const losingTeamId = s1 >= 2500 ? 2 : 1;
-                const losingTeamScore = s1 >= 2500 ? s2 : s1;
-                const losingMembers = calculatorState[`team${losingTeamId}`];
-
-                losingMembers.forEach(uid => {
-                    calculatorState.penalties.push({ playerId: uid, amount: 2, reason: 'Verloren (Spiel)' });
-                });
-
-                if(losingTeamScore < 1500) {
-                    losingMembers.forEach(uid => {
-                        calculatorState.penalties.push({ playerId: uid, amount: 1, reason: 'Berg (Schneider)' });
-                    });
-                }
-
-                calculatorState.rounds.forEach(r => {
-                    if (r.pA === 0) { 
-                         calculatorState.team1.forEach(uid => calculatorState.penalties.push({ playerId: uid, amount: 1, reason: 'Match kassiert' }));
-                    }
-                    if (r.pB === 0) { 
-                         calculatorState.team2.forEach(uid => calculatorState.penalties.push({ playerId: uid, amount: 1, reason: 'Match kassiert' }));
-                    }
-                });
+                calculatorState.activeStep = 'finish'; calculatorState.winnerTeam = s1 >= 2500 ? 1 : 2; calculatorState.penalties = []; 
+                const losingTeamId = s1 >= 2500 ? 2 : 1; const losingTeamScore = s1 >= 2500 ? s2 : s1; const losingMembers = calculatorState[`team${losingTeamId}`];
+                losingMembers.forEach(uid => { calculatorState.penalties.push({ playerId: uid, amount: 2, reason: 'Verloren (Spiel)' }); });
+                if(losingTeamScore < 1500) { losingMembers.forEach(uid => { calculatorState.penalties.push({ playerId: uid, amount: 1, reason: 'Berg (Schneider)' }); }); }
+                calculatorState.rounds.forEach(r => { if (r.pA === 0) { calculatorState.team1.forEach(uid => calculatorState.penalties.push({ playerId: uid, amount: 1, reason: 'Match kassiert' })); } if (r.pB === 0) { calculatorState.team2.forEach(uid => calculatorState.penalties.push({ playerId: uid, amount: 1, reason: 'Match kassiert' })); } });
             }
         };
-
         window.saveCalculatedGame = async () => {
             const batch = writeBatch(db);
-            
-            calculatorState.penalties.forEach(p => {
-                const ref = doc(collection(db, COLLECTIONS.GAMES));
-                batch.set(ref, {
-                    playerId: p.playerId, 
-                    points: p.amount, 
-                    reason: p.reason, 
-                    timestamp: serverTimestamp(), 
-                    type: 'game-penalty', 
-                    season: currentSeasonId, 
-                    paid: false
-                });
-            });
-
+            calculatorState.penalties.forEach(p => { batch.set(doc(collection(db, COLLECTIONS.GAMES)), { playerId: p.playerId, points: p.amount, reason: p.reason, timestamp: serverTimestamp(), type: 'game-penalty', season: currentSeasonId, paid: false }); });
             const winners = calculatorState[`team${calculatorState.winnerTeam}`];
-            winners.forEach(uid => {
-                 const ref = doc(collection(db, COLLECTIONS.GAMES));
-                 batch.set(ref, {
-                     playerId: uid, points: 1, type: 'game-win', timestamp: serverTimestamp(), season: currentSeasonId
-                 });
-            });
-
+            winners.forEach(uid => { batch.set(doc(collection(db, COLLECTIONS.GAMES)), { playerId: uid, points: 1, type: 'game-win', timestamp: serverTimestamp(), season: currentSeasonId }); });
             await batch.commit();
-            
             calculatorState = { team1: [], team2: [], rounds: [], penalties: [], activeStep: 'setup', selectedTrump: 'eichel' };
             setActiveTab('leaderboard');
         };
-        
-        window.payDebt = async (uid) => {
-            if(!confirm("Schulden als BEZAHLT markieren?")) return;
-            const unpaid = games.filter(g => g.playerId === uid && g.type === 'game-penalty' && !g.paid);
-            const batch = writeBatch(db);
-            unpaid.forEach(g => batch.update(doc(db, COLLECTIONS.GAMES, g.id), { paid: true, paidDate: serverTimestamp() }));
-            await batch.commit();
-        };
-        window.abortGame = () => { if(confirm("Abbrechen?")) { calculatorState.activeStep='setup'; calculatorState.team1=[]; calculatorState.team2=[]; setActiveTab('leaderboard'); }};
-        
+        window.payDebt = async (uid) => { if(!confirm("Schulden als BEZAHLT markieren?")) return; const unpaid = games.filter(g => g.playerId === uid && g.type === 'game-penalty' && !g.paid); const batch = writeBatch(db); unpaid.forEach(g => batch.update(doc(db, COLLECTIONS.GAMES, g.id), { paid: true, paidDate: serverTimestamp() })); await batch.commit(); };
+        window.abortGame = () => { if(confirm(t('gameAbort')+"?")) { calculatorState.activeStep='setup'; calculatorState.team1=[]; calculatorState.team2=[]; setActiveTab('leaderboard'); }};
         window.handleDeleteGame = async (id) => { if(!confirm("Löschen?")) return; if(prompt("Code") !== "JG2020") return; await deleteDoc(doc(db, COLLECTIONS.GAMES, id)); }; 
-        window.handleDeleteEvent = async (id) => { if(!confirm("Event löschen?")) return; await deleteDoc(doc(db, COLLECTIONS.EVENTS, id)); };
+        window.handleDeleteEvent = async (id) => { if(!confirm(t('deleteEvent')+"?")) return; await deleteDoc(doc(db, COLLECTIONS.EVENTS, id)); closeModal(null,true); };
 
-        const handleScroll = () => {
-            const nav = document.getElementById('mobile-nav');
-            if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); }
-        };
+        const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
 
         // --- INIT ---
         const startApp = async () => {
@@ -1711,46 +1673,21 @@
                 if(userData?.role === 'admin') pendingUsers = users.filter(u => u.role === 'pending');
                 renderApp();
             });
-            onSnapshot(query(collection(db, COLLECTIONS.GAMES), orderBy('timestamp', 'desc')), sn => {
-                games = sn.docs.map(d=>({id:d.id, ...d.data()}));
-                renderApp();
-            });
-            onSnapshot(query(collection(db, COLLECTIONS.EVENTS), orderBy('date', 'asc')), sn => {
-                events = sn.docs.map(d=>({id:d.id, ...d.data()}));
-                renderApp();
-            });
-            onSnapshot(doc(db, COLLECTIONS.SETTINGS, 'config'), sn => {
-                if(sn.exists()) currentSeasonId = sn.data().currentSeason || '2025';
-                renderApp();
-            });
+            onSnapshot(query(collection(db, COLLECTIONS.GAMES), orderBy('timestamp', 'desc')), sn => { games = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+            onSnapshot(query(collection(db, COLLECTIONS.EVENTS), orderBy('date', 'asc')), sn => { events = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+            onSnapshot(doc(db, COLLECTIONS.SETTINGS, 'config'), sn => { if(sn.exists()) currentSeasonId = sn.data().currentSeason || '2025'; renderApp(); });
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;
                 if (user && !user.isAnonymous) {
                     const userRef = doc(db, COLLECTIONS.USERS, user.uid);
                     const snap = await getDoc(userRef);
-                    if (!snap.exists()) {
-                        userData = null; 
-                        renderApp();
-                    } else {
-                        userData = snap.data();
-                        if (user.email && ADMIN_EMAILS.includes(user.email) && userData.role !== 'admin') {
-                            await updateDoc(userRef, { role: 'admin' });
-                        }
-                        renderApp();
-                    }
-                } else {
-                    userData = null;
-                    renderApp();
-                }
-                
-                // DEEP LINK CHECK
+                    if (!snap.exists()) { userData = null; renderApp(); } 
+                    else { userData = snap.data(); if (user.email && ADMIN_EMAILS.includes(user.email) && userData.role !== 'admin') { await updateDoc(userRef, { role: 'admin' }); } renderApp(); }
+                } else { userData = null; renderApp(); }
                 const urlParams = new URLSearchParams(window.location.search);
                 const eid = urlParams.get('eid');
-                if(eid && user) {
-                    // Warte kurz bis Events geladen sind
-                    setTimeout(() => window.openEventDetails(eid), 1500);
-                }
+                if(eid && user) { setTimeout(() => window.openEventDetails(eid), 1500); }
             });
         };
         startApp();
