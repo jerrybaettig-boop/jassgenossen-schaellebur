@@ -29,6 +29,9 @@
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -50,6 +53,7 @@
         
         .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
 
+        /* UI COMPONENTS */
         .retro-card {
             background-color: #fff;
             border: 3px solid var(--ink-black);
@@ -72,10 +76,12 @@
             box-shadow: 4px 4px 0px rgba(0,0,0,1);
             transition: transform 0.1s;
             cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
         .retro-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px rgba(0,0,0,1); }
         .retro-btn-secondary { background-color: var(--gold-base); color: var(--ink-black); }
         .retro-btn-outline { background-color: white; color: black; }
+        .retro-btn-success { background-color: #16a34a; color: white; }
         
         .retro-input {
             background-color: #fff;
@@ -83,7 +89,9 @@
             border-radius: 8px;
             font-family: 'Bangers', cursive;
             box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+            outline: none;
         }
+        .retro-input:focus { border-color: var(--swiss-red); }
 
         .header-pattern-container {
             position: absolute; inset: 0; z-index: 0;
@@ -91,17 +99,12 @@
             border-bottom: 4px solid var(--ink-black);
         }
         
-        /* --- HIER KANNST DU DAS MUSTER ANPASSEN --- */
         .header-pattern-img {
             position: absolute; inset: 0; z-index: 0;
             background-repeat: repeat;
-            background-size: 60px 60px; /* Größe der Schellen */
-            
-            /* WICHTIG: Sichtbarkeit */
-            opacity: 0.2; /* 0.1 = ganz schwach, 1.0 = voll sichtbar. Probier 0.2 oder 0.3 */
-            
-           /* Macht das Bild schwarz, damit es sich gut vom Gold abhebt */
-           filter: brightness(10) grayscale(60%);
+            background-size: 60px 60px;
+            opacity: 0.2;
+            filter: brightness(10) grayscale(60%);
         }
 
         .avatar-card-frame {
@@ -122,7 +125,7 @@
             box-shadow: 2px 2px 0px #d80018 !important;
         }
 
-        .modal-overlay { background-color: rgba(26, 26, 26, 0.9); backdrop-filter: blur(4px); }
+        .modal-overlay { background-color: rgba(26, 26, 26, 0.95); backdrop-filter: blur(4px); }
         
         .stamp-definitiv {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
@@ -131,33 +134,12 @@
             opacity: 0.8; pointer-events: none; mix-blend-mode: multiply; z-index: 10;
         }
 
-        /* --- MUSTER LOGIN KARTE --- */
-        .card-back-pattern {
-            background-color: var(--gold-base);
-            background-size: 40px 40px; 
-            background-repeat: repeat;
-            /* Hier kein Filter, da es ein background-image ist. Das Bild wird so genommen wie es ist */
-        }
-        
-        /* Animation Utilities */
         .animate-in { animation: animateIn 0.3s ease-out forwards; }
         @keyframes animateIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        /* Range Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none; 
-            appearance: none;
-            width: 100%; background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; 
-            appearance: none;
-            height: 24px; width: 24px; border-radius: 50%;
-            background: #D80018; border: 2px solid black; cursor: pointer; margin-top: -10px;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 3px; border: 1px solid #94a3b8;
-        }
+        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #D80018; border: 2px solid black; cursor: pointer; margin-top: -10px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 3px; border: 1px solid #94a3b8; }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -171,7 +153,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- A. KONFIGURATION ---
-        // !!! WICHTIG !!! Hier deine echten Daten von Firebase einfügen!
     const firebaseConfig = {
         apiKey: "AIzaSyAPkAhM-BhJfG5cljBk2S2KGN3TIg8IxXM",
         authDomain: "jassgenossenschaellebur.firebaseapp.com",
@@ -186,15 +167,17 @@
             "jerry.baettig@gmail.com",
             "jassgenossenschallebur@gmail.com"
         ];
+        
+        const CLUB_EMAIL = "jassgenossenschallebur@gmail.com";
 
-        // --- B. ASSETS (Via GitHub Raw Links) ---
+        // --- EMAILJS KONFIGURATION ---
+        const EMAIL_SERVICE_ID = "service_Jassgenossen2020";  
+        const EMAIL_TEMPLATE_ID = "template_Jassgenossen202";
+        const EMAIL_PUBLIC_KEY = "iDDsHBSu1RHSw8v8L";
+
+        // --- B. ASSETS ---
         const LOGO_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/6b6be0b76b1deaa9524af5f522e6addb15da85dc/img/jass%20file_gold1.png"; 
-        
-        // HINTERGRUNDBILD (Schelle)
         const BG_BASE64 = "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/1749f1b1e5a0e6f2c98a0e2de1e9e2a54eb2aa0a/img/Sch%C3%A4lle.png";   
-        
-        // Jass Icon Fallback (SVG)
-        const JASS_ICON_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M12 2C12 2 16 6 16 9C16 11.2 14.2 13 12 13C9.8 13 8 11.2 8 9C8 6 12 2 12 2ZM12 15C15.3 15 18 17.7 18 21C18 21.6 17.6 22 17 22H7C6.4 22 6 21.6 6 21C6 17.7 8.7 15 12 15Z" /><circle cx="12" cy="14" r="1.5" /></svg>`;
         
         const AVATARS = { 
             "Diego": "https://raw.githubusercontent.com/jerrybaettig-boop/jassgenossen-schaellebur/6b6be0b76b1deaa9524af5f522e6addb15da85dc/img/DT_Avatar_klein.png", 
@@ -210,10 +193,7 @@
             { name: "Diego", email: "tosoni.diego94@gmail.com", amount: 301, roleKey: 'roleDiego' }
         ];
 
-        const SKILL_LABELS = [
-            "skillJass", "skillWeis", "skillMatchCall", "skillMatchPlay", "skillColors", "skillCounting", "skillTrashTalk", "skillLevel"
-        ];
-        
+        const SKILL_LABELS = ["skillJass", "skillWeis", "skillMatchCall", "skillMatchPlay", "skillColors", "skillCounting", "skillTrashTalk", "skillLevel"];
         const TRUMP_MODES = [
             { id: 'eichel', label: 'Eichel', mult: 1, icon: '🌰' },
             { id: 'rose', label: 'Rose', mult: 1, icon: '🌹' },
@@ -224,9 +204,6 @@
         ];
 
         const URL_FALLBACK = "https://ui-avatars.com/api/?background=000&color=fff";
-        // Fallback Pattern falls das Bild nicht lädt
-        const BG_FALLBACK = "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 30c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zm-5 5c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm0-10c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm10 25c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zm-10 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5zM30 0c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10-10-4.477-10-10zM5 0c0 2.76-2.24 5-5 5S-5 2.76-5 0s2.24-5 5-5 5 2.24 5 5z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E";
-
         const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings' };
         
         // --- C. STATE ---
@@ -235,21 +212,15 @@
         let games = [], users = [], events = [], pendingUsers = [];
         let activeTab = 'leaderboard';
         let leaderboardFilter = 'season'; 
-        
-        let calculatorState = { 
-            team1: [], team2: [], 
-            rounds: [], 
-            penalties: [], 
-            activeStep: 'setup', 
-            selectedTrump: 'eichel' 
-        };
+        let calculatorState = { team1: [], team2: [], rounds: [], penalties: [], activeStep: 'setup', selectedTrump: 'eichel' };
         let expandedHistoryDates = {}; 
         let selectedArchiveSeason = null;
         let currentLang = 'de';
         let currentSeasonId = '2025';
         let registrationRole = 'active';
+        let editEventId = null; // Für Admin Edit Mode
 
-        // --- D. TEXTS ---
+        // --- D. TEXTS & HELPERS ---
         const translations = {
             de: {
                 subtitle: "Liga der Jass-Legenden",
@@ -261,7 +232,7 @@
                 pendingTitle: "Anfrage gesendet", pendingText: "Deine Mitgliedschaft wird geprüft.",
                 nextEvents: "Nächste Events", pollEvents: "Termin-Abfrage", definitive: "BESTÄTIGT",
                 noEntries: "Keine Daten.", createEvent: "Neuer Termin",
-                join: "Dabei", leave: "Abmelden",
+                join: "Dabei", decline: "Absagen", leave: "Abmelden",
                 calcTitle: "Match Center", start: "Start", save: "Speichern", cancel: "Abbruch",
                 penalties: "Strafen", points: "Punkte", weis: "Weis",
                 paymentInfo: "Mitgliederbeiträge & Spenden", matchRestricted: "Resultate erfassen nur für Aktivmitglieder.",
@@ -274,84 +245,44 @@
                 skillJass: "Jassfertigkeit", skillWeis: "Weisen", skillMatchCall: "Match ansagen", skillMatchPlay: "Match durchführen",
                 skillColors: "Farben angeben", skillCounting: "Karten zählen", skillTrashTalk: "Jasssprüche", skillLevel: "Schällebur-Level",
                 editProfile: "Profil bearbeiten", updateProfile: "Profil Speichern"
-            },
-            en: {
-                subtitle: "League of Jass-Legends",
-                tabs: { leaderboard: "Stats", events: "Events", calculator: "Match", members: "Members", admin: "Admin" },
-                filters: { debt: "Debts", season: "Current Season", history: "Jass History" },
-                loginTitle: "Jass Login", loginMemberBtn: "Member Login", registerTitle: "Apply for Membership",
-                registerBtn: "Register", guestBtn: "Stay as Guest",
-                roleActive: "Active Member (CHF 30/mo)", rolePatron: "Patron (CHF 1000/yr)",
-                pendingTitle: "Request Sent", pendingText: "Your membership is pending approval.",
-                nextEvents: "Upcoming Events", pollEvents: "Polls", definitive: "CONFIRMED",
-                noEntries: "No data.", createEvent: "New Event",
-                join: "Join", leave: "Leave",
-                calcTitle: "Match Center", start: "Start", save: "Save", cancel: "Cancel",
-                penalties: "Penalties", points: "Points", weis: "Weis",
-                paymentInfo: "Membership Fees & Donations", matchRestricted: "Results entry for active members only.",
-                guestHint: "Login for full access",
-                roleToni: "The Conqueror", roleDiego: "The Baron", roleLaurent: "The Farmer", roleJerome: "The Charmer", memberStandard: "Member",
-                host: "Host", timeFrom: "Time From", timeTo: "Time To", location: "Location",
-                totalDebt: "Total Penalties (All Time)", paidDebt: "Paid", openDebt: "Open",
-                profileTitle: "Player Profile", bioPlaceholder: "A true Jass legend...",
-                statsWins: "Wins", statsLosses: "Losses", statsWeis: "Weis Total", statsDebt: "Debt Curr.",
-                skillJass: "Jass Skills", skillWeis: "Weis Calls", skillMatchCall: "Match Calling", skillMatchPlay: "Match Playing",
-                skillColors: "Color Picking", skillCounting: "Card Counting", skillTrashTalk: "Trash Talk", skillLevel: "Schällebur Level",
-                editProfile: "Edit Profile", updateProfile: "Save Profile"
             }
         };
 
-        const t = (key) => {
-            const keys = key.split('.');
-            let val = translations[currentLang];
-            for (let k of keys) val = val?.[k];
-            return val || key;
+        const t = (key) => translations['de'][key] || key;
+        
+        // NEU: Vorname Only Logic
+        const getFirstName = (u) => {
+            if (!u || !u.name) return 'Gast';
+            return u.name.split(' ')[0];
         };
 
         const getAvatarUrl = (u) => {
             if (!u) return URL_FALLBACK;
-            const name = u.name || 'User';
-            // Robust check: Look for partial match in AVATARS keys
+            // Nutze Vornamen für Key Match
+            const name = getFirstName(u);
             const key = Object.keys(AVATARS).find(k => name.includes(k));
             if (key) return AVATARS[key];
-            
             if (u.avatar && u.avatar.length > 50) return u.avatar;
             if (u.photoURL) return u.photoURL;
-            return URL_FALLBACK + `&name=${name || 'User'}`;
+            return URL_FALLBACK + `&name=${name}`;
         };
-
-        const getTitle = (u) => {
-            if (u.roleKey) return t(u.roleKey); 
-            const legacy = LEGACY_DEBTS.find(l => u.name.includes(l.name));
-            if (legacy && legacy.roleKey) return t(legacy.roleKey);
-            return u.roleName || t('memberStandard');
-        };
-
+        
+        const getTitle = (u) => u.roleKey ? t(u.roleKey) : (u.roleName || t('memberStandard'));
         const isMember = () => userData && (userData.role === 'active' || userData.role === 'patron' || userData.role === 'admin');
         const isActiveMember = () => userData && (userData.role === 'active' || userData.role === 'admin');
         const isAdmin = () => userData && userData.role === 'admin';
 
         const getLegacyDebt = (u) => {
-            const match = LEGACY_DEBTS.find(l => 
-                (u.email && l.email && u.email.toLowerCase() === l.email.toLowerCase()) || 
-                (u.name && u.name.toLowerCase().includes(l.name.toLowerCase()))
-            );
+            const match = LEGACY_DEBTS.find(l => (u.email && l.email && u.email.toLowerCase() === l.email.toLowerCase()) || (u.name && u.name.toLowerCase().includes(l.name.toLowerCase())));
             return match ? match.amount : 0;
         };
 
         const getAllPlayers = () => {
             let combined = [...users];
             LEGACY_DEBTS.forEach(legacy => {
-                const exists = combined.find(u => 
-                    (u.email && legacy.email && u.email.toLowerCase() === legacy.email.toLowerCase()) || 
-                    (u.name && u.name.toLowerCase().includes(legacy.name.toLowerCase()))
-                );
+                const exists = combined.find(u => (u.email && legacy.email && u.email.toLowerCase() === legacy.email.toLowerCase()) || (u.name && u.name.toLowerCase().includes(legacy.name.toLowerCase())));
                 if (!exists) {
-                    combined.push({
-                        id: 'legacy-' + legacy.name, 
-                        name: legacy.name, email: legacy.email,
-                        role: 'active', roleKey: legacy.roleKey, avatar: '', isVirtual: true, bio: t('bioPlaceholder')
-                    });
+                    combined.push({ id: 'legacy-' + legacy.name, name: legacy.name, email: legacy.email, role: 'active', roleKey: legacy.roleKey, avatar: '', isVirtual: true, bio: t('bioPlaceholder') });
                 } else {
                     const existingUser = combined.find(u => u.name.includes(legacy.name));
                     if(existingUser && !existingUser.roleKey) existingUser.roleKey = legacy.roleKey;
@@ -360,36 +291,102 @@
             return combined;
         };
 
+        // --- KALENDER & EMAIL HELPERS ---
+        const generateGoogleCalendarLink = (event) => {
+            const d = event.date.toDate();
+            const formatTime = (timeStr) => {
+                const [h, m] = timeStr.split(':');
+                const dCopy = new Date(d);
+                dCopy.setHours(h, m, 0);
+                return dCopy.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            }
+            const startStr = formatTime(event.timeFrom);
+            let endStr = "";
+            if(event.timeTo) {
+                const [hEnd, mEnd] = event.timeTo.split(':');
+                const dEnd = new Date(d);
+                dEnd.setHours(hEnd, mEnd, 0);
+                endStr = dEnd.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            } else {
+                const dEnd = new Date(d);
+                dEnd.setHours(dEnd.getHours() + 3);
+                endStr = dEnd.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            }
+            const title = encodeURIComponent(`Jass Schällebur: ${event.location || 'TBD'}`);
+            const details = encodeURIComponent(`Jassrunde!\nHost: ${event.hostId ? 'Bekannt' : 'TBD'}\nLocation: ${event.location}`);
+            const loc = encodeURIComponent(event.location || 'TBD');
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${loc}`;
+        };
+
+        const downloadICS = (event) => {
+            const d = event.date.toDate();
+            const formatTime = (timeStr, dateObj) => {
+                const [h, m] = timeStr.split(':');
+                const newD = new Date(dateObj);
+                newD.setHours(h, m, 0);
+                return newD.toISOString().replace(/-|:|\.\d\d\d/g, "").split('T')[0] + 'T' + newD.toTimeString().split(' ')[0].replace(/:/g,'');
+            };
+            const startStr = formatTime(event.timeFrom, d);
+            let endStr = event.timeTo ? formatTime(event.timeTo, d) : startStr;
+            const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Jass Schällebur//App//DE\nBEGIN:VEVENT\nUID:${event.id}@jass-schaellebur.web.app\nDTSTAMP:${new Date().toISOString().replace(/-|:|\.\d\d\d/g, "").split('T')[0]}T000000\nDTSTART:${startStr}\nDTEND:${endStr}\nSUMMARY:Jass Schällebur\nDESCRIPTION:Jassrunde bei ${event.location || 'TBD'}\nLOCATION:${event.location || 'TBD'}\nEND:VEVENT\nEND:VCALENDAR`;
+            const blob = new Blob([icsContent], { type: 'text/calendar' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jass_event_${event.date.toDate().toISOString().split('T')[0]}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        const sendSystemEmail = async (recipientsArray, subject, message, link) => {
+            if (typeof emailjs === 'undefined') {
+                alert("EmailJS Skript fehlt! Fallback auf lokales Mail-Programm.");
+                window.location.href = `mailto:?bcc=${recipientsArray.join(',')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message + "\n\nLink: " + link)}`;
+                return;
+            }
+            try {
+                emailjs.init(EMAIL_PUBLIC_KEY);
+                console.log("Versuche Email Senden an:", recipientsArray.length, "Empfänger");
+                await emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, {
+                    to_email: CLUB_EMAIL,          
+                    bcc_emails: recipientsArray.join(','), 
+                    subject: subject,
+                    message: message,
+                    event_link: link
+                });
+                alert(`✅ Email wurde automatisch an alle ${recipientsArray.length} Mitglieder versendet!`);
+            } catch (error) {
+                console.error("EMAIL FEHLER:", error);
+                alert("Fehler beim automatischen Versand. Öffne Mail-Programm als Reserve.");
+                window.location.href = `mailto:?bcc=${recipientsArray.join(',')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message + "\n\nLink: " + link)}`;
+            }
+        };
+
         // --- E. RENDER FUNCTIONS ---
 
         const renderHeader = () => `
             <header class="relative text-white pt-10 pb-20 px-4 overflow-hidden border-b-4 border-black">
-                <div class="header-pattern-container">
-                <div class="header-pattern-img" style="background-image: url('${BG_BASE64}');"></div>
-                <div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80"></div> 
-                </div>
+                <div class="header-pattern-container"><div class="header-pattern-img" style="background-image: url('${BG_BASE64}');"></div><div class="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80"></div></div>
                 <div class="max-w-4xl mx-auto text-center relative z-10">
                     <div class="w-64 h-64 mx-auto mb-2 relative group">
                         <div class="absolute inset-0 bg-yellow-100 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
-                        <img src="${LOGO_BASE64}" onerror="this.style.display='none'"
-                             class="w-full h-full object-contain relative z-10 transform group-hover:scale-105 transition-all duration-500 drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)]" alt="Logo">
+                        <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain relative z-10 transform group-hover:scale-105 transition-all duration-500 drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)]">
                     </div>
                     <div class="inline-block bg-black/80 backdrop-blur-sm border-2 border-yellow-500 px-4 py-2 rounded-lg transform -rotate-1 shadow-[4px_4px_0_rgba(0,0,0,0.5)] mb-2">
                         <h2 class="text-sm md:text-base font-bold tracking-widest uppercase font-mono text-yellow-400">${t('subtitle')}</h2>
                     </div>
-                    
                     ${userData && userData.role !== 'pending' ? `
                         <button onclick="signOutUser()" class="absolute top-4 right-4 flex flex-col items-center group z-50">
                             <div class="w-12 h-16 bg-white border-2 border-black rounded-lg overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all relative">
                                 <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
                                 <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition"><i data-lucide="log-out" class="w-4 h-4 text-white"></i></div>
                             </div>
-                            <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-500 uppercase">${userData.name.split(' ')[0]}</div>
+                            <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-500 uppercase">${getFirstName(userData)}</div>
                         </button>
                     ` : `
                         <button onclick="openLoginModal()" class="absolute top-4 right-4 flex flex-col items-center group z-50">
-                            <div class="w-12 h-16 border-2 border-black rounded-lg flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all card-back-pattern" 
-                                 style="background-image: url('${BG_BASE64}');">
+                            <div class="w-12 h-16 border-2 border-black rounded-lg flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all card-back-pattern" style="background-image: url('${BG_BASE64}');">
                                 <div class="bg-black/50 p-1 rounded-full"><i data-lucide="key" class="w-4 h-4 text-white"></i></div>
                             </div>
                             <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-500 uppercase">${t('loginTitle')}</div>
@@ -408,9 +405,7 @@
                         <button onclick="loginGoogle()" class="w-full py-3 retro-btn bg-white text-black hover:bg-slate-50 flex items-center justify-center gap-3 border-2 border-black shadow-[2px_2px_0_black]">
                              ${t('loginMemberBtn')}
                         </button>
-                        
                         <div class="h-px bg-slate-200 my-2"></div>
-                        
                         <div class="text-left bg-slate-50 p-3 rounded border border-slate-200">
                             <label class="text-xs font-bold uppercase text-slate-500 block mb-2">${t('registerTitle')}</label>
                             <div class="grid grid-cols-2 gap-2 mb-2">
@@ -419,12 +414,144 @@
                             </div>
                             <button onclick="loginGoogle()" class="w-full py-2 retro-btn text-sm">${t('registerBtn')}</button>
                         </div>
-
                         <button onclick="loginGuestAndRedirect()" class="w-full py-2 text-xs font-bold text-slate-400 hover:text-black uppercase tracking-widest mt-2">${t('guestBtn')}</button>
                     </div>
                 </div>
             </div>
         `;
+
+        const renderEventDetailsModal = (eventId) => {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return '';
+            
+            const allPlayers = getAllPlayers();
+            const host = allPlayers.find(u => u.id === event.hostId)?.name || 'Unbekannt';
+            
+            const attendees = event.attendees || [];
+            const declined = event.declined || [];
+            const isConfirmed = event.status === 'confirmed';
+            
+            const activeUsers = allPlayers.filter(u => u.role === 'active' || u.role === 'admin');
+            const pending = activeUsers.filter(u => !attendees.includes(u.id) && !declined.includes(u.id));
+
+            const isJoined = userData && attendees.includes(userData.id);
+            const isDeclined = userData && declined.includes(userData.id);
+            const gCalLink = isConfirmed ? generateGoogleCalendarLink(event) : '#';
+
+            // EDIT MODE?
+            if (editEventId === eventId) {
+                return `
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
+                    <div class="retro-card p-6 w-full max-w-lg bg-white relative animate-in">
+                        <h2 class="text-2xl font-comic mb-4">Event Bearbeiten</h2>
+                        <div class="space-y-3">
+                            <input type="date" id="edit-date" class="retro-input w-full px-3 py-2" value="${event.date.toDate().toISOString().split('T')[0]}">
+                            <div class="flex gap-2">
+                                <input type="time" id="edit-time-from" class="retro-input w-full px-3 py-2" value="${event.timeFrom}">
+                                <input type="time" id="edit-time-to" class="retro-input w-full px-3 py-2" value="${event.timeTo}">
+                            </div>
+                            <input type="text" id="edit-loc" class="retro-input w-full px-3 py-2" value="${event.location}">
+                            <div class="flex gap-2 mt-4">
+                                <button onclick="updateEventData('${eventId}')" class="flex-1 retro-btn py-2">Speichern & Email</button>
+                                <button onclick="editEventId=null; openEventDetails('${eventId}')" class="flex-1 bg-slate-200 text-slate-500 rounded font-bold uppercase">Abbruch</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            const renderUserRow = (uid) => {
+                const u = allPlayers.find(p => p.id === uid);
+                if (!u) return '';
+                return `
+                <div class="flex items-center justify-between mb-2 p-2 bg-slate-50 rounded border border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <img src="${getAvatarUrl(u)}" class="w-8 h-8 rounded-full border border-black object-cover">
+                        <span class="font-bold text-sm text-slate-700">${getFirstName(u)}</span>
+                    </div>
+                    ${isAdmin() ? `<button onclick="forceRemoveUserFromEvent('${eventId}', '${uid}')" class="text-slate-300 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+                </div>`;
+            };
+
+            return `
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
+                <div class="retro-card p-6 w-full max-w-lg bg-white relative max-h-[90vh] overflow-y-auto animate-in">
+                    <button onclick="closeModal(null, true)" class="absolute top-4 right-4 z-20 bg-slate-100 p-2 rounded-full hover:bg-red-100 hover:text-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    
+                    ${isConfirmed ? `<div class="absolute top-0 left-0 w-full bg-green-500 text-white text-center text-xs font-bold uppercase py-1 tracking-widest">Definitiv - Findet Statt</div>` : ''}
+
+                    <div class="flex justify-between items-start mt-4 mb-1">
+                        <h2 class="text-3xl font-comic text-slate-900">${event.date.toDate().toLocaleDateString('de-CH', {weekday:'long', day:'numeric', month:'long'})}</h2>
+                        ${isAdmin() ? `<button onclick="enableEditMode('${eventId}')" class="bg-slate-100 p-2 rounded hover:bg-yellow-100"><i data-lucide="pencil" class="w-4 h-4 text-slate-500"></i></button>` : ''}
+                    </div>
+                    
+                    <div class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 border-b-2 border-slate-200 pb-2">
+                        ${event.timeFrom} Uhr @ ${event.location || 'TBD'} (Host: ${getFirstName({name:host})})
+                    </div>
+                    
+                    ${isConfirmed ? `
+                    <div class="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                        <h4 class="font-bold text-green-800 text-sm uppercase mb-2">📅 Kalender Eintrag</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="${gCalLink}" target="_blank" class="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-green-300 rounded hover:bg-green-100 text-xs font-bold text-green-800 transition">
+                                <i data-lucide="calendar" class="w-4 h-4"></i> Google
+                            </a>
+                            <button onclick="downloadICSForEvent('${event.id}')" class="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-green-300 rounded hover:bg-green-100 text-xs font-bold text-green-800 transition">
+                                <i data-lucide="download" class="w-4 h-4"></i> Outlook / Apple
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- ACTIONS FOR USER -->
+                    ${userData && isActiveMember() ? `
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <button onclick="updateEventStatus('${eventId}', 'join')" 
+                            class="py-3 rounded-lg border-2 border-black font-bold uppercase shadow-[3px_3px_0_black] transition-transform active:translate-y-1 active:shadow-none flex items-center justify-center gap-2
+                            ${isJoined ? 'bg-green-500 text-white' : 'bg-white hover:bg-green-50 text-green-700'}">
+                            <i data-lucide="check" class="w-5 h-5"></i> ${t('join')}
+                        </button>
+                        <button onclick="updateEventStatus('${eventId}', 'decline')" 
+                            class="py-3 rounded-lg border-2 border-black font-bold uppercase shadow-[3px_3px_0_black] transition-transform active:translate-y-1 active:shadow-none flex items-center justify-center gap-2
+                            ${isDeclined ? 'bg-red-500 text-white' : 'bg-white hover:bg-red-50 text-red-700'}">
+                            <i data-lucide="x" class="w-5 h-5"></i> ${t('decline')}
+                        </button>
+                    </div>
+                    ` : ''}
+
+                    <!-- TABS / LISTS -->
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-xs uppercase text-green-600 mb-2 flex items-center gap-2"><div class="w-2 h-2 bg-green-500 rounded-full"></div> Dabei (${attendees.length})</h4>
+                            <div class="pl-4 border-l-2 border-green-200">
+                                ${attendees.length > 0 ? attendees.map(uid => renderUserRow(uid)).join('') : '<div class="text-slate-400 text-xs italic">Noch niemand</div>'}
+                            </div>
+                        </div>
+                        
+                        ${declined.length > 0 ? `
+                        <div>
+                            <h4 class="font-bold text-xs uppercase text-red-600 mb-2 flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full"></div> Abgesagt (${declined.length})</h4>
+                            <div class="pl-4 border-l-2 border-red-200 opacity-70">
+                                ${declined.map(uid => renderUserRow(uid)).join('')}
+                            </div>
+                        </div>` : ''}
+
+                        <div>
+                            <h4 class="font-bold text-xs uppercase text-slate-400 mb-2 flex items-center gap-2"><div class="w-2 h-2 bg-slate-300 rounded-full"></div> Ausstehend (${pending.length})</h4>
+                            <div class="pl-4 border-l-2 border-slate-200 opacity-60">
+                                ${pending.length > 0 ? `<div class="text-xs text-slate-500">${pending.map(u => getFirstName(u)).join(', ')}</div>` : '<div class="text-slate-400 text-xs italic">Alle haben geantwortet!</div>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${isAdmin() ? `
+                        <div class="mt-8 pt-4 border-t border-slate-200">
+                            <button onclick="handleDeleteEvent('${event.id}')" class="text-red-500 text-xs font-bold hover:underline">Event komplett löschen</button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>`;
+        };
         
         const renderCreateEventModal = () => {
             const allPlayers = getAllPlayers().filter(u => u.role !== 'pending');
@@ -456,11 +583,14 @@
                         <div>
                             <label class="text-xs font-bold uppercase text-slate-500 block mb-1">${t('host')}</label>
                             <select id="new-event-host" class="retro-input w-full px-3 py-2 bg-white">
-                                ${allPlayers.map(p => `<option value="${p.id}" ${p.id === user.uid ? 'selected' : ''}>${p.name}</option>`).join('')}
+                                ${allPlayers.map(p => `<option value="${p.id}" ${p.id === user.uid ? 'selected' : ''}>${getFirstName(p)}</option>`).join('')}
                             </select>
                         </div>
                         
-                        <button onclick="submitNewEvent()" class="w-full retro-btn py-3 mt-2">${t('save')}</button>
+                        <div class="pt-2">
+                            <button onclick="submitNewEvent()" class="w-full retro-btn py-3">${t('save')}</button>
+                            <div class="text-[10px] text-slate-400 mt-2 text-center">Öffnet Email-App zur Benachrichtigung aller Member</div>
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -537,7 +667,6 @@
             const averageRating = validSkillsCount > 0 ? (totalScore / validSkillsCount) : 0;
             const roundedRating = Math.round(averageRating);
 
-            // Icon Source: Verwende BG_BASE64 oder Fallback
             const iconSrc = BG_BASE64 || "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Schelle.svg/60px-Schelle.svg.png";
 
             const renderStars = (score, max, interactive, skillKey) => {
@@ -547,8 +676,6 @@
                     const styleClass = isActive ? '' : 'filter: grayscale(100%) opacity(30%);';
                     const clickAttr = interactive ? `onclick="updateSkill('${u.id}', '${skillKey}', ${i})"` : '';
                     const cursorClass = interactive ? 'cursor-pointer hover:scale-110 transition-transform' : '';
-                    
-                    // Added onerror to fallback to built-in SVG if GitHub link fails
                     html += `<img src="${iconSrc}" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Schelle.svg/60px-Schelle.svg.png'" class="w-6 h-6 object-contain ${cursorClass}" style="${styleClass}" ${clickAttr} title="${i}/${max}">`;
                 }
                 html += '</div>';
@@ -558,13 +685,11 @@
             return `
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
                 <div class="retro-card p-0 w-full max-w-lg bg-white relative max-h-[90vh] overflow-y-auto animate-in">
-                    <!-- Close Button (X) -->
                     <button onclick="closeModal(null, true)" class="absolute top-4 right-4 z-20 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition-colors duration-200 backdrop-blur-md flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                     
                     <div class="bg-gradient-to-r from-red-800 to-red-950 h-32 relative mb-12 border-b-4 border-black">
-                         <!-- UPDATE: opacity-20 zu opacity-40 geändert und Filter hinzugefügt -->
                          <div class="absolute inset-0 opacity-40" style="background-image: url('${BG_BASE64}'); filter: grayscale(100%) brightness(0.5);"></div>
                          <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full border-4 border-white shadow-xl bg-white overflow-hidden">
                             <img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
@@ -572,10 +697,9 @@
                     </div>
 
                     <div class="px-6 pb-6 text-center">
-                        <h2 class="text-3xl font-comic text-slate-900 leading-none">${u.name}</h2>
+                        <h2 class="text-3xl font-comic text-slate-900 leading-none">${getFirstName(u)}</h2>
                         <p class="text-xs font-bold text-red-700 uppercase tracking-widest mb-2">${getTitle(u)}</p>
                         
-                        <!-- Overall Rating Badge -->
                         <div class="inline-flex flex-col items-center gap-1 bg-amber-50 border border-amber-200 px-5 py-2 rounded-xl mb-6 shadow-sm">
                              <span class="text-amber-800 text-[10px] font-bold uppercase tracking-wider">Jass Skill Rating</span>
                              ${renderStars(roundedRating, 5, false, null)}
@@ -587,7 +711,6 @@
                             <span class="absolute bottom-[-10px] right-2 text-4xl text-slate-200 font-serif leading-none">"</span>
                         </div>
 
-                        <!-- Stats Grid -->
                         <div class="grid grid-cols-2 gap-3 mb-6">
                             <div class="bg-slate-100 p-2 rounded border border-slate-200">
                                 <div class="text-[10px] uppercase text-slate-400 font-bold">${t('statsDebt')}</div>
@@ -599,7 +722,6 @@
                             </div>
                         </div>
 
-                        <!-- Skill Ratings -->
                         <div class="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-6">
                             <h4 class="font-bold text-xs uppercase text-slate-400 tracking-widest mb-4 text-center">Fähigkeiten</h4>
                             <div class="space-y-2 text-left">
@@ -630,7 +752,6 @@
             const scores = {};
             const debts = {};
             
-            // Get all unique seasons
             const allSeasons = [...new Set(games.map(g => g.season).filter(s => s))].sort().reverse();
             const viewingSeason = leaderboardFilter === 'season' ? currentSeasonId : null;
 
@@ -664,7 +785,6 @@
             }
             displayData = displayData.filter(d => allPlayers.find(u=>u.id===d.uid));
 
-            // Helper to get winner of a specific season
             const getSeasonWinner = (sId) => {
                 const sScores = {};
                 games.filter(g => g.season === sId && g.type !== 'game-penalty').forEach(g => {
@@ -673,7 +793,7 @@
                 const entries = Object.entries(sScores).sort((a,b)=>b[1]-a[1]);
                 if(entries.length === 0) return null;
                 const uid = entries[0][0];
-                return { uid, score: entries[0][1], name: allPlayers.find(u=>u.id===uid)?.name || '?' };
+                return { uid, score: entries[0][1], name: getFirstName(allPlayers.find(u=>u.id===uid)) || '?' };
             };
 
             const groupedGames = {};
@@ -696,7 +816,7 @@
                     <button onclick="setFilter('history')" class="flex-1 py-2 text-xs font-bold uppercase transition-colors ${leaderboardFilter==='history'?'bg-white text-black shadow-sm rounded-lg':'text-slate-500 hover:text-black'}">${t('filters.history')}</button>
                 </div>
 
-                <!-- RANGLISTE (Aktuelle Auswahl) -->
+                <!-- RANGLISTE -->
                 ${leaderboardFilter === 'season' ? `<h4 class="text-center font-bold text-lg uppercase text-slate-800 -mb-2">Aktuelle Saison: ${currentSeasonId}</h4>` : ''}
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -706,14 +826,13 @@
                         const isLeader = idx === 0 && item.val > 0 && leaderboardFilter !== 'debt';
                         const isDebt = leaderboardFilter === 'debt';
                         
-                        // CLICKABLE CARD
                         return `
                             <div onclick="openMemberModal('${u.id}')" class="retro-card p-3 flex items-center gap-4 cursor-pointer hover:scale-[1.02] hover:shadow-xl transition-all active:scale-100 ${isLeader ? 'bg-yellow-50 border-yellow-500' : ''}">
                                 <div class="absolute top-0 right-0 bg-black text-white px-2 py-1 rounded-bl-lg text-xs font-bold font-mono z-10">#${idx+1}</div>
                                 <div class="avatar-card-frame shrink-0"><img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="avatar-img-pinned"></div>
                                 <div class="flex-1 py-1">
                                     <div class="flex flex-col">
-                                        <div class="font-comic text-2xl text-slate-900 uppercase tracking-wide leading-none mb-1">${u.name}</div>
+                                        <div class="font-comic text-2xl text-slate-900 uppercase tracking-wide leading-none mb-1">${getFirstName(u)}</div>
                                         <div class="text-xs font-bold text-slate-500 uppercase tracking-widest border-b-2 border-slate-200 pb-2 mb-2 w-full">${getTitle(u)}</div>
                                     </div>
                                     <div class="flex items-center justify-between">
@@ -729,7 +848,7 @@
                     }).join('')}
                 </div>
 
-                <!-- SAISON ARCHIV (Nur sichtbar wenn Filter = Season) -->
+                <!-- ARCHIV & HISTORIE -->
                 ${leaderboardFilter === 'season' ? `
                     <div class="mt-12 pt-6 border-t-4 border-slate-200">
                         <h4 class="font-comic text-2xl text-slate-400 uppercase mb-4 text-center">Saison Archiv</h4>
@@ -749,7 +868,6 @@
                     </div>
                 ` : ''}
 
-                <!-- HISTORIE -->
                 ${(leaderboardFilter !== 'debt' && leaderboardFilter !== 'season') ? `
                     <div class="mt-8 border-t-2 border-slate-200 pt-4">
                         <h4 class="font-bold text-sm uppercase text-slate-500 mb-3">${t('filters.history')}</h4>
@@ -768,7 +886,7 @@
                                                 <div class="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0">
                                                     <div class="flex items-center gap-2">
                                                         <img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-6 h-6 rounded-full border border-black bg-black">
-                                                        <span class="text-sm font-bold ${isPen ? 'text-red-600' : 'text-slate-800'}">${p?.name}</span>
+                                                        <span class="text-sm font-bold ${isPen ? 'text-red-600' : 'text-slate-800'}">${getFirstName(p)}</span>
                                                     </div>
                                                     <div class="text-right flex items-center gap-2">
                                                         <div>
@@ -804,7 +922,8 @@
                     <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">${t('tabs.events')}</h3>
                     ${isAdmin() ? `<button onclick="openCreateEventModal()" class="bg-black text-yellow-400 px-3 py-1 text-sm font-bold rounded border-2 border-yellow-400 shadow-md hover:scale-105 transition"><i data-lucide="plus" class="w-4 h-4 inline mr-1"></i> ${t('createEvent')}</button>` : ''}
                 </div>
-                <!-- Fixierte Events -->
+                
+                <!-- CONFIRMED EVENTS -->
                 <div>
                     <h4 class="font-bold text-sm uppercase text-slate-500 mb-3 border-b-2 border-slate-200 pb-1">${t('nextEvents')}</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -813,13 +932,13 @@
                             const date = e.date.toDate();
                             const host = allPlayers.find(u => u.id === e.hostId)?.name || 'Unbekannt';
                             return `
-                            <div class="retro-card p-4 border-l-8 border-l-green-600 relative overflow-hidden">
+                            <div onclick="openEventDetails('${e.id}')" class="retro-card p-4 border-l-8 border-l-green-600 relative overflow-hidden cursor-pointer hover:scale-[1.01] transition-transform">
                                 <div class="stamp-definitiv">${t('definitive')}</div>
                                 <div class="flex justify-between items-start relative z-20">
                                     <div>
                                         <div class="text-3xl font-comic text-slate-800">${date.toLocaleDateString('de-CH', {day:'2-digit', month:'2-digit'})}</div>
                                         <div class="text-lg font-bold text-slate-600">${date.toLocaleDateString('de-CH', {weekday:'long'})} ${e.timeFrom || ''} ${e.timeTo ? '- '+e.timeTo : ''}</div>
-                                        <div class="text-xs mt-2 font-mono bg-slate-100 px-2 py-1 rounded inline-block"><i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${e.location || 'TBD'} @ ${host}</div>
+                                        <div class="text-xs mt-2 font-mono bg-slate-100 px-2 py-1 rounded inline-block"><i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${e.location || 'TBD'} @ ${getFirstName({name:host})}</div>
                                     </div>
                                     <div class="flex -space-x-2">
                                         ${e.attendees.map(uid => `<img src="${getAvatarUrl(allPlayers.find(u=>u.id===uid)||{})}" onerror="this.src='${URL_FALLBACK}'" class="w-8 h-8 rounded-full border-2 border-white bg-black object-cover">`).join('')}
@@ -830,7 +949,8 @@
                         }).join('')}
                     </div>
                 </div>
-                <!-- Umfragen -->
+                
+                <!-- POLLS -->
                 ${polls.length > 0 ? `
                 <div>
                     <h4 class="font-bold text-sm uppercase text-slate-500 mb-3 border-b-2 border-slate-200 pb-1 mt-6">${t('pollEvents')}</h4>
@@ -840,7 +960,7 @@
                             const isJoined = userData && e.attendees.includes(userData.id);
                             const count = e.attendees.length;
                             return `
-                            <div class="retro-card p-3 flex items-center justify-between">
+                            <div class="retro-card p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50" onclick="openEventDetails('${e.id}')">
                                 <div>
                                     <div class="font-bold text-lg text-slate-800">${date.toLocaleDateString('de-CH', {weekday:'short', day:'2-digit', month:'2-digit'})}</div>
                                     <div class="text-xs text-slate-500">${e.location || 'TBD'}</div>
@@ -850,11 +970,9 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <button onclick="${canAction ? `toggleEventJoin('${e.id}', ${isJoined})` : 'openLoginModal()'}" 
-                                        class="px-4 py-2 rounded-lg font-bold text-xs uppercase border-2 border-black shadow-[2px_2px_0_black] transition-all active:translate-y-0.5 active:shadow-none ${canAction ? (isJoined ? 'bg-red-100 text-red-600' : 'bg-green-400 text-black') : 'bg-slate-200 text-slate-400'}">
-                                        ${canAction ? (isJoined ? t('leave') : t('join')) : 'Login'}
-                                    </button>
-                                    ${isAdmin() ? `<button onclick="handleDeleteEvent('${e.id}')" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                                    <div class="px-4 py-2 rounded-lg font-bold text-xs uppercase border-2 border-black shadow-[2px_2px_0_black] transition-all active:translate-y-0.5 active:shadow-none ${canAction ? (isJoined ? 'bg-green-100 text-green-700' : 'bg-white text-black') : 'bg-slate-200 text-slate-400'}">
+                                        ${isJoined ? 'Dabei' : 'Antworten'}
+                                    </div>
                                 </div>
                             </div>`;
                         }).join('')}
@@ -867,21 +985,30 @@
             const allPlayers = getAllPlayers();
             return `
             <div class="space-y-4 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
-                <div class="flex items-center justify-between px-1 mb-2"><h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">${t('tabs.members')}</h3></div>
+                <div class="flex items-center justify-between px-1 mb-2">
+                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">${t('tabs.members')}</h3>
+                </div>
+                
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     ${allPlayers.filter(u => u.role !== 'pending').map(u => `
                         <div class="retro-card p-2 flex flex-col items-center text-center cursor-pointer hover:border-yellow-400 hover:shadow-lg transition-all" onclick="openMemberModal('${u.id}')">
                             <div class="avatar-card-frame mb-2"><img src="${getAvatarUrl(u)}" onerror="this.src='${URL_FALLBACK}'" class="avatar-img-pinned"></div>
-                            <div class="font-bold text-sm uppercase leading-tight">${u.name}</div>
+                            <div class="font-bold text-sm uppercase leading-tight">${getFirstName(u)}</div>
                             <div class="text-[10px] text-slate-500 mt-1 px-2 py-0.5 bg-slate-100 rounded-full">${getTitle(u)}</div>
                             <div class="text-[9px] text-yellow-600 font-bold mt-1 uppercase">${u.role === 'patron' ? t('rolePatron').split(' ')[0] : t('roleActive').split(' ')[0]}</div>
                         </div>
                     `).join('')}
                 </div>
+                
                 ${isMember() ? `
                 <div class="retro-card bg-slate-100 p-4 mt-8 !border-slate-300 md:w-1/2 md:mx-auto">
                     <h4 class="font-bold text-sm uppercase mb-2 flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4"></i> ${t('paymentInfo')}</h4>
-                    <div class="text-xs font-mono space-y-1 text-slate-600"><p>Twint: 078 816 63 50</p><p>IBAN: CH39 0878 1000 2448 0910 0</p><p>Beitrag Aktiv: CHF 30.00 pro Monat</p><p>Beitrag Gönner: CHF 1000.00 pro Jahr</p></div>
+                    <div class="text-xs font-mono space-y-1 text-slate-600">
+                        <p>Twint: 078 816 63 50</p>
+                        <p>IBAN: CH39 0878 1000 2448 0910 0</p>
+                        <p>Beitrag Aktiv: CHF 30.00 pro Monat</p>
+                        <p>Beitrag Gönner: CHF 1000.00 pro Jahr</p>
+                    </div>
                 </div>` : `
                 <div class="px-4 py-6 text-center animate-in fade-in">
                     <div class="retro-card p-4 bg-slate-50 border-dashed md:w-1/2 md:mx-auto">
@@ -910,38 +1037,38 @@
             if (calculatorState.activeStep === 'setup') return `
                 <div class="retro-card p-0 animate-in zoom-in-95 mx-2 overflow-hidden max-w-2xl mx-auto w-full">
                     <div class="bg-slate-100 p-4 border-b-4 border-black text-center"><h2 class="text-3xl font-comic text-slate-800">${t('calcTitle')}</h2></div>
-                    <div class="p-6 space-y-6 bg-white">
+                    <div class="p-6 space-y-6 bg-white flex flex-col items-center">
                         ${[1, 2].map(teamNum => `
-                            <div class="space-y-2">
-                                <div class="inline-block px-2 py-1 bg-black text-white text-xs font-bold uppercase transform -rotate-1">Team ${teamNum}</div>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="space-y-3 w-full text-center">
+                                <div class="inline-block px-4 py-1 bg-black text-white text-sm font-bold uppercase transform -rotate-1 rounded shadow-md">Team ${teamNum}</div>
+                                <div class="flex flex-wrap justify-center gap-3">
                                     ${allPlayers.filter(u=>u.role!=='pending').map(p => `
                                         <button onclick="toggleTeamSelection('${p.id}', ${teamNum})" 
-                                            class="p-2 rounded-lg border-2 transition-all font-bold text-sm flex flex-col items-center justify-center gap-2 overflow-hidden relative
-                                            ${calculatorState[`team${teamNum}`].includes(p.id) ? (teamNum===1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[2px_2px_0_#2563eb]' : 'border-red-600 bg-red-50 text-red-700 shadow-[2px_2px_0_#dc2626]') : calculatorState[teamNum===1?'team2':'team1'].includes(p.id) ? 'opacity-30 border-slate-200 cursor-not-allowed grayscale' : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:-translate-y-1'}">
-                                            <div class="w-10 h-10 rounded-full overflow-hidden border border-black bg-black"><img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom"></div>
-                                            <span class="uppercase text-[10px] truncate w-full text-center">${p.name}</span>
+                                            class="w-20 h-24 p-2 rounded-xl border-2 transition-all font-bold text-sm flex flex-col items-center justify-between gap-1 overflow-hidden relative shadow-sm
+                                            ${calculatorState[`team${teamNum}`].includes(p.id) ? (teamNum===1 ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-[2px_2px_0_#2563eb] scale-105' : 'border-red-600 bg-red-50 text-red-700 shadow-[2px_2px_0_#dc2626] scale-105') : calculatorState[teamNum===1?'team2':'team1'].includes(p.id) ? 'opacity-30 border-slate-200 cursor-not-allowed grayscale' : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:-translate-y-1 bg-white'}">
+                                            <div class="w-12 h-12 rounded-full overflow-hidden border border-black bg-black"><img src="${getAvatarUrl(p)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover object-bottom"></div>
+                                            <span class="uppercase text-[10px] truncate w-full text-center leading-none">${getFirstName(p)}</span>
                                         </button>
                                     `).join('')}
                                 </div>
                             </div>
                         `).join('')}
-                        <button onclick="startCalculatorGame()" ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? 'disabled' : ''}
-                            class="w-full py-4 retro-btn text-xl mt-2 ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none' : ''}">${t('start')}</button>
+                        <div class="w-full pt-4 border-t border-slate-100 mt-2">
+                            <button onclick="startCalculatorGame()" ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? 'disabled' : ''}
+                                class="w-full py-4 retro-btn text-xl shadow-lg ${(calculatorState.team1.length !== 2 || calculatorState.team2.length !== 2) ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none cursor-not-allowed' : 'hover:scale-105'}">${t('start')}</button>
+                        </div>
                     </div>
                 </div>`;
             
-            // --- UPDATED CALCULATOR PLAY VIEW ---
             if (calculatorState.activeStep === 'play') {
                 const t1Members = calculatorState.team1.map(uid => allPlayers.find(u => u.id === uid));
                 const t2Members = calculatorState.team2.map(uid => allPlayers.find(u => u.id === uid));
                 
                 const sumPoints = (teamIdx) => calculatorState.rounds.reduce((acc, r) => {
                     const cardPts = teamIdx === 1 ? r.pA : r.pB;
-                    // Standard Jass: If 157, count 257. Else raw points.
                     const val = cardPts === 157 ? 257 : cardPts;
                     const weis = teamIdx === 1 ? r.wA : r.wB;
-                    return acc + (val * r.mult) + (weis * r.mult); // Weis is also multiplied
+                    return acc + (val * r.mult) + (weis * r.mult); 
                 }, 0);
 
                 const totalA = sumPoints(1);
@@ -950,9 +1077,7 @@
                 return `
                 <div class="flex flex-col h-full animate-in fade-in duration-300 pb-24 px-2 max-w-2xl mx-auto w-full items-center">
                     
-                    <!-- TOP: Scores & Avatars (LARGER SIZE: w-16 h-16) -->
                     <div class="w-full grid grid-cols-2 gap-3 mb-4">
-                        <!-- TEAM 1 (Blue) -->
                         <div class="flex flex-col gap-1 items-center">
                             <div class="flex justify-center gap-1 mb-1">
                                 ${t1Members.map(m => `
@@ -967,7 +1092,6 @@
                             </div>
                         </div>
 
-                        <!-- TEAM 2 (Red) -->
                         <div class="flex flex-col gap-1 items-center">
                             <div class="flex justify-center gap-1 mb-1">
                                 ${t2Members.map(m => `
@@ -983,9 +1107,7 @@
                         </div>
                     </div>
 
-                    <!-- INPUT AREA -->
                     <div class="retro-card p-4 mb-4 bg-white w-full">
-                        <!-- Trumpf Selector -->
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             ${TRUMP_MODES.map(t => `
                                 <button onclick="selectTrump('${t.id}')" 
@@ -1008,7 +1130,6 @@
                             </div>
                         </div>
                         
-                        <!-- Range Slider for easy input -->
                         <div class="mb-4 px-2">
                             <input type="range" id="slider-points" min="0" max="157" value="0" oninput="updateFromSlider(this.value)">
                         </div>
@@ -1027,7 +1148,6 @@
                         <button onclick="submitRound()" class="w-full retro-btn text-xl py-4 shadow-lg hover:translate-y-[-2px] transition-transform">Punkte Buchen</button>
                     </div>
 
-                    <!-- HISTORY & UNDO -->
                     <div class="w-full mb-20">
                         <div class="flex justify-between items-center mb-2 px-1">
                             <h4 class="font-bold text-xs uppercase text-slate-400">Verlauf</h4>
@@ -1079,7 +1199,7 @@
                         calculatorState.penalties.map(p => {
                             const pl = allPlayers.find(u => u.id === p.playerId);
                             return `<li class="flex justify-between items-center text-sm border-b border-red-200 pb-2 last:border-0">
-                                <span>${pl?.name}</span>
+                                <span>${getFirstName(pl)}</span>
                                 <div class="text-right">
                                     <span class="block font-bold text-red-600">+ CHF ${p.amount}</span>
                                     <span class="text-[10px] text-red-400 uppercase">${p.reason}</span>
@@ -1267,6 +1387,58 @@
 
         window.openCreateEventModal = () => { document.getElementById('modal-container').innerHTML = renderCreateEventModal(); if (window.lucide) window.lucide.createIcons(); };
         
+        // --- NEW CALENDAR LOGIC ACTIONS ---
+        window.openEventDetails = (eid) => { document.getElementById('modal-container').innerHTML = renderEventDetailsModal(eid); if (window.lucide) window.lucide.createIcons(); };
+        window.downloadICSForEvent = (eid) => { const e = events.find(x => x.id === eid); if(e) downloadICS(e); };
+
+        // ADMIN EVENT MANAGEMENT
+        window.enableEditMode = (eid) => { editEventId = eid; window.openEventDetails(eid); };
+        
+        window.updateEventData = async (eid) => {
+            const d = document.getElementById('edit-date').value;
+            const t1 = document.getElementById('edit-time-from').value;
+            const t2 = document.getElementById('edit-time-to').value;
+            const loc = document.getElementById('edit-loc').value;
+            
+            if(!d || !t1) return;
+            
+            const eventRef = doc(db, COLLECTIONS.EVENTS, eid);
+            await updateDoc(eventRef, {
+                date: new Date(d+'T'+t1),
+                timeFrom: t1, timeTo: t2, location: loc
+            });
+            
+            editEventId = null;
+            closeModal(null,true);
+            
+            // SEND UPDATE EMAIL TO PARTICIPANTS
+            const event = events.find(e => e.id === eid);
+            const attendees = event.attendees || [];
+            if(attendees.length > 0) {
+                const participantEmails = users.filter(u => attendees.includes(u.id) && u.email).map(u => u.email);
+                if(participantEmails.length > 0) {
+                    const subject = `UPDATE: Jass am ${new Date(d).toLocaleDateString('de-CH')}`;
+                    const body = `Hoi zäme\n\nEs gab eine Anpassung beim Termin!\n\nNeues Datum: ${new Date(d).toLocaleDateString('de-CH')}\nZeit: ${t1} Uhr\nOrt: ${loc}\n\nBitte prüfen!`;
+                    // Deep Link
+                    const baseUrl = window.location.href.split('?')[0];
+                    const link = `${baseUrl}?eid=${eid}`;
+                    await sendSystemEmail(participantEmails, subject, body, link);
+                }
+            } else {
+                alert("Event aktualisiert (keine Teilnehmer zu benachrichtigen).");
+            }
+        };
+
+        window.forceRemoveUserFromEvent = async (eid, uid) => {
+            if(!confirm("Diesen User wirklich austragen?")) return;
+            const eventRef = doc(db, COLLECTIONS.EVENTS, eid);
+            const snap = await getDoc(eventRef);
+            let att = snap.data().attendees || [];
+            att = att.filter(id => id !== uid);
+            await updateDoc(eventRef, { attendees: att, status: 'poll' }); // Set back to poll if someone is removed
+            window.openEventDetails(eid); // Refresh modal
+        };
+
         window.submitNewEvent = async () => {
             const d = document.getElementById('new-event-date').value;
             const t1 = document.getElementById('new-event-time-from').value;
@@ -1276,28 +1448,77 @@
             
             if(!d || !t1) return;
             
-            await addDoc(collection(db, COLLECTIONS.EVENTS), {
+            // a) Save
+            const docRef = await addDoc(collection(db, COLLECTIONS.EVENTS), {
                 date: new Date(d+'T'+t1),
-                timeFrom: t1,
-                timeTo: t2,
-                location: loc, 
-                hostId: hostId, 
-                attendees: [user.uid], 
-                status: 'poll', 
-                season: currentSeasonId
+                timeFrom: t1, timeTo: t2, location: loc, hostId: hostId, 
+                attendees: [user.uid], declined: [], status: 'confirmed', season: currentSeasonId 
             });
-            closeModal(null,true);
+            
+            // b) Generate Link
+            const baseUrl = window.location.href.split('?')[0];
+            const inviteLink = `${baseUrl}?eid=${docRef.id}`;
+            
+            // c) Prepare Emails
+            const allActiveEmails = users.filter(u => (u.role === 'active' || u.role === 'admin') && u.email).map(u => u.email);
+            const hostName = getFirstName({name: users.find(u => u.id === hostId)?.name || 'Einem Host'});
+            const subject = `Neue Jass-Runde: ${new Date(d).toLocaleDateString('de-CH')}`;
+            const body = `Hoi Jassgenossen\n\nEin neuer Termin steht!\n\nDatum: ${new Date(d).toLocaleDateString('de-CH')}\nZeit: ${t1} Uhr\nOrt: ${loc} (bei ${hostName})\n\nBitte hier direkt an/abmelden:`;
+            
+            closeModal(null,true); 
+            
+            // d) Automatischer Versand
+            await sendSystemEmail(allActiveEmails, subject, body, inviteLink);
         };
-        
-        window.toggleEventJoin = async (eid, joined) => {
+
+        window.updateEventStatus = async (eid, status) => {
             const ref = doc(db, COLLECTIONS.EVENTS, eid);
             const snap = await getDoc(ref);
             if(!snap.exists()) return;
-            let att = snap.data().attendees || [];
-            if(joined) att = att.filter(id => id !== user.uid);
-            else if(!att.includes(user.uid)) att.push(user.uid);
-            await updateDoc(ref, { attendees: att, status: att.length >= 4 ? 'confirmed' : 'poll' });
+            
+            let data = snap.data();
+            let attendees = data.attendees || [];
+            let declined = data.declined || [];
+            
+            attendees = attendees.filter(id => id !== user.uid);
+            declined = declined.filter(id => id !== user.uid);
+            
+            if (status === 'join') attendees.push(user.uid);
+            if (status === 'decline') declined.push(user.uid);
+            
+            let newStatus = data.status || 'poll'; // Default to poll until full
+            let justConfirmed = false;
+            
+            if (status === 'join' && attendees.length === 4) {
+                newStatus = 'confirmed';
+                justConfirmed = true; 
+            }
+
+            await updateDoc(ref, { attendees, declined, status: newStatus });
+            
+            if(document.getElementById('modal-container').innerHTML !== '') {
+                window.openEventDetails(eid);
+            }
+
+            // AUTO-EMAIL BEI 4 SPIELERN
+            if(justConfirmed) {
+                const baseUrl = window.location.href.split('?')[0];
+                const eventLink = `${baseUrl}?eid=${eid}`;
+
+                const dObj = data.date.toDate();
+                const dStr = dObj.toLocaleDateString('de-CH');
+                
+                // Empfänger: Nur die 4 Teilnehmer
+                const participantEmails = users.filter(u => attendees.includes(u.id) && u.email).map(u => u.email);
+                
+                const subject = `DEFINITIV: Jass am ${dStr}`;
+                const body = `Die Runde ist komplett!\n\nDatum: ${dStr}\nStart: ${data.timeFrom} Uhr\nLocation: ${data.location}\n\nTermin Details & Kalender-Export hier:`;
+                
+                await sendSystemEmail(participantEmails, subject, body, eventLink);
+            }
         };
+
+        // --- CALCULATOR & OTHER ACTIONS ---
         
         window.toggleTeamSelection = (pid, team) => {
             const other = team === 1 ? 2 : 1;
@@ -1407,7 +1628,6 @@
                 
                 const losingTeamId = s1 >= 2500 ? 2 : 1;
                 const losingTeamScore = s1 >= 2500 ? s2 : s1;
-                const winningTeamScore = s1 >= 2500 ? s1 : s2;
                 const losingMembers = calculatorState[`team${losingTeamId}`];
 
                 losingMembers.forEach(uid => {
@@ -1489,9 +1709,6 @@
                 users = sn.docs.map(d=>({id:d.id, ...d.data()}));
                 if(user) userData = users.find(u => u.id === user.uid) || userData;
                 if(userData?.role === 'admin') pendingUsers = users.filter(u => u.role === 'pending');
-                const modalContainer = document.getElementById('modal-container');
-                if (modalContainer && modalContainer.innerHTML !== '') {
-                }
                 renderApp();
             });
             onSnapshot(query(collection(db, COLLECTIONS.GAMES), orderBy('timestamp', 'desc')), sn => {
@@ -1525,6 +1742,14 @@
                 } else {
                     userData = null;
                     renderApp();
+                }
+                
+                // DEEP LINK CHECK
+                const urlParams = new URLSearchParams(window.location.search);
+                const eid = urlParams.get('eid');
+                if(eid && user) {
+                    // Warte kurz bis Events geladen sind
+                    setTimeout(() => window.openEventDetails(eid), 1500);
                 }
             });
         };
