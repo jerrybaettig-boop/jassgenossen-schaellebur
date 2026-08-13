@@ -225,6 +225,12 @@
             border-radius: 3px; 
             border: 1px solid #94a3b8; 
         }
+
+        /* BRACKET */
+        .bracket-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .bracket-col { min-width: 220px; }
+        .bracket-match { background:#fff; }
+        .bracket-connector { position:relative; }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -289,8 +295,38 @@
             { id: 'undeufe', label: 'Undeufe', mult: 3, icon: '⬆️' }, 
         ];
 
+        // --- DOPPEL-K.O. TURNIERBAUM VORLAGEN ---
+        // Jedes Match: id, round (Anzeige), teamASeed/teamBSeed (Index im Team-Array, nur für Runde 1),
+        // winnerTo / loserTo = "matchId:slot" wohin Sieger/Verlierer weiterrücken. isGrandFinal markiert das Final.
+        const BRACKET_TEMPLATES = {
+            4: [
+                { id: 'wb1-1', round: 'WB R1', teamASeed: 0, teamBSeed: 1, winnerTo: 'wbf:A', loserTo: 'lb1:A' },
+                { id: 'wb1-2', round: 'WB R1', teamASeed: 2, teamBSeed: 3, winnerTo: 'wbf:B', loserTo: 'lb1:B' },
+                { id: 'lb1', round: 'LB R1', isLB: true, winnerTo: 'lbf:A' },
+                { id: 'wbf', round: 'WB Final', winnerTo: 'gf:A', loserTo: 'lbf:B' },
+                { id: 'lbf', round: 'LB Final', isLB: true, winnerTo: 'gf:B' },
+                { id: 'gf', round: 'Grand Final', isGrandFinal: true }
+            ],
+            8: [
+                { id: 'wb1-1', round: 'WB R1', teamASeed: 0, teamBSeed: 1, winnerTo: 'wb2-1:A', loserTo: 'lb1-1:A' },
+                { id: 'wb1-2', round: 'WB R1', teamASeed: 2, teamBSeed: 3, winnerTo: 'wb2-1:B', loserTo: 'lb1-1:B' },
+                { id: 'wb1-3', round: 'WB R1', teamASeed: 4, teamBSeed: 5, winnerTo: 'wb2-2:A', loserTo: 'lb1-2:A' },
+                { id: 'wb1-4', round: 'WB R1', teamASeed: 6, teamBSeed: 7, winnerTo: 'wb2-2:B', loserTo: 'lb1-2:B' },
+                { id: 'lb1-1', round: 'LB R1', isLB: true, winnerTo: 'lb2-1:A' },
+                { id: 'lb1-2', round: 'LB R1', isLB: true, winnerTo: 'lb2-2:A' },
+                { id: 'wb2-1', round: 'WB Halbfinal', winnerTo: 'wbf:A', loserTo: 'lb2-1:B' },
+                { id: 'wb2-2', round: 'WB Halbfinal', winnerTo: 'wbf:B', loserTo: 'lb2-2:B' },
+                { id: 'lb2-1', round: 'LB R2', isLB: true, winnerTo: 'lb3:A' },
+                { id: 'lb2-2', round: 'LB R2', isLB: true, winnerTo: 'lb3:B' },
+                { id: 'lb3', round: 'LB Halbfinal', isLB: true, winnerTo: 'lbf:A' },
+                { id: 'wbf', round: 'WB Final', winnerTo: 'gf:A', loserTo: 'lbf:B' },
+                { id: 'lbf', round: 'LB Final', isLB: true, winnerTo: 'gf:B' },
+                { id: 'gf', round: 'Grand Final', isGrandFinal: true }
+            ]
+        };
+
         const URL_FALLBACK = "https://ui-avatars.com/api/?background=000&color=fff";
-        const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings' };
+        const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings', GENJASS: 'jass_genjass_reg', BRACKET: 'jass_bracket' };
         
         // --- C. STATE ---
         let app, auth, db, user;
@@ -312,12 +348,14 @@
         let currentSeasonId = '2025';
         let registrationRole = 'active';
         let editEventId = null; 
+        let genJassRegs = [];
+        let bracketData = null;
 
         // --- D. TRANSLATIONS ---
         const translations = {
             de: {
                 subtitle: "Liga der Jass-Legenden",
-                tabs: { leaderboard: "Statistik", events: "Events", calculator: "Match", members: "Member", admin: "Admin" },
+                tabs: { leaderboard: "Statistik", events: "Events", calculator: "Match", members: "Member", admin: "Admin", genjass: "Generationen Jass", bracket: "Turnierbaum" },
                 filters: { debt: "Schulden", season: "Aktuelle Saison", history: "Jass-Historie" },
                 loginTitle: "Jass-Login", loginMemberBtn: "Login für Mitglieder", loginGuest: "Als Gast (Zuschauer)",
                 registerTitle: "Mitgliedschaft beantragen", registerBtn: "Registrieren", guestBtn: "Ich bleibe als Gast",
@@ -346,11 +384,22 @@
                 saveEmail: "Speichern & Email", cancelBtn: "Abbruch",
                 team1: "Team 1", team2: "Team 2", cards: "Karten", gameAbort: "Spiel Abbrechen",
                 seasonArchive: "Saison Archiv", currentSeason: "Aktuelle Saison", newSeasonStart: "Neue Saison Starten",
-                requests: "Anfragen", approve: "Aktiv", approvePatron: "Gönner", reject: "Löschen"
+                requests: "Anfragen", approve: "Aktiv", approvePatron: "Gönner", reject: "Löschen",
+                genjassTitle: "Generationen Jass", genjassSubtitle: "Registrier dich für das Wochenend-Event!",
+                genjassRegisterBtn: "Jetzt registrieren", genjassNamePlaceholder: "Dein Name",
+                genjassRegistered: "Registriert", genjassAlreadyIn: "Du bist bereits dabei!",
+                genjassTeamsBtn: "Teams auslosen", genjassTeamsRedo: "Neu auslosen", genjassTeamsTitle: "Teams",
+                genjassResetBtn: "Registrierung zurücksetzen", genjassNoTeamsYet: "Teams wurden noch nicht ausgelost.",
+                genjassMinTeams: "Mind. 4 Personen (gerade Anzahl) nötig für die Auslosung.",
+                bracketTitle: "Turnierbaum", bracketGenerate: "Turnier starten", bracketReset: "Turnier zurücksetzen",
+                bracketNoData: "Noch kein Turnier gestartet.", bracketNeedTeams: "Bitte zuerst unter 'Generationen Jass' Teams auslosen.",
+                bracketWB: "Winner Bracket", bracketLB: "Loser Bracket", bracketGF: "Grand Final", bracketGF2: "Entscheidungsspiel",
+                bracketPickWinner: "Sieger wählen", bracketTBD: "TBD", bracketBye: "Freilos", bracketChampion: "Champion",
+                bracketEnterScore: "Resultat"
             },
             en: {
                 subtitle: "League of Jass-Legends",
-                tabs: { leaderboard: "Stats", events: "Events", calculator: "Match", members: "Members", admin: "Admin" },
+                tabs: { leaderboard: "Stats", events: "Events", calculator: "Match", members: "Members", admin: "Admin", genjass: "Generations Jass", bracket: "Bracket" },
                 filters: { debt: "Debts", season: "Current Season", history: "History" },
                 loginTitle: "Jass Login", loginMemberBtn: "Member Login", loginGuest: "Guest Access",
                 registerTitle: "Apply for Membership", registerBtn: "Register", guestBtn: "Stay as Guest",
@@ -379,7 +428,18 @@
                 saveEmail: "Save & Email", cancelBtn: "Cancel",
                 team1: "Team 1", team2: "Team 2", cards: "Cards", gameAbort: "Abort Game",
                 seasonArchive: "Season Archive", currentSeason: "Current Season", newSeasonStart: "Start New Season",
-                requests: "Requests", approve: "Active", approvePatron: "Patron", reject: "Reject"
+                requests: "Requests", approve: "Active", approvePatron: "Patron", reject: "Reject",
+                genjassTitle: "Generations Jass", genjassSubtitle: "Register for the weekend event!",
+                genjassRegisterBtn: "Register now", genjassNamePlaceholder: "Your name",
+                genjassRegistered: "Registered", genjassAlreadyIn: "You're already in!",
+                genjassTeamsBtn: "Draw teams", genjassTeamsRedo: "Redraw", genjassTeamsTitle: "Teams",
+                genjassResetBtn: "Reset registrations", genjassNoTeamsYet: "Teams not drawn yet.",
+                genjassMinTeams: "Min. 4 people (even number) needed to draw teams.",
+                bracketTitle: "Bracket", bracketGenerate: "Start tournament", bracketReset: "Reset tournament",
+                bracketNoData: "No tournament started yet.", bracketNeedTeams: "Please draw teams under 'Generations Jass' first.",
+                bracketWB: "Winner Bracket", bracketLB: "Loser Bracket", bracketGF: "Grand Final", bracketGF2: "Decider Match",
+                bracketPickWinner: "Pick winner", bracketTBD: "TBD", bracketBye: "Bye", bracketChampion: "Champion",
+                bracketEnterScore: "Score"
             }
         };
 
@@ -1406,8 +1466,193 @@
             </div>`;
         };
 
+        const renderGenJass = () => {
+            const isRegistered = user && genJassRegs.find(r => r.uid === user.uid);
+            const teamed = genJassRegs.filter(r => r.teamNumber != null);
+            const hasTeams = teamed.length > 0;
+            const teamsMap = {};
+            teamed.forEach(r => { (teamsMap[r.teamNumber] = teamsMap[r.teamNumber] || []).push(r); });
+            const teamNumbers = Object.keys(teamsMap).sort((a,b)=>a-b);
+            const canDraw = genJassRegs.length >= 4 && genJassRegs.length % 2 === 0;
+
+            return `
+            <div class="space-y-6 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
+                <div class="text-center mb-2">
+                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">${t('genjassTitle')}</h3>
+                    <p class="text-sm text-slate-500">${t('genjassSubtitle')}</p>
+                </div>
+
+                ${!isRegistered ? `
+                <div class="retro-card p-4 max-w-md mx-auto">
+                    <div class="flex gap-2">
+                        <input type="text" id="genjass-name" placeholder="${t('genjassNamePlaceholder')}" class="retro-input flex-1 px-3 py-2" value="${userData ? userData.name : ''}">
+                        <button onclick="registerGenJass()" class="retro-btn px-4">${t('genjassRegisterBtn')}</button>
+                    </div>
+                </div>` : `
+                <div class="text-center">
+                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-700 border-2 border-green-500 px-4 py-2 rounded-lg font-bold text-sm uppercase"><i data-lucide="check-circle" class="w-4 h-4"></i> ${t('genjassAlreadyIn')}</span>
+                </div>`}
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-slate-500 mb-3 border-b-2 border-slate-200 pb-1">${t('genjassRegistered')} (${genJassRegs.length})</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        ${genJassRegs.length === 0 ? `<div class="text-slate-400 text-sm italic col-span-full">${t('noEntries')}</div>` :
+                        genJassRegs.map(r => `
+                            <div class="retro-card p-2 flex flex-col items-center text-center">
+                                <div class="avatar-card-frame mb-2"><img src="${r.avatar || URL_FALLBACK + '&name=' + encodeURIComponent(r.name)}" onerror="this.src='${URL_FALLBACK}'" class="avatar-img-pinned"></div>
+                                <div class="font-bold text-sm uppercase leading-tight">${r.name.split(' ')[0]}</div>
+                                ${r.teamNumber != null ? `<div class="text-[9px] text-blue-600 font-bold mt-1 uppercase">Team ${parseInt(r.teamNumber)+1}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${isAdmin() ? `
+                <div class="retro-card p-4 !border-yellow-400 border-l-8">
+                    <div class="flex flex-wrap gap-2 items-center justify-between">
+                        <div class="text-xs text-slate-500">${canDraw ? '' : t('genjassMinTeams')}</div>
+                        <div class="flex gap-2">
+                            <button onclick="randomizeGenJassTeams()" ${canDraw ? '' : 'disabled'} class="retro-btn py-2 px-4 text-sm ${canDraw ? '' : '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none cursor-not-allowed'}">${hasTeams ? t('genjassTeamsRedo') : t('genjassTeamsBtn')}</button>
+                            ${genJassRegs.length > 0 ? `<button onclick="resetGenJass()" class="bg-white border-2 border-red-400 text-red-500 px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-red-50">${t('genjassResetBtn')}</button>` : ''}
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-slate-500 mb-3 border-b-2 border-slate-200 pb-1">${t('genjassTeamsTitle')}</h4>
+                    ${!hasTeams ? `<div class="text-slate-400 text-sm italic">${t('genjassNoTeamsYet')}</div>` : `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${teamNumbers.map(tn => `
+                            <div class="retro-card p-3 border-l-8 border-l-blue-600">
+                                <div class="font-comic text-lg mb-2">Team ${parseInt(tn)+1}</div>
+                                <div class="flex flex-wrap gap-3">
+                                    ${teamsMap[tn].map(r => `
+                                        <div class="flex items-center gap-2">
+                                            <img src="${r.avatar || URL_FALLBACK + '&name=' + encodeURIComponent(r.name)}" onerror="this.src='${URL_FALLBACK}'" class="w-8 h-8 rounded-full border border-black object-cover bg-black">
+                                            <span class="font-bold text-sm">${r.name.split(' ')[0]}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>`}
+                </div>
+            </div>`;
+        };
+
+        const renderBracket = () => {
+            if (!bracketData || !bracketData.matches) {
+                const teamed = genJassRegs.filter(r => r.teamNumber != null);
+                const teamCount = teamed.length > 0 ? new Set(teamed.map(r=>r.teamNumber)).size : 0;
+                return `
+                <div class="px-4 py-12 text-center animate-in fade-in">
+                    <div class="retro-card p-8 bg-slate-50 border-dashed max-w-md mx-auto">
+                        <i data-lucide="git-branch" class="w-12 h-12 mx-auto text-slate-300 mb-4"></i>
+                        <h3 class="font-comic text-xl text-slate-800 mb-2">${t('bracketTitle')}</h3>
+                        <p class="text-sm text-slate-500 mb-6">${teamCount >= 2 ? t('bracketNoData') : t('bracketNeedTeams')}</p>
+                        ${isAdmin() && teamCount >= 2 ? `<button onclick="generateBracket()" class="retro-btn py-3 px-6">${t('bracketGenerate')}</button>` : ''}
+                    </div>
+                </div>`;
+            }
+
+            const matches = bracketData.matches;
+            const teamsById = {};
+            (bracketData.teams || []).forEach(tm => teamsById[tm.id] = tm);
+
+            const teamLabel = (mId, slot) => {
+                const m = matches.find(x => x.id === mId);
+                if (!m) return t('bracketTBD');
+                const tid = slot === 'A' ? m.teamA : m.teamB;
+                if (!tid) return t('bracketTBD');
+                if (tid === 'BYE') return t('bracketBye');
+                const tm = teamsById[tid];
+                return tm ? tm.name : t('bracketTBD');
+            };
+
+            const renderMatchCard = (m) => {
+                const nameA = teamLabel(m.id, 'A');
+                const nameB = teamLabel(m.id, 'B');
+                const done = !!m.winnerId;
+                const canPick = isAdmin() && m.teamA && m.teamB && m.teamA !== 'BYE' && m.teamB !== 'BYE' && !done;
+                return `
+                <div class="bracket-match retro-card p-2 !rounded-lg mb-6 !shadow-[3px_3px_0_black]">
+                    <div class="text-[9px] font-bold uppercase text-slate-400 mb-1">${m.round}</div>
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between px-2 py-1 rounded ${done && m.winnerId===m.teamA ? 'bg-green-100 font-bold text-green-800' : 'bg-slate-50'}">
+                            <span class="text-xs truncate">${nameA}</span>
+                            ${canPick ? `<button onclick="submitBracketResult('${m.id}','A')" class="text-[9px] bg-black text-white px-2 py-0.5 rounded uppercase">${t('bracketPickWinner')}</button>` : (done && m.winnerId===m.teamA ? `<i data-lucide="crown" class="w-3 h-3 text-yellow-500"></i>` : '')}
+                        </div>
+                        <div class="flex items-center justify-between px-2 py-1 rounded ${done && m.winnerId===m.teamB ? 'bg-green-100 font-bold text-green-800' : 'bg-slate-50'}">
+                            <span class="text-xs truncate">${nameB}</span>
+                            ${canPick ? `<button onclick="submitBracketResult('${m.id}','B')" class="text-[9px] bg-black text-white px-2 py-0.5 rounded uppercase">${t('bracketPickWinner')}</button>` : (done && m.winnerId===m.teamB ? `<i data-lucide="crown" class="w-3 h-3 text-yellow-500"></i>` : '')}
+                        </div>
+                    </div>
+                </div>`;
+            };
+
+            const wbMatches = matches.filter(m => !m.isLB && !m.isGrandFinal);
+            const lbMatches = matches.filter(m => m.isLB);
+            const gf = matches.find(m => m.id === 'gf');
+            const gf2 = matches.find(m => m.id === 'gf2');
+            const champion = gf2 ? (gf2.winnerId ? teamsById[gf2.winnerId]?.name : null) : (gf && gf.winnerId === gf.teamA ? teamsById[gf.winnerId]?.name : null);
+
+            const groupByRound = (list) => {
+                const g = {};
+                list.forEach(m => { (g[m.round] = g[m.round] || []).push(m); });
+                return g;
+            };
+            const wbRounds = groupByRound(wbMatches);
+            const lbRounds = groupByRound(lbMatches);
+
+            return `
+            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-6xl mx-auto w-full">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">${t('bracketTitle')}</h3>
+                    ${isAdmin() ? `<button onclick="resetBracket()" class="bg-white border-2 border-red-400 text-red-500 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-red-50">${t('bracketReset')}</button>` : ''}
+                </div>
+
+                ${champion ? `
+                <div class="retro-card p-6 text-center !border-yellow-500 bg-yellow-50">
+                    <div class="text-xs uppercase text-yellow-700 font-bold tracking-widest mb-1">${t('bracketChampion')}</div>
+                    <div class="text-4xl font-comic text-yellow-700">🏆 ${champion}</div>
+                </div>` : ''}
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-blue-700 mb-3">${t('bracketWB')}</h4>
+                    <div class="bracket-scroll flex gap-6 pb-2">
+                        ${Object.entries(wbRounds).map(([round, ms]) => `
+                            <div class="bracket-col shrink-0">
+                                <div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${round}</div>
+                                ${ms.map(renderMatchCard).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-red-700 mb-3">${t('bracketLB')}</h4>
+                    <div class="bracket-scroll flex gap-6 pb-2">
+                        ${Object.entries(lbRounds).map(([round, ms]) => `
+                            <div class="bracket-col shrink-0">
+                                <div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${round}</div>
+                                ${ms.map(renderMatchCard).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-yellow-700 mb-3">${t('bracketGF')}</h4>
+                    <div class="bracket-scroll flex gap-6 pb-2">
+                        <div class="bracket-col shrink-0">${renderMatchCard(gf)}</div>
+                        ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${t('bracketGF2')}</div>${renderMatchCard(gf2)}</div>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        };
+
         const renderApp = () => {
-            const tabKeys = ['leaderboard', 'events', 'calculator', 'members'];
+            const tabKeys = ['leaderboard', 'events', 'calculator', 'members', 'genjass', 'bracket'];
             if (isAdmin()) tabKeys.push('admin');
 
             document.getElementById('app').innerHTML = `
@@ -1424,6 +1669,8 @@
                       activeTab === 'events' ? renderEvents() :
                       activeTab === 'members' ? renderMembers() :
                       activeTab === 'calculator' ? renderCalculator() :
+                      activeTab === 'genjass' ? renderGenJass() :
+                      activeTab === 'bracket' ? renderBracket() :
                       activeTab === 'admin' ? renderAdminPanel() : ''
                     }
                     <footer class="text-center py-8 text-slate-400 text-xs pb-32 md:pb-8 relative z-10 font-mono">
@@ -1434,11 +1681,11 @@
                         <p class="uppercase tracking-widest">&copy; 2025 Jassgenossen Schällebur</p>
                     </footer>
                 </main>
-                <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300">
+                <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300 overflow-x-auto">
                      ${tabKeys.map(k => {
                         const isActive = activeTab === k;
-                        const icons = { leaderboard: 'trophy', calculator: 'calculator', events: 'calendar', members: 'users', admin: 'shield' };
-                        return `<button onclick="setActiveTab('${k}')" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${isActive ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="${icons[k]}" class="w-5 h-5 ${isActive ? 'fill-current' : ''}"></i></button>`;
+                        const icons = { leaderboard: 'trophy', calculator: 'calculator', events: 'calendar', members: 'users', admin: 'shield', genjass: 'shuffle', bracket: 'git-branch' };
+                        return `<button onclick="setActiveTab('${k}')" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 ${isActive ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="${icons[k]}" class="w-5 h-5 ${isActive ? 'fill-current' : ''}"></i></button>`;
                     }).join('')}
                 </nav>
                 `}
@@ -1658,6 +1905,122 @@
         window.handleDeleteGame = async (id) => { if(!confirm("Löschen?")) return; if(prompt("Code") !== "JG2020") return; await deleteDoc(doc(db, COLLECTIONS.GAMES, id)); }; 
         window.handleDeleteEvent = async (id) => { if(!confirm(t('deleteEvent')+"?")) return; await deleteDoc(doc(db, COLLECTIONS.EVENTS, id)); closeModal(null,true); };
 
+        // --- GENERATIONEN JASS: REGISTRIERUNG & TEAM-RANDOMISER ---
+        window.registerGenJass = async () => {
+            const nameInput = document.getElementById('genjass-name');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) return alert('Bitte Namen eingeben.');
+            if (!user) { window.guestMode = true; }
+            const uid = user ? user.uid : 'guest-' + Date.now();
+            const already = genJassRegs.find(r => r.uid === uid || r.name.toLowerCase() === name.toLowerCase());
+            if (already) return alert(t('genjassAlreadyIn'));
+            try {
+                await addDoc(collection(db, COLLECTIONS.GENJASS), {
+                    uid, name, avatar: (userData && userData.avatar) || (user && user.photoURL) || '',
+                    teamNumber: null, timestamp: serverTimestamp()
+                });
+            } catch (e) {
+                console.error('GenJass Registrierung fehlgeschlagen:', e);
+                alert('Fehler beim Speichern: ' + e.message + '\n\n(Meist sind das die Firestore Security Rules — die Collection "jass_genjass_reg" braucht eine Schreib-Regel.)');
+            }
+        };
+
+        window.randomizeGenJassTeams = async () => {
+            if (genJassRegs.length < 4 || genJassRegs.length % 2 !== 0) return alert(t('genjassMinTeams'));
+            if (!confirm(t('genjassTeamsBtn') + '?')) return;
+            const shuffled = [...genJassRegs].sort(() => Math.random() - 0.5);
+            const batch = writeBatch(db);
+            shuffled.forEach((r, idx) => {
+                const teamNumber = Math.floor(idx / 2);
+                batch.update(doc(db, COLLECTIONS.GENJASS, r.id), { teamNumber });
+            });
+            try { await batch.commit(); } catch (e) { console.error(e); alert('Fehler beim Auslosen: ' + e.message); }
+        };
+
+        window.resetGenJass = async () => {
+            if (!confirm(t('genjassResetBtn') + '?')) return;
+            const batch = writeBatch(db);
+            genJassRegs.forEach(r => batch.delete(doc(db, COLLECTIONS.GENJASS, r.id)));
+            try {
+                await batch.commit();
+                await deleteDoc(doc(db, COLLECTIONS.BRACKET, 'current')).catch(() => {});
+            } catch (e) { console.error(e); alert('Fehler beim Zurücksetzen: ' + e.message); }
+        };
+
+        // --- TURNIERBAUM: DOPPEL-K.O. ---
+        window.generateBracket = async () => {
+            const teamed = genJassRegs.filter(r => r.teamNumber != null);
+            const teamsMap = {};
+            teamed.forEach(r => { (teamsMap[r.teamNumber] = teamsMap[r.teamNumber] || []).push(r.name.split(' ')[0]); });
+            let teamList = Object.keys(teamsMap).sort((a,b)=>a-b).map(tn => ({ id: 'team-' + tn, name: teamsMap[tn].join(' & ') }));
+            if (teamList.length < 2) return alert(t('bracketNeedTeams'));
+            if (!confirm(t('bracketGenerate') + '?')) return;
+
+            teamList = [...teamList].sort(() => Math.random() - 0.5);
+            const size = teamList.length <= 4 ? 4 : 8;
+            while (teamList.length < size) teamList.push({ id: 'BYE', name: t('bracketBye') });
+
+            const template = BRACKET_TEMPLATES[size];
+            const matches = template.map(tpl => {
+                const m = { id: tpl.id, round: tpl.round, isLB: !!tpl.isLB, isGrandFinal: !!tpl.isGrandFinal, winnerTo: tpl.winnerTo || null, loserTo: tpl.loserTo || null, teamA: null, teamB: null, winnerId: null };
+                if (tpl.teamASeed !== undefined) m.teamA = teamList[tpl.teamASeed].id;
+                if (tpl.teamBSeed !== undefined) m.teamB = teamList[tpl.teamBSeed].id;
+                return m;
+            });
+
+            // Freilose sofort auflösen (Bye gewinnt automatisch weiter)
+            const resolveByes = (list) => {
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    list.forEach(m => {
+                        if (!m.winnerId && m.teamA && m.teamB) {
+                            let winner = null, loser = null;
+                            if (m.teamA === 'BYE' && m.teamB !== 'BYE') { winner = m.teamB; loser = 'BYE'; }
+                            else if (m.teamB === 'BYE' && m.teamA !== 'BYE') { winner = m.teamA; loser = 'BYE'; }
+                            if (winner) {
+                                m.winnerId = winner;
+                                changed = true;
+                                if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winner; }
+                                if (m.loserTo && loser !== 'BYE') { const [mid, slot] = m.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loser; }
+                            }
+                        }
+                    });
+                }
+            };
+            resolveByes(matches);
+
+            try {
+                await setDoc(doc(db, COLLECTIONS.BRACKET, 'current'), { teams: teamList.filter(t=>t.id!=='BYE'), matches, createdAt: serverTimestamp() });
+            } catch (e) { console.error(e); alert('Fehler beim Erstellen des Turnierbaums: ' + e.message); }
+        };
+
+        window.submitBracketResult = async (matchId, winningSlot) => {
+            if (!bracketData) return;
+            const matches = JSON.parse(JSON.stringify(bracketData.matches));
+            const m = matches.find(x => x.id === matchId);
+            if (!m) return;
+            const winnerId = winningSlot === 'A' ? m.teamA : m.teamB;
+            const loserId = winningSlot === 'A' ? m.teamB : m.teamA;
+            m.winnerId = winnerId;
+
+            if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = matches.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winnerId; }
+            if (m.loserTo) { const [mid, slot] = m.loserTo.split(':'); const target = matches.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loserId; }
+
+            // Grand Final Logik: wenn LB-Champion (Slot B) gewinnt, Entscheidungsspiel (gf2) erzeugen
+            if (m.id === 'gf' && winningSlot === 'B') {
+                if (!matches.find(x => x.id === 'gf2')) {
+                    matches.push({ id: 'gf2', round: t('bracketGF2'), isGrandFinal: true, winnerTo: null, loserTo: null, teamA: m.teamA, teamB: m.teamB, winnerId: null });
+                }
+            }
+
+            try {
+                await updateDoc(doc(db, COLLECTIONS.BRACKET, 'current'), { matches });
+            } catch (e) { console.error(e); alert('Fehler beim Speichern des Resultats: ' + e.message); }
+        };
+
+        window.resetBracket = async () => { if(!confirm(t('bracketReset')+'?')) return; try { await deleteDoc(doc(db, COLLECTIONS.BRACKET, 'current')); } catch(e) { console.error(e); alert('Fehler: ' + e.message); } };
+
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
 
         // --- INIT ---
@@ -1676,6 +2039,8 @@
             onSnapshot(query(collection(db, COLLECTIONS.GAMES), orderBy('timestamp', 'desc')), sn => { games = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
             onSnapshot(query(collection(db, COLLECTIONS.EVENTS), orderBy('date', 'asc')), sn => { events = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
             onSnapshot(doc(db, COLLECTIONS.SETTINGS, 'config'), sn => { if(sn.exists()) currentSeasonId = sn.data().currentSeason || '2025'; renderApp(); });
+            onSnapshot(query(collection(db, COLLECTIONS.GENJASS), orderBy('timestamp', 'asc')), sn => { genJassRegs = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+            onSnapshot(doc(db, COLLECTIONS.BRACKET, 'current'), sn => { bracketData = sn.exists() ? sn.data() : null; renderApp(); });
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;
