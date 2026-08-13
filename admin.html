@@ -256,7 +256,8 @@
 
         const ADMIN_EMAILS = [
             "jerry.baettig@gmail.com",
-            "jassgenossenschallebur@gmail.com"
+            "jassgenossenschallebur@gmail.com",
+            "baettig.laurent@gmail.com"
         ];
         
         const CLUB_EMAIL = "jassgenossenschallebur@gmail.com";
@@ -343,6 +344,7 @@
         let editEventId = null;
 
         const PAGE_KEY = 'admin';
+        const PAGE_TITLE = 'Admin';
         const AUTO_LOGIN_MODE = 'required';
 
         // --- D. TRANSLATIONS ---
@@ -634,30 +636,32 @@
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
 
-        // --- NEUE SEITEN-NAVIGATION (ersetzt Tab-Switching) ---
+        // --- NEUE SEITEN-NAVIGATION ---
+        // visibility: 'all' (auch Gäste), 'members' (nur eingeloggte Aktiv-/Gönner-Mitglieder), 'admin' (nur Admins)
         const NAV_ITEMS = [
-            { key: 'leaderboard', label: 'Statistik', href: 'statistik.html', icon: 'trophy', membersOnly: false },
-            { key: 'calculator',  label: 'Match',     href: 'match.html',     icon: 'calculator', membersOnly: false },
-            { key: 'members',     label: 'Member',    href: 'members.html',  icon: 'users', membersOnly: false },
-            { key: 'termine',     label: 'Termine',   href: 'termine.html',  icon: 'calendar', membersOnly: false },
-            { key: 'jassevents',  label: 'Jass-Events', href: 'events.html', icon: 'flag', membersOnly: false },
-            { key: 'admin',       label: 'Admin',     href: 'admin.html',    icon: 'shield', membersOnly: true },
+            { key: 'leaderboard', label: 'Statistik',   href: 'statistik.html', icon: 'trophy',     visibility: 'all' },
+            { key: 'members',     label: 'Member',      href: 'members.html',   icon: 'users',       visibility: 'all' },
+            { key: 'jassevents',  label: 'Jass-Events',  href: 'events.html',   icon: 'flag',        visibility: 'all' },
+            { key: 'freispiel',   label: 'Freispiel',   href: 'freispiel.html', icon: 'shuffle',    visibility: 'all' },
+            { key: 'calculator',  label: 'Match',       href: 'match.html',     icon: 'calculator',  visibility: 'members' },
+            { key: 'termine',     label: 'Termine',     href: 'termine.html',   icon: 'calendar',    visibility: 'members' },
+            { key: 'admin',       label: 'Admin',       href: 'admin.html',     icon: 'shield',      visibility: 'admin' },
         ];
+        const navItemAllowed = (i) => i.visibility === 'all' || (i.visibility === 'members' && isMember()) || (i.visibility === 'admin' && isAdmin());
 
         const renderTopNav = (activeKey) => {
-            const items = NAV_ITEMS.filter(i => !i.membersOnly || isAdmin());
+            const items = NAV_ITEMS.filter(navItemAllowed);
             return `
-            <div class="hidden md:flex justify-center gap-2 -mt-4 relative z-20 mb-8 px-2 flex-wrap">
-                <a href="index.html" class="px-5 py-2 rounded border-2 border-black font-comic text-lg uppercase shadow-[3px_3px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all bg-white" title="Home"><i data-lucide="home" class="w-5 h-5"></i></a>
+            <div class="hidden md:flex justify-center gap-2 mb-8 px-2 flex-wrap">
                 ${items.map(i => `<a href="${i.href}" class="px-5 py-2 rounded border-2 border-black font-comic text-lg uppercase shadow-[3px_3px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all bg-white ${activeKey===i.key?'tab-btn-active':''}">${i.label}</a>`).join('')}
             </div>`;
         };
 
         const renderBottomNav = (activeKey) => {
-            const items = NAV_ITEMS.filter(i => !i.membersOnly || isAdmin());
+            const items = NAV_ITEMS.filter(navItemAllowed);
             return `
             <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300 overflow-x-auto">
-                <a href="index.html" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 text-slate-400 hover:text-slate-800"><i data-lucide="home" class="w-5 h-5"></i></a>
+                <a href="index.html" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 ${activeKey==='home' ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="home" class="w-5 h-5"></i></a>
                 ${items.map(i => {
                     const isActive = activeKey === i.key;
                     return `<a href="${i.href}" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 ${isActive ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="${i.icon}" class="w-5 h-5 ${isActive ? 'fill-current' : ''}"></i></a>`;
@@ -674,15 +678,38 @@
                 <p class="uppercase tracking-widest">&copy; 2025 Jassgenossen Schällebur</p>
             </footer>`;
 
+        // Kompakter, sticky Header für alle Seiten ausser der Startseite:
+        // links = zurück zum Hauptmenü, Mitte = Seitentitel, rechts = Login/Avatar.
+        const renderCompactHeader = (title) => `
+            <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
+                <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
+                    <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
+                        <div class="w-9 h-9 rounded-full bg-black text-yellow-400 flex items-center justify-center group-hover:scale-105 transition-transform"><i data-lucide="home" class="w-5 h-5"></i></div>
+                        <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
+                    </a>
+                    <h1 class="font-comic text-lg sm:text-2xl text-slate-900 uppercase truncate text-center flex-1">${title}</h1>
+                    <div class="shrink-0">
+                        ${userData && userData.role !== 'pending' ? `
+                            <button onclick="signOutUser()" class="w-9 h-9 rounded-full border-2 border-black overflow-hidden bg-black block" title="Abmelden">
+                                <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
+                            </button>` : `
+                            <button onclick="openLoginModal()" class="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center bg-white" title="Login">
+                                <i data-lucide="key" class="w-4 h-4"></i>
+                            </button>`}
+                    </div>
+                </div>
+            </header>`;
+
         // mountPage: gemeinsamer Seitenrahmen (Header, Login/Registrierung/Pending-Gates, Nav, Footer)
-        // PAGE_KEY, AUTO_LOGIN_MODE ('none' | 'members' | 'required') werden pro Seite gesetzt.
+        // PAGE_KEY, PAGE_TITLE, AUTO_LOGIN_MODE ('none' | 'members' | 'required') werden pro Seite gesetzt.
         const mountPage = (contentHtml) => {
             const forcedLoginNow = (AUTO_LOGIN_MODE === 'members' && !user && !window.guestMode)
                 || (AUTO_LOGIN_MODE === 'required' && !user && !userData && !window.guestMode);
+            const isHome = PAGE_KEY === 'home';
             document.getElementById('app').innerHTML = `
                 ${forcedLoginNow ? renderLoginModal() : ''}
                 ${(user && !userData) ? renderRegistration() : ''}
-                ${(userData && userData.role === 'pending') ? renderPendingScreen() : `
+                ${(userData && userData.role === 'pending') ? renderPendingScreen() : (isHome ? `
                 ${renderHeader()}
                 <main class="max-w-6xl mx-auto -mt-8 relative z-10 min-h-screen flex flex-col">
                     ${renderTopNav(PAGE_KEY)}
@@ -690,7 +717,15 @@
                     ${renderFooter()}
                 </main>
                 ${renderBottomNav(PAGE_KEY)}
-                `}
+                ` : `
+                ${renderCompactHeader(PAGE_TITLE)}
+                <main class="max-w-6xl mx-auto relative z-10 min-h-screen flex flex-col pt-6">
+                    ${renderTopNav(PAGE_KEY)}
+                    ${contentHtml}
+                    ${renderFooter()}
+                </main>
+                ${renderBottomNav(PAGE_KEY)}
+                `)}
             `;
             if (window.lucide) window.lucide.createIcons();
             window.removeEventListener('scroll', handleScroll);

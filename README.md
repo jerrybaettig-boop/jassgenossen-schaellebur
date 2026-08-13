@@ -28,7 +28,7 @@ Die App ist neu auf **10 einzelne HTML-Dateien** aufgeteilt statt einer riesigen
 5. **Turnierbaum + Events als eigener Bereich, unabhängig von den Mitglieder-Seiten** – erledigt: `events.html`, `event.html`, `bracket.html`, `freispiel.html` laden nicht den ganzen Mitglieder-Code, sondern nur was sie brauchen.
 6. **Freispiele für Gäste** – `freispiel.html`, kein Login nötig.
 7. **Konfigurierbare Zählweise pro Event** – beim Event-Erstellen wählbar: "Klassisch" (Eichel/Rose 1×, Schälle/Schilte 2×, Obenabe/Undeufe 3× – das bisherige Schällebur-Standard), "Einfach" (alle 1×, Obenabe/Undeufe 2×), "Alles gleich" (alle 1×) oder frei editierbar. **Hinweis:** Es gibt keine einzige offizielle gesamtschweizerische Multiplikator-Tabelle, das ist Klub-/Verbandskonvention – darum die freie Wahl statt einer Vorgabe.
-8. **Live-Eintragen im Turnierbaum** – jedes Match im Turnierbaum lässt sich anklicken, öffnet eine Mini-Jasstafel mit den für dieses Event geltenden Regeln. Punkte werden rundenweise gespeichert und sind für alle sofort live sichtbar (Firestore `onSnapshot`). Berechtigt zum Eintragen sind Admins sowie eingeloggte Mitglieder, die selbst in einem der beiden Teams stehen.
+8. **Live-Eintragen im Turnierbaum** – jedes Match im Turnierbaum lässt sich anklicken, öffnet eine Mini-Jasstafel mit den für dieses Event geltenden Regeln. Punkte werden rundenweise gespeichert und sind für alle sofort live sichtbar (Firestore `onSnapshot`). Berechtigt zum Eintragen sind Admins sowie alle registrierten Teilnehmer ihres eigenen Matches – dank der anonymen Firebase-Anmeldung (siehe unten) funktioniert das jetzt auch für Gäste ohne Google-Konto, nicht nur für eingeloggte Mitglieder.
 
 ## Neue Firestore-Collections
 
@@ -43,7 +43,7 @@ Die alten `jass_genjass_reg` / `jass_bracket` Collections werden von der neuen S
 
 ## Firestore Security Rules (Vorschlag)
 
-Da sich bei euch auch nicht eingeloggte Gäste registrieren und Freispiele erfassen können sollen, braucht es hierfür offene, aber eingeschränkte Schreibrechte. Ungetesteter Vorschlag zum Ergänzen eurer bestehenden `firestore.rules` – bitte vor dem Deployen selbst in der Firebase Console gegenprüfen:
+Da ihr in der Firebase Console unter **Authentication → Anmeldemethode** bereits "Anonym" aktiviert habt: Der Code auf den 5 neuen Seiten (`index`, `events`, `event`, `bracket`, `freispiel`) meldet Besucher jetzt automatisch im Hintergrund anonym an (`signInAnonymously`), sobald sie eine dieser Seiten öffnen — ganz ohne Klick, ohne Google-Konto. Dadurch hat *jeder* echte Besucher eine gültige Firebase-Session mit stabiler `uid`, auch Gäste. Das erlaubt euch, die Regeln enger zu fassen als "für alle offen":
 
 ```
 match /jass_tourneys/{id} {
@@ -52,21 +52,36 @@ match /jass_tourneys/{id} {
 }
 match /jass_tourney_registrations/{id} {
   allow read: if true;
-  allow create: if true; // auch Gäste ohne Login dürfen sich anmelden
+  allow create: if request.auth != null; // auch anonyme Gäste dürfen sich anmelden
   allow update, delete: if request.auth != null;
 }
 match /jass_tourney_brackets/{id} {
   allow read: if true;
-  allow write: if request.auth != null; // Eintragen nur eingeloggt
+  allow write: if request.auth != null; // Resultate eintragen: eigene Berechtigungsprüfung passiert im Frontend (Admin oder Team-Mitglied)
 }
 match /jass_free_games/{id} {
   allow read: if true;
-  allow create: if true; // auch Gäste dürfen Freispiele erfassen
+  allow create: if request.auth != null; // auch anonyme Gäste dürfen Freispiele erfassen
   allow update, delete: if request.auth != null;
 }
 ```
 
+Wichtig: Diese Regeln lassen **jeden mit gültiger Firebase-Session** (also auch anonyme Gäste) schreiben — das ist bewusst so, weil ihr ja wollt, dass sich Gäste ohne Konto registrieren können. Sie blockieren aber zumindest simple Bots/Skripte, die gar keine Firebase-Session aufbauen. Für strengeren Schutz (z.B. Rate-Limiting oder Validierung der Feldinhalte) müsste man die Regeln weiter ausbauen — sagt Bescheid, falls das ein Thema wird.
+
+**Nur die neuen Seiten melden sich anonym an**, die bestehenden Mitglieder-Seiten (`statistik`, `match`, `members`, `admin`, `termine`) wurden bewusst nicht angefasst — dort bleibt die Login-Logik (Google-Login für Mitglieder) unverändert wie bisher.
+
+## Update (2. Runde)
+
+- **Neuer Admin:** `baettig.laurent@gmail.com` ist in `ADMIN_EMAILS` ergänzt. Wirkt automatisch beim nächsten Google-Login von Laurent (egal ob er sich neu registriert oder schon einen Account hat).
+- **Layout:** Nur `index.html` zeigt noch den grossen Hero-Header mit Logo. Alle anderen Seiten haben einen kompakten, **sticky** Header (bleibt beim Scrollen oben) mit: Home-Icon links (zurück zum Hauptmenü), Seitentitel in der Mitte, Login/Avatar rechts. Responsive getestet (Text "Hauptmenü" verschwindet auf kleinen Screens, nur Icon bleibt). Die Navigationsleiste (Desktop: Reihe oben, Mobile: Leiste unten) bleibt zusätzlich bestehen, damit man zwischen Bereichen wechseln kann, nicht nur zurück zum Hauptmenü.
+- **Sichtbarkeit für Gäste:** "Match" und "Termine" erscheinen in der Navigation nur noch für eingeloggte Mitglieder (`isMember()`). Gäste/Event-User sehen: Statistik, Member, Jass-Events, Freispiel. Ruft ein Gast `termine.html` trotzdem direkt über die URL auf, sieht er eine "Nur für Mitglieder"-Karte mit Login-Button statt der Jassrunden-Liste. Die Startseite zeigt jetzt zusätzlich eine kurze Klub-Präsentation ("D'Jassgenosse Schällebur") — das ist bewusst als Platzhalter-Text markiert, den ihr durch eure echte Geschichte ersetzen könnt.
+- **Event-Seite bleibt "zuhause":** Auf `event.html?id=…` gibt es jetzt direkt einen Bereich "Sonderspiele / Freispiele", in dem alle (auch Gäste) spontane Spiele erfassen können, ohne die Seite zu verlassen. Der Link zur eigenständigen `freispiel.html` bleibt als Alternative bestehen.
+
+### Kleiner technischer Hinweis
+Für die Freispiele-Liste auf der Event-Seite wird eine einfache Firestore-Abfrage ohne zusammengesetzten Index verwendet (Sortierung passiert im Browser). Falls Firestore beim ersten Live-Test trotzdem einen Hinweis auf einen fehlenden Index anzeigt, einfach auf den von Firebase automatisch generierten Link klicken – erledigt sich in der Regel von selbst.
+
 ## Bekannte Einschränkungen / offene Punkte
+
 
 - Die neuen Seiten (`events`, `event`, `bracket`, `freispiel`, `index`) sind nur auf Deutsch (kein DE/EN-Umschalter wie bei den bestehenden Seiten) – lässt sich bei Bedarf nachrüsten.
 - Der Turnierbaum unterstützt 4, 8 oder 16 Teams (Doppel-K.O., gleiche Logik wie zuvor).

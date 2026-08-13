@@ -256,7 +256,8 @@
 
         const ADMIN_EMAILS = [
             "jerry.baettig@gmail.com",
-            "jassgenossenschallebur@gmail.com"
+            "jassgenossenschallebur@gmail.com",
+            "baettig.laurent@gmail.com"
         ];
         
         const CLUB_EMAIL = "jassgenossenschallebur@gmail.com";
@@ -428,10 +429,12 @@
         let tourney = null;
         let bracketDoc = null;
         let freeGames = [];
+        let eventFreeGames = [];
         let currentTourneyId = null;
         let freeGameEventId = null;
 
         const PAGE_KEY = 'jassevents';
+        const PAGE_TITLE = 'Event';
         const AUTO_LOGIN_MODE = 'none';
 
         // --- D. TRANSLATIONS ---
@@ -684,6 +687,126 @@
             return map[s] || map.draft;
         };
 
+        let evFreeGame = { open: false, step: 'setup', team1: '', team2: '', rounds: [], trump: null };
+
+        const evFreeGameSum = (side) => {
+            const mults = (tourney && tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            return evFreeGame.rounds.reduce((acc, r) => {
+                const cardPts = side === 'A' ? r.pA : r.pB;
+                const val = cardPts === 157 ? 257 : cardPts;
+                const weis = side === 'A' ? r.wA : r.wB;
+                const mult = mults[r.trumpId] || 1;
+                return acc + (val * mult) + (weis * mult);
+            }, 0);
+        };
+
+        const renderEventFreeGamesSection = () => {
+            if (!tourney) return '';
+            const games = eventFreeGames || [];
+            return `
+            <div class="retro-card p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-bold text-sm uppercase flex items-center gap-2"><i data-lucide="shuffle" class="w-4 h-4"></i> Sonderspiele / Freispiele</h4>
+                    ${!evFreeGame.open ? `<button onclick="toggleEventFreeGame(true)" class="text-xs font-bold bg-black text-yellow-400 px-3 py-1.5 rounded uppercase">+ Neues Freispiel</button>` : ''}
+                </div>
+                <p class="text-xs text-slate-500 mb-3">Für spontane Spiele ausserhalb des Turnierbaums — bleibt hier im Event, keine separate Seite nötig.</p>
+
+                ${evFreeGame.open ? renderEventFreeGameForm() : ''}
+
+                <div class="space-y-2 mt-3">
+                    ${games.length === 0 ? '<div class="text-slate-400 text-sm italic">Noch keine erfasst.</div>' : games.map(g => `
+                        <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded p-2 text-xs">
+                            <span>${g.team1} <b>${g.totalA}</b> — <b>${g.totalB}</b> ${g.team2}</span>
+                            <span class="text-slate-400 font-mono">${g.timestamp ? g.timestamp.toDate().toLocaleDateString('de-CH') : ''}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        };
+
+        const renderEventFreeGameForm = () => {
+            if (evFreeGame.step === 'setup') return `
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-3 space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="ev-fg-team1" value="${evFreeGame.team1}" placeholder="Team 1 Namen" class="retro-input px-3 py-2 text-sm">
+                        <input type="text" id="ev-fg-team2" value="${evFreeGame.team2}" placeholder="Team 2 Namen" class="retro-input px-3 py-2 text-sm">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="startEventFreeGame()" class="flex-1 retro-btn py-2 text-sm">Start</button>
+                        <button onclick="toggleEventFreeGame(false)" class="px-4 text-xs font-bold text-slate-400 uppercase">Abbrechen</button>
+                    </div>
+                </div>`;
+
+            const modes = trumpModesFromRules(tourney.rules);
+            if (!evFreeGame.trump) evFreeGame.trump = modes[0].id;
+            const totalA = evFreeGameSum('A'), totalB = evFreeGameSum('B');
+            return `
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-3">
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div class="retro-card !min-h-0 bg-blue-50 p-2 text-center !border-blue-800"><div class="text-[10px] uppercase text-blue-400 font-bold">${evFreeGame.team1}</div><div class="text-2xl font-comic text-blue-900">${totalA}</div></div>
+                    <div class="retro-card !min-h-0 bg-red-50 p-2 text-center !border-red-800"><div class="text-[10px] uppercase text-red-400 font-bold">${evFreeGame.team2}</div><div class="text-2xl font-comic text-red-900">${totalB}</div></div>
+                </div>
+                <div class="grid grid-cols-3 gap-1 mb-3">
+                    ${modes.map(m => `
+                        <button onclick="selectEventFreeTrump('${m.id}')" class="flex flex-col items-center justify-center p-1.5 rounded border-2 ${evFreeGame.trump===m.id?'bg-slate-800 text-white border-slate-900':'bg-white border-slate-200 text-slate-500'}">
+                            <span class="text-lg">${m.icon}</span><span class="text-[8px] font-bold uppercase">${m.mult}×</span>
+                        </button>`).join('')}
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <input type="number" id="ev-fg-pa" placeholder="Punkte" class="retro-input px-2 py-2 text-center text-lg">
+                    <input type="number" id="ev-fg-pb" placeholder="Punkte" class="retro-input px-2 py-2 text-center text-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <input type="number" id="ev-fg-wa" placeholder="Weis" class="border-b-2 border-slate-300 bg-transparent text-center py-1 text-sm">
+                    <input type="number" id="ev-fg-wb" placeholder="Weis" class="border-b-2 border-slate-300 bg-transparent text-center py-1 text-sm">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="submitEventFreeRound()" class="flex-1 retro-btn py-2 text-sm">Runde speichern</button>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-2">${evFreeGame.rounds.length} Runde(n)</div>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="finishEventFreeGame()" class="flex-1 retro-btn-secondary retro-btn py-2 text-xs">Spiel speichern &amp; beenden</button>
+                    <button onclick="toggleEventFreeGame(false)" class="px-3 text-xs font-bold text-slate-400 uppercase">Abbrechen</button>
+                </div>
+            </div>`;
+        };
+
+        window.toggleEventFreeGame = (open) => {
+            evFreeGame = { open, step: 'setup', team1: '', team2: '', rounds: [], trump: null };
+            renderApp();
+        };
+        window.startEventFreeGame = () => {
+            const t1 = document.getElementById('ev-fg-team1').value.trim();
+            const t2 = document.getElementById('ev-fg-team2').value.trim();
+            if (!t1 || !t2) return alert('Bitte beide Teams benennen.');
+            evFreeGame.team1 = t1; evFreeGame.team2 = t2; evFreeGame.step = 'play';
+            renderApp();
+        };
+        window.selectEventFreeTrump = (id) => { evFreeGame.trump = id; renderApp(); };
+        window.submitEventFreeRound = () => {
+            const pa = parseInt(document.getElementById('ev-fg-pa').value) || 0;
+            const pb = parseInt(document.getElementById('ev-fg-pb').value) || 0;
+            const wa = parseInt(document.getElementById('ev-fg-wa').value) || 0;
+            const wb = parseInt(document.getElementById('ev-fg-wb').value) || 0;
+            if (pa === 0 && pb === 0) return alert('Bitte Punkte eingeben.');
+            evFreeGame.rounds.push({ trumpId: evFreeGame.trump, pA: pa, pB: pb, wA: wa, wB: wb });
+            renderApp();
+        };
+        window.finishEventFreeGame = async () => {
+            if (evFreeGame.rounds.length === 0) return alert('Noch keine Runde erfasst.');
+            const totalA = evFreeGameSum('A'), totalB = evFreeGameSum('B');
+            await addDoc(collection(db, TCOL.FREEGAMES), {
+                eventId: tourney.id,
+                team1: evFreeGame.team1, team2: evFreeGame.team2,
+                rounds: evFreeGame.rounds, totalA, totalB, winnerTeam: totalA >= totalB ? 1 : 2,
+                rulesUsed: (tourney.rules && tourney.rules.preset) || 'klassisch', mults: (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults,
+                createdByName: (userData && userData.name) || 'Gast',
+                timestamp: serverTimestamp(),
+            });
+            evFreeGame = { open: false, step: 'setup', team1: '', team2: '', rounds: [], trump: null };
+            renderApp();
+        };
+
         const renderRulesTable = (rules) => {
             const modes = trumpModesFromRules(rules);
             return `
@@ -732,15 +855,17 @@
                 </a>` : ''}
 
                 <a href="freispiel.html?eventId=${tourney.id}" class="w-full block text-center py-2 text-xs font-bold text-slate-400 hover:text-black uppercase tracking-widest">
-                    + Sonderspiel/Freispiel im Rahmen dieses Events erfassen
+                    (alternativ: als eigenständige Seite öffnen)
                 </a>
+
+                ${renderEventFreeGamesSection()}
 
                 ${(tourney.status === 'registration' || tourney.status === 'draft') ? `
                 <div class="retro-card p-5">
                     <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Anmeldung</h4>
                     ${myReg ? `<div class="text-sm text-green-700 font-bold flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Du bist angemeldet als ${myReg.name}</div>` : `
                     <div class="flex gap-2">
-                        <input type="text" id="reg-self-name" placeholder="${user ? (userData?.name || 'Dein Name') : 'Dein Name (auch als Gast)'}" value="${userData?.name || ''}" class="retro-input flex-1 px-3 py-2">
+                        <input type="text" id="reg-self-name" placeholder="${userData?.name ? userData.name : 'Dein Name (auch als Gast)'}" value="${userData?.name || ''}" class="retro-input flex-1 px-3 py-2">
                         <button onclick="registerSelfForTourney('${tourney.id}')" class="retro-btn px-4">Anmelden</button>
                     </div>`}
                 </div>` : ''}
@@ -812,7 +937,7 @@
             await addDoc(collection(db, TCOL.REGS), {
                 tourneyId, uid: user ? user.uid : null, name,
                 avatar: (userData && userData.avatar) || (user && user.photoURL) || '',
-                isGuest: !user, teamNumber: null, timestamp: serverTimestamp(),
+                isGuest: !userData, teamNumber: null, timestamp: serverTimestamp(),
             });
         };
 
@@ -926,30 +1051,32 @@
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
 
-        // --- NEUE SEITEN-NAVIGATION (ersetzt Tab-Switching) ---
+        // --- NEUE SEITEN-NAVIGATION ---
+        // visibility: 'all' (auch Gäste), 'members' (nur eingeloggte Aktiv-/Gönner-Mitglieder), 'admin' (nur Admins)
         const NAV_ITEMS = [
-            { key: 'leaderboard', label: 'Statistik', href: 'statistik.html', icon: 'trophy', membersOnly: false },
-            { key: 'calculator',  label: 'Match',     href: 'match.html',     icon: 'calculator', membersOnly: false },
-            { key: 'members',     label: 'Member',    href: 'members.html',  icon: 'users', membersOnly: false },
-            { key: 'termine',     label: 'Termine',   href: 'termine.html',  icon: 'calendar', membersOnly: false },
-            { key: 'jassevents',  label: 'Jass-Events', href: 'events.html', icon: 'flag', membersOnly: false },
-            { key: 'admin',       label: 'Admin',     href: 'admin.html',    icon: 'shield', membersOnly: true },
+            { key: 'leaderboard', label: 'Statistik',   href: 'statistik.html', icon: 'trophy',     visibility: 'all' },
+            { key: 'members',     label: 'Member',      href: 'members.html',   icon: 'users',       visibility: 'all' },
+            { key: 'jassevents',  label: 'Jass-Events',  href: 'events.html',   icon: 'flag',        visibility: 'all' },
+            { key: 'freispiel',   label: 'Freispiel',   href: 'freispiel.html', icon: 'shuffle',    visibility: 'all' },
+            { key: 'calculator',  label: 'Match',       href: 'match.html',     icon: 'calculator',  visibility: 'members' },
+            { key: 'termine',     label: 'Termine',     href: 'termine.html',   icon: 'calendar',    visibility: 'members' },
+            { key: 'admin',       label: 'Admin',       href: 'admin.html',     icon: 'shield',      visibility: 'admin' },
         ];
+        const navItemAllowed = (i) => i.visibility === 'all' || (i.visibility === 'members' && isMember()) || (i.visibility === 'admin' && isAdmin());
 
         const renderTopNav = (activeKey) => {
-            const items = NAV_ITEMS.filter(i => !i.membersOnly || isAdmin());
+            const items = NAV_ITEMS.filter(navItemAllowed);
             return `
-            <div class="hidden md:flex justify-center gap-2 -mt-4 relative z-20 mb-8 px-2 flex-wrap">
-                <a href="index.html" class="px-5 py-2 rounded border-2 border-black font-comic text-lg uppercase shadow-[3px_3px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all bg-white" title="Home"><i data-lucide="home" class="w-5 h-5"></i></a>
+            <div class="hidden md:flex justify-center gap-2 mb-8 px-2 flex-wrap">
                 ${items.map(i => `<a href="${i.href}" class="px-5 py-2 rounded border-2 border-black font-comic text-lg uppercase shadow-[3px_3px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all bg-white ${activeKey===i.key?'tab-btn-active':''}">${i.label}</a>`).join('')}
             </div>`;
         };
 
         const renderBottomNav = (activeKey) => {
-            const items = NAV_ITEMS.filter(i => !i.membersOnly || isAdmin());
+            const items = NAV_ITEMS.filter(navItemAllowed);
             return `
             <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300 overflow-x-auto">
-                <a href="index.html" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 text-slate-400 hover:text-slate-800"><i data-lucide="home" class="w-5 h-5"></i></a>
+                <a href="index.html" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 ${activeKey==='home' ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="home" class="w-5 h-5"></i></a>
                 ${items.map(i => {
                     const isActive = activeKey === i.key;
                     return `<a href="${i.href}" class="flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 ${isActive ? 'bg-black text-yellow-400 transform -translate-y-1 shadow-[2px_2px_0_#d80018]' : 'text-slate-400 hover:text-slate-800'}"><i data-lucide="${i.icon}" class="w-5 h-5 ${isActive ? 'fill-current' : ''}"></i></a>`;
@@ -966,15 +1093,38 @@
                 <p class="uppercase tracking-widest">&copy; 2025 Jassgenossen Schällebur</p>
             </footer>`;
 
+        // Kompakter, sticky Header für alle Seiten ausser der Startseite:
+        // links = zurück zum Hauptmenü, Mitte = Seitentitel, rechts = Login/Avatar.
+        const renderCompactHeader = (title) => `
+            <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
+                <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
+                    <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
+                        <div class="w-9 h-9 rounded-full bg-black text-yellow-400 flex items-center justify-center group-hover:scale-105 transition-transform"><i data-lucide="home" class="w-5 h-5"></i></div>
+                        <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
+                    </a>
+                    <h1 class="font-comic text-lg sm:text-2xl text-slate-900 uppercase truncate text-center flex-1">${title}</h1>
+                    <div class="shrink-0">
+                        ${userData && userData.role !== 'pending' ? `
+                            <button onclick="signOutUser()" class="w-9 h-9 rounded-full border-2 border-black overflow-hidden bg-black block" title="Abmelden">
+                                <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
+                            </button>` : `
+                            <button onclick="openLoginModal()" class="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center bg-white" title="Login">
+                                <i data-lucide="key" class="w-4 h-4"></i>
+                            </button>`}
+                    </div>
+                </div>
+            </header>`;
+
         // mountPage: gemeinsamer Seitenrahmen (Header, Login/Registrierung/Pending-Gates, Nav, Footer)
-        // PAGE_KEY, AUTO_LOGIN_MODE ('none' | 'members' | 'required') werden pro Seite gesetzt.
+        // PAGE_KEY, PAGE_TITLE, AUTO_LOGIN_MODE ('none' | 'members' | 'required') werden pro Seite gesetzt.
         const mountPage = (contentHtml) => {
             const forcedLoginNow = (AUTO_LOGIN_MODE === 'members' && !user && !window.guestMode)
                 || (AUTO_LOGIN_MODE === 'required' && !user && !userData && !window.guestMode);
+            const isHome = PAGE_KEY === 'home';
             document.getElementById('app').innerHTML = `
                 ${forcedLoginNow ? renderLoginModal() : ''}
                 ${(user && !userData) ? renderRegistration() : ''}
-                ${(userData && userData.role === 'pending') ? renderPendingScreen() : `
+                ${(userData && userData.role === 'pending') ? renderPendingScreen() : (isHome ? `
                 ${renderHeader()}
                 <main class="max-w-6xl mx-auto -mt-8 relative z-10 min-h-screen flex flex-col">
                     ${renderTopNav(PAGE_KEY)}
@@ -982,7 +1132,15 @@
                     ${renderFooter()}
                 </main>
                 ${renderBottomNav(PAGE_KEY)}
-                `}
+                ` : `
+                ${renderCompactHeader(PAGE_TITLE)}
+                <main class="max-w-6xl mx-auto relative z-10 min-h-screen flex flex-col pt-6">
+                    ${renderTopNav(PAGE_KEY)}
+                    ${contentHtml}
+                    ${renderFooter()}
+                </main>
+                ${renderBottomNav(PAGE_KEY)}
+                `)}
             `;
             if (window.lucide) window.lucide.createIcons();
             window.removeEventListener('scroll', handleScroll);
@@ -1029,6 +1187,11 @@
             auth = getAuth(app);
             db = getFirestore(app);
 
+            // Gäste bekommen automatisch eine anonyme Firebase-Session (stabile uid),
+            // damit Firestore-Regeln "request.auth != null" verlangen können statt komplett offen zu sein,
+            // und damit z.B. eigene Turnierbaum-Resultate später der eigenen Anmeldung zugeordnet werden können.
+            try { if (!auth.currentUser) { await signInAnonymously(auth); } } catch(e) { console.error('Anonyme Anmeldung fehlgeschlagen:', e); }
+
             onSnapshot(query(collection(db, COLLECTIONS.USERS)), sn => {
                 users = sn.docs.map(d=>({id:d.id, ...d.data()}));
                 if(user) userData = users.find(u => u.id === user.uid) || userData;
@@ -1040,6 +1203,7 @@
             if (currentTourneyId) {
                 onSnapshot(doc(db, TCOL.TOURNEYS, currentTourneyId), sn => { tourney = sn.exists() ? { id: sn.id, ...sn.data() } : null; renderApp(); });
                 onSnapshot(query(collection(db, TCOL.REGS), where('tourneyId', '==', currentTourneyId)), sn => { tourneyRegs = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+                onSnapshot(query(collection(db, TCOL.FREEGAMES), where('eventId', '==', currentTourneyId)), sn => { eventFreeGames = sn.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=> (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0)); renderApp(); });
             }
 
             onAuthStateChanged(auth, async (u) => {
