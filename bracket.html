@@ -969,8 +969,8 @@
                     </div>
                     <div class="grid grid-cols-3 gap-2 mb-3">
                         ${modes.map(tm => `
-                            <button onclick="scoringTrump='${tm.id}'; document.getElementById('modal-container').innerHTML = renderScoringModal(); if(window.lucide) window.lucide.createIcons();"
-                                class="flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${scoringTrump === tm.id ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">
+                            <button type="button" data-trump-btn="${tm.id}" onclick="selectScoringTrump('${tm.id}')"
+                                class="trump-mode-btn flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${scoringTrump === tm.id ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">
                                 <span class="text-xl">${tm.icon}</span>
                                 <span class="text-[9px] font-bold uppercase mt-1">${tm.label} <span class="bg-yellow-400 text-black px-1 rounded">${tm.mult}×</span></span>
                             </button>
@@ -1135,11 +1135,30 @@
             if (window.lucide) window.lucide.createIcons();
         };
 
+        window.selectScoringTrump = (id) => {
+            scoringTrump = id;
+            // Nur die Buttons umfärben statt die ganze Maske neu zu rendern —
+            // sonst gehen bereits eingetippte Punkte/Weis-Werte verloren.
+            document.querySelectorAll('#modal-container .trump-mode-btn').forEach(btn => {
+                const active = btn.dataset.trumpBtn === id;
+                btn.classList.toggle('bg-slate-800', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-slate-900', active);
+                btn.classList.toggle('bg-slate-50', !active);
+                btn.classList.toggle('border-slate-200', !active);
+                btn.classList.toggle('text-slate-500', !active);
+            });
+        };
+
         window.syncMatchPoints = (src) => {
             const inA = document.getElementById('score-pa'); const inB = document.getElementById('score-pb');
             let val = parseInt(src === 'a' ? inA.value : inB.value); if (isNaN(val)) val = 0; if (val > 157) val = 157; if (val < 0) val = 0;
             if (src === 'a') { inA.value = val; inB.value = 157 - val; } else { inB.value = val; inA.value = 157 - val; }
         };
+
+        // Gleiche 2500-Punkte-Regel wie beim normalen "Match": Spiel endet automatisch,
+        // sobald ein Team 2500 Punkte erreicht hat.
+        const MATCH_TARGET_POINTS = 2500;
 
         window.submitMatchRound = async () => {
             const pa = parseInt(document.getElementById('score-pa').value) || 0;
@@ -1157,10 +1176,20 @@
             document.getElementById('score-pb').value = '';
             document.getElementById('score-wa').value = '';
             document.getElementById('score-wb').value = '';
+
+            const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const totalA = matchSumPoints(m, mults, 'A'), totalB = matchSumPoints(m, mults, 'B');
+            if (totalA >= MATCH_TARGET_POINTS || totalB >= MATCH_TARGET_POINTS) {
+                alert(`${totalA >= MATCH_TARGET_POINTS ? nameAOf(m) : nameBOf(m)} hat ${MATCH_TARGET_POINTS} Punkte erreicht — Spiel wird automatisch abgeschlossen!`);
+                await window.finalizeMatch(scoringMatchId, totalA >= totalB ? 'A' : 'B', true);
+            }
         };
 
-        window.finalizeMatch = async (matchId, winningSlot) => {
-            if (!confirm('Spiel wirklich abschliessen? Der Sieger rückt im Turnierbaum weiter.')) return;
+        const nameAOf = (m) => { const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm); return (teamsById[m.teamA] || {}).name || 'Team A'; };
+        const nameBOf = (m) => { const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm); return (teamsById[m.teamB] || {}).name || 'Team B'; };
+
+        window.finalizeMatch = async (matchId, winningSlot, skipConfirm) => {
+            if (!skipConfirm && !confirm('Spiel wirklich abschliessen? Der Sieger rückt im Turnierbaum weiter.')) return;
             const matches = JSON.parse(JSON.stringify(bracketDoc.matches));
             const m = matches.find(x => x.id === matchId);
             if (!m) return;

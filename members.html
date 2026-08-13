@@ -1105,7 +1105,22 @@
             renderApp();
         };
         window.startCalculatorGame = () => { calculatorState.activeStep = 'play'; calculatorState.rounds = []; calculatorState.penalties = []; calculatorState.selectedTrump = 'eichel'; renderApp(); };
-        window.selectTrump = (id) => { calculatorState.selectedTrump = id; renderApp(); };
+        window.selectTrump = (id) => {
+            calculatorState.selectedTrump = id;
+            // Nur die Buttons umfärben statt die ganze Maske neu zu rendern —
+            // sonst gehen bereits eingetippte Punkte/Weis-Werte verloren.
+            document.querySelectorAll('.trump-mode-btn').forEach(btn => {
+                const active = btn.dataset.trumpBtn === id;
+                btn.classList.toggle('bg-slate-800', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-slate-900', active);
+                btn.classList.toggle('shadow-inner', active);
+                btn.classList.toggle('bg-slate-50', !active);
+                btn.classList.toggle('border-slate-200', !active);
+                btn.classList.toggle('text-slate-500', !active);
+                btn.classList.toggle('hover:bg-white', !active);
+            });
+        };
         window.updateFromSlider = (val) => { document.getElementById('input-points-a').value = val; calculatePoints('a'); };
         window.calculatePoints = (src) => {
             const inA = document.getElementById('input-points-a'); const inB = document.getElementById('input-points-b'); const slider = document.getElementById('slider-points');

@@ -797,7 +797,7 @@
                     <div class="retro-card p-4 mb-4 bg-white w-full">
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             ${modes.map(m => `
-                                <button onclick="selectFreeTrump('${m.id}')" class="flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${freeGame.trump === m.id ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">
+                                <button type="button" data-trump-btn="${m.id}" onclick="selectFreeTrump('${m.id}')" class="trump-mode-btn flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${freeGame.trump === m.id ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">
                                     <span class="text-2xl">${m.icon}</span>
                                     <span class="text-[10px] font-bold uppercase mt-1">${m.label} <span class="bg-yellow-400 text-black px-1 rounded text-[9px] ml-1">${m.mult}x</span></span>
                                 </button>`).join('')}
@@ -862,13 +862,26 @@
             freeGame.team1 = t1; freeGame.team2 = t2; freeGame.rounds = []; freeGame.step = 'play'; freeGame.trump = TRUMP_SUITS[0].id;
             renderApp();
         };
-        window.selectFreeTrump = (id) => { freeGame.trump = id; renderApp(); };
+        window.selectFreeTrump = (id) => {
+            freeGame.trump = id;
+            document.querySelectorAll('.trump-mode-btn').forEach(btn => {
+                const active = btn.dataset.trumpBtn === id;
+                btn.classList.toggle('bg-slate-800', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-slate-900', active);
+                btn.classList.toggle('bg-slate-50', !active);
+                btn.classList.toggle('border-slate-200', !active);
+                btn.classList.toggle('text-slate-500', !active);
+            });
+        };
 
         window.syncFreePoints = (src) => {
             const inA = document.getElementById('fg-pa'); const inB = document.getElementById('fg-pb');
             let val = parseInt(src === 'a' ? inA.value : inB.value); if (isNaN(val)) val = 0; if (val > 157) val = 157; if (val < 0) val = 0;
             if (src === 'a') { inA.value = val; inB.value = 157 - val; } else { inB.value = val; inA.value = 157 - val; }
         };
+
+        const FREEGAME_TARGET_POINTS = 2500;
 
         window.submitFreeRound = () => {
             const pa = parseInt(document.getElementById('fg-pa').value) || 0;
@@ -878,6 +891,10 @@
             const wb = parseInt(document.getElementById('fg-wb').value) || 0;
             freeGame.rounds.push({ trumpId: freeGame.trump, pA: pa, pB: pb, wA: wa, wB: wb });
             renderApp();
+            const totalA = freeGameSum('A'), totalB = freeGameSum('B');
+            if (totalA >= FREEGAME_TARGET_POINTS || totalB >= FREEGAME_TARGET_POINTS) {
+                setTimeout(() => { alert(`${totalA >= FREEGAME_TARGET_POINTS ? freeGame.team1 : freeGame.team2} hat ${FREEGAME_TARGET_POINTS} Punkte erreicht — Spiel ist entschieden!`); finishFreeGame(); }, 50);
+            }
         };
         window.undoFreeRound = () => { freeGame.rounds.pop(); renderApp(); };
 
@@ -895,6 +912,7 @@
             });
             freeGame.step = 'done';
             renderApp();
+            window.celebrate(false);
         };
 
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---

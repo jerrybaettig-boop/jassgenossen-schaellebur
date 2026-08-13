@@ -109,6 +109,14 @@ Für die Freispiele-Liste auf der Event-Seite wird eine einfache Firestore-Abfra
 
 
 
+## Update (6. Runde) — Bugfix Trumpf-Auswahl + Automatisches Spielende
+
+**Deine Frage "wann ist ein Spiel fertig/gewonnen":** Im Original-Code (Match-Rechner) gibt es dafür schon eine feste Regel, die ich bisher übersehen hatte, in den neuen Bereichen (Turnier, Freispiel) nachzuziehen: **Ein Spiel endet automatisch, sobald ein Team 2500 Punkte erreicht.** Zusätzlich beim normalen Match: Verlierer unter 1500 Punkten bekommt einen "Schneider/Berg"-Straf-Zuschlag, und 0 Punkte in einer Runde gelten als "Match kassiert" (ebenfalls Strafe). Diese 2500-Punkte-Regel gilt jetzt einheitlich überall — Match, Turnierbaum, eingebettetes Event-Freispiel und die eigenständige Freispiel-Seite. Falls ihr für Turniere lieber eine andere Ziel-Punktzahl (oder eine feste Rundenanzahl statt Punkteziel) wollt, sagt Bescheid — aktuell ist das als `MATCH_TARGET_POINTS = 2500` eine einzige Zahl im Code, easy anzupassen.
+
+**Der eigentliche Bug:** Gefunden — beim Klick auf eine Trumpf-Farbe wurde bisher die **komplette Erfassungsmaske neu aufgebaut**. Das hat zwei Sachen kaputt gemacht: eure bereits eingetippten Punkte/Weis-Werte wurden gelöscht, und je nach Zustand konnte es wirken, als würde sich beim Klick gar nichts tun (v.a. bei Obenabe/Undeufe unten in der zweiten Reihe, wenn man in der Zwischenzeit schon zu scrollen versucht hatte). Behoben in allen vier betroffenen Stellen (Match-Rechner, Turnierbaum-Resultat, eingebettetes Event-Freispiel, Freispiel-Seite): Ein Klick auf eine Trumpf-Farbe färbt jetzt nur noch den Button um, ohne die Maske neu zu laden — eure Eingaben bleiben erhalten, und alle sechs Farben (inkl. Obenabe/Undeufe) lassen sich zuverlässig anwählen.
+
+
+
 ## Bekannte Einschränkungen / offene Punkte
 
 - Die neuen Seiten (`events`, `event`, `bracket`, `freispiel`, `index`) sind nur auf Deutsch (kein DE/EN-Umschalter wie bei den bestehenden Seiten) – lässt sich bei Bedarf nachrüsten.

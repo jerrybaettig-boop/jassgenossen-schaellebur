@@ -727,8 +727,8 @@
                     <div class="retro-card p-4 mb-4 bg-white w-full">
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             ${TRUMP_MODES.map(t => `
-                                <button onclick="selectTrump('${t.id}')" 
-                                    class="flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${calculatorState.selectedTrump === t.id ? 'bg-slate-800 text-white border-slate-900 shadow-inner' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white'}">
+                                <button type="button" data-trump-btn="${t.id}" onclick="selectTrump('${t.id}')" 
+                                    class="trump-mode-btn flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${calculatorState.selectedTrump === t.id ? 'bg-slate-800 text-white border-slate-900 shadow-inner' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white'}">
                                     <span class="text-2xl">${t.icon}</span>
                                     <span class="text-[10px] font-bold uppercase mt-1">${t.label} <span class="bg-yellow-400 text-black px-1 rounded text-[9px] ml-1">${t.mult}x</span></span>
                                 </button>
@@ -1154,7 +1154,22 @@
             renderApp();
         };
         window.startCalculatorGame = () => { calculatorState.activeStep = 'play'; calculatorState.rounds = []; calculatorState.penalties = []; calculatorState.selectedTrump = 'eichel'; renderApp(); };
-        window.selectTrump = (id) => { calculatorState.selectedTrump = id; renderApp(); };
+        window.selectTrump = (id) => {
+            calculatorState.selectedTrump = id;
+            // Nur die Buttons umfärben statt die ganze Maske neu zu rendern —
+            // sonst gehen bereits eingetippte Punkte/Weis-Werte verloren.
+            document.querySelectorAll('.trump-mode-btn').forEach(btn => {
+                const active = btn.dataset.trumpBtn === id;
+                btn.classList.toggle('bg-slate-800', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-slate-900', active);
+                btn.classList.toggle('shadow-inner', active);
+                btn.classList.toggle('bg-slate-50', !active);
+                btn.classList.toggle('border-slate-200', !active);
+                btn.classList.toggle('text-slate-500', !active);
+                btn.classList.toggle('hover:bg-white', !active);
+            });
+        };
         window.updateFromSlider = (val) => { document.getElementById('input-points-a').value = val; calculatePoints('a'); };
         window.calculatePoints = (src) => {
             const inA = document.getElementById('input-points-a'); const inB = document.getElementById('input-points-b'); const slider = document.getElementById('slider-points');
