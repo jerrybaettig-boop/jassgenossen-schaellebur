@@ -231,6 +231,29 @@
         .bracket-col { min-width: 220px; }
         .bracket-match { background:#fff; }
         .bracket-connector { position:relative; }
+
+        /* --- TURNIERBAUM: VERBINDUNGSLINIEN --- */
+        .bracket-canvas { position: relative; }
+        .bracket-svg-lines { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+
+        /* --- KONFETTI / JUBEL-EFFEKT --- */
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 2px;
+            animation-name: confetti-fall;
+            animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
+            animation-fill-mode: forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .confetti-piece { animation: none; display: none; }
+        }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -705,6 +728,14 @@
         `;
 
 
+        const computeChampion = (matches, teamsById) => {
+            const gf = matches.find(m => m.id === 'gf');
+            const gf2 = matches.find(m => m.id === 'gf2');
+            if (gf2) return gf2.winnerId ? ((teamsById[gf2.winnerId] || {}).name || null) : null;
+            if (gf && gf.winnerId === gf.teamA) return (teamsById[gf.winnerId] || {}).name || null;
+            return null;
+        };
+
         let scoringMatchId = null;
         let scoringTrump = null;
 
@@ -721,6 +752,50 @@
             const mult = mults[r.trumpId] || 1;
             return acc + (val * mult) + (weis * mult);
         }, 0);
+
+        // Zeichnet SVG-Verbindungslinien zwischen Matches innerhalb einer Bracket-Sektion (WB bzw. LB).
+        window.drawBracketConnectors = () => {
+            if (!bracketDoc || !bracketDoc.matches) return;
+            const sections = [
+                { canvasId: 'wb-canvas', svgId: 'wb-svg', ids: bracketDoc.matches.filter(m => !m.isLB && !m.isGrandFinal).map(m => m.id) },
+                { canvasId: 'lb-canvas', svgId: 'lb-svg', ids: bracketDoc.matches.filter(m => m.isLB).map(m => m.id) },
+            ];
+            sections.forEach(sec => {
+                const canvas = document.getElementById(sec.canvasId);
+                const svg = document.getElementById(sec.svgId);
+                if (!canvas || !svg) return;
+                svg.innerHTML = '';
+                svg.setAttribute('width', canvas.scrollWidth);
+                svg.setAttribute('height', canvas.scrollHeight);
+                const canvasRect = canvas.getBoundingClientRect();
+                sec.ids.forEach(id => {
+                    const m = bracketDoc.matches.find(x => x.id === id);
+                    if (!m || !m.winnerTo) return;
+                    const [targetId] = m.winnerTo.split(':');
+                    if (!sec.ids.includes(targetId)) return;
+                    const srcEl = canvas.querySelector(`[data-match-id="${id}"]`);
+                    const tgtEl = canvas.querySelector(`[data-match-id="${targetId}"]`);
+                    if (!srcEl || !tgtEl) return;
+                    const s = srcEl.getBoundingClientRect(), t = tgtEl.getBoundingClientRect();
+                    const x1 = s.right - canvasRect.left + canvas.scrollLeft;
+                    const y1 = s.top + s.height / 2 - canvasRect.top + canvas.scrollTop;
+                    const x2 = t.left - canvasRect.left + canvas.scrollLeft;
+                    const y2 = t.top + t.height / 2 - canvasRect.top + canvas.scrollTop;
+                    const midX = x1 + (x2 - x1) / 2;
+                    const done = !!m.winnerId;
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`);
+                    path.setAttribute('stroke', done ? '#d4af37' : '#cbd5e1');
+                    path.setAttribute('stroke-width', done ? '3' : '2');
+                    if (!done) path.setAttribute('stroke-dasharray', '5,5');
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-linecap', 'round');
+                    svg.appendChild(path);
+                });
+            });
+        };
+        window.removeEventListener('resize', window.drawBracketConnectors);
+        window.addEventListener('resize', window.drawBracketConnectors);
 
         const renderTourneyBracket = () => {
             if (!tourney) return `<div class="px-4 py-12 text-center text-slate-400 italic">Event wird geladen...</div>`;
@@ -750,7 +825,7 @@
                 return (teamsById[tid] || {}).name || 'TBD';
             };
 
-            const renderTeamRow = (m, slot, total, isWinnerRow, canAct) => {
+            const renderTeamRow = (m, slot, total, isWinnerRow) => {
                 const name = teamName(m.id, slot);
                 const isTBD = name === 'TBD';
                 const isBye = name === 'Freilos';
@@ -776,21 +851,22 @@
                 const canAct = canEnterAsAdmin || canEnterAsParticipant;
 
                 return `
-                <div class="bracket-match-wrap relative mb-7">
-                    <div class="bracket-match rounded-lg overflow-hidden border-2 border-black ${live ? 'ring-2 ring-swiss-red animate-pulse' : ''} ${done ? 'shadow-[3px_3px_0_#d4af37]' : 'shadow-[3px_3px_0_black]'}">
+                <div class="bracket-match-wrap relative mb-7" data-match-id="${m.id}">
+                    <div class="bracket-match rounded-lg overflow-hidden border-2 border-black ${live ? 'ring-2 ring-swiss-red animate-pulse' : ''} ${done ? 'shadow-[3px_3px_0_#d4af37] opacity-90' : 'shadow-[3px_3px_0_black]'}">
                         <div class="flex items-center justify-between px-2 py-1 bg-black">
                             <span class="text-[9px] font-bold uppercase text-yellow-400 tracking-wider">${m.round}</span>
                             ${live ? '<span class="flex items-center gap-1 text-[8px] font-bold uppercase text-red-400"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>Live</span>' : ''}
-                            ${done ? '<i data-lucide="trophy" class="w-3 h-3 text-yellow-400"></i>' : ''}
+                            ${done ? '<i data-lucide="lock" class="w-3 h-3 text-yellow-400"></i>' : ''}
                         </div>
                         <div class="divide-y divide-black/40">
-                            ${renderTeamRow(m, 'A', totalA, done && m.winnerId === m.teamA, canAct)}
-                            ${renderTeamRow(m, 'B', totalB, done && m.winnerId === m.teamB, canAct)}
+                            ${renderTeamRow(m, 'A', totalA, done && m.winnerId === m.teamA)}
+                            ${renderTeamRow(m, 'B', totalB, done && m.winnerId === m.teamB)}
                         </div>
                     </div>
-                    ${canAct ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[10px] ${done ? 'bg-white border-2 border-black text-slate-700' : 'bg-swiss-red text-white border-2 border-black'} py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1">
-                        <i data-lucide="${done ? 'pencil' : (live ? 'play' : 'swords')}" class="w-3 h-3"></i> ${done ? 'Bearbeiten' : (live ? 'Weiterspielen' : 'Spiel starten')}
-                    </button>` : ''}
+                    ${canAct ? (done
+                        ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[9px] bg-white border border-slate-300 text-slate-400 py-1 rounded uppercase hover:text-slate-700 hover:border-slate-400 transition-colors flex items-center justify-center gap-1"><i data-lucide="lock-open" class="w-3 h-3"></i> Admin: wieder öffnen</button>`
+                        : `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[10px] bg-swiss-red text-white border-2 border-black py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1"><i data-lucide="${live ? 'play' : 'swords'}" class="w-3 h-3"></i> ${live ? 'Weiterspielen' : 'Spiel starten'}</button>`
+                    ) : ''}
                 </div>`;
             };
 
@@ -798,27 +874,30 @@
             const lbMatches = matches.filter(m => m.isLB);
             const gf = matches.find(m => m.id === 'gf');
             const gf2 = matches.find(m => m.id === 'gf2');
-            const champion = gf2 ? (gf2.winnerId ? teamsById[gf2.winnerId]?.name : null) : (gf && gf.winnerId === gf.teamA ? teamsById[gf.winnerId]?.name : null);
+            const champion = computeChampion(matches, teamsById);
 
             const groupByRound = (list) => { const g = {}; list.forEach(m => { (g[m.round] = g[m.round] || []).push(m); }); return g; };
             const wbRounds = groupByRound(wbMatches);
             const lbRounds = groupByRound(lbMatches);
 
-            const renderBracketSection = (title, icon, colorClass, rounds) => `
+            const renderBracketSection = (title, icon, colorClass, rounds, canvasId) => `
                 <div>
                     <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full ${colorClass} border-2 border-black shadow-[2px_2px_0_black]">
                         <i data-lucide="${icon}" class="w-4 h-4"></i>
                         <span class="font-comic text-sm uppercase tracking-wide">${title}</span>
                     </div>
-                    <div class="bracket-scroll flex gap-8 pb-4">
+                    <div id="${canvasId}" class="bracket-canvas bracket-scroll flex gap-10 pb-4">
+                        <svg id="${canvasId.replace('canvas','svg')}" class="bracket-svg-lines"></svg>
                         ${Object.entries(rounds).map(([round, ms]) => `
-                            <div class="bracket-col shrink-0 flex flex-col justify-around">
+                            <div class="bracket-col shrink-0 flex flex-col justify-around relative z-10">
                                 <div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">${round}</div>
                                 ${ms.map(renderMatchCard).join('')}
                             </div>
                         `).join('')}
                     </div>
                 </div>`;
+
+            setTimeout(() => window.drawBracketConnectors(), 60);
 
             return `
             <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-6xl mx-auto w-full">
@@ -835,8 +914,10 @@
                     <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(black 1px, transparent 1px); background-size: 14px 14px;"></div>
                     <div class="relative z-10">
                         <i data-lucide="trophy" class="w-12 h-12 mx-auto text-slate-900 mb-2 drop-shadow"></i>
-                        <div class="text-xs uppercase text-slate-800/70 font-bold tracking-[0.3em] mb-1">Champion</div>
+                        <div class="text-xs uppercase text-slate-800/70 font-bold tracking-[0.3em] mb-1">Turnier beendet — Champion</div>
                         <div class="text-5xl font-comic text-slate-900 drop-shadow-sm">${champion}</div>
+                        <p class="text-[11px] text-slate-800/70 mt-3 max-w-sm mx-auto">Das Turnier ist entschieden. Offen bleiben ab jetzt nur noch Freispiele — oder startet auf der Event-Seite eine neue Runde mit denselben Teilnehmern.</p>
+                        <a href="event.html?id=${tourney.id}" class="inline-block mt-3 text-xs font-bold text-slate-900 underline">Zur Event-Seite</a>
                     </div>
                 </div>` : `
                 <div class="retro-card p-3 bg-slate-50 !border-slate-300 flex items-center gap-3 text-xs text-slate-500">
@@ -844,19 +925,19 @@
                     ${isAdmin() ? 'Als Admin könnt ihr jedes Spiel öffnen, um es zu starten oder ein bereits entschiedenes Resultat zu korrigieren.' : 'Klickt euer Match an, um live Resultate einzutragen.'}
                 </div>`}
 
-                ${renderBracketSection('Winner Bracket', 'trending-up', 'bg-blue-100 text-blue-800', wbRounds)}
-                ${Object.keys(lbRounds).length ? renderBracketSection('Loser Bracket', 'trending-down', 'bg-red-100 text-red-800', lbRounds) : ''}
+                ${renderBracketSection('Winner Bracket', 'trending-up', 'bg-blue-100 text-blue-800', wbRounds, 'wb-canvas')}
+                ${Object.keys(lbRounds).length ? renderBracketSection('Loser Bracket', 'trending-down', 'bg-red-100 text-red-800', lbRounds, 'lb-canvas') : ''}
 
-                <div>
-                    <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 border-2 border-black shadow-[2px_2px_0_black]">
-                        <i data-lucide="award" class="w-4 h-4"></i>
-                        <span class="font-comic text-sm uppercase tracking-wide">Grand Final</span>
-                    </div>
-                    <div class="bracket-scroll flex gap-8 pb-4">
-                        <div class="bracket-col shrink-0">${renderMatchCard(gf)}</div>
-                        ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Entscheidungsspiel</div>${renderMatchCard(gf2)}</div>` : ''}
-                    </div>
+                <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 border-2 border-black shadow-[2px_2px_0_black]">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                    <span class="font-comic text-sm uppercase tracking-wide">Grand Final</span>
                 </div>
+                <div class="bracket-scroll flex gap-8 pb-4 -mt-4">
+                    <div class="bracket-col shrink-0">${renderMatchCard(gf)}</div>
+                    ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Entscheidungsspiel</div>${renderMatchCard(gf2)}</div>` : ''}
+                </div>
+
+                ${renderTourneyStats()}
             </div>`;
         };
 
@@ -896,8 +977,8 @@
                         `).join('')}
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-3">
-                        <div><label class="block text-[10px] font-bold text-blue-900 uppercase text-center mb-1">Punkte ${nameA}</label><input type="number" id="score-pa" placeholder="0" class="retro-input w-full h-12 text-center text-2xl"></div>
-                        <div><label class="block text-[10px] font-bold text-red-900 uppercase text-center mb-1">Punkte ${nameB}</label><input type="number" id="score-pb" placeholder="0" class="retro-input w-full h-12 text-center text-2xl"></div>
+                        <div><label class="block text-[10px] font-bold text-blue-900 uppercase text-center mb-1">Punkte ${nameA}</label><input type="number" id="score-pa" min="0" max="157" placeholder="0" oninput="syncMatchPoints('a')" class="retro-input w-full h-12 text-center text-2xl"></div>
+                        <div><label class="block text-[10px] font-bold text-red-900 uppercase text-center mb-1">Punkte ${nameB}</label><input type="number" id="score-pb" min="0" max="157" placeholder="0" oninput="syncMatchPoints('b')" class="retro-input w-full h-12 text-center text-2xl"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <div><label class="block text-[10px] font-bold text-blue-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wa" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
@@ -918,6 +999,135 @@
             </div>`;
         };
 
+        let showTourneyStats = false;
+
+        const computeTourneyStats = () => {
+            const matches = (bracketDoc && bracketDoc.matches) || [];
+            const mults = (tourney && tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const teamsById = {};
+            ((bracketDoc && bracketDoc.teams) || []).forEach(tm => teamsById[tm.id] = tm);
+
+            const stats = {}; // teamId -> { name, wins, losses, points, weis, trumps: {suitId: count}, games: [] }
+            const ensure = (tid) => {
+                if (!tid || tid === 'BYE') return null;
+                if (!stats[tid]) stats[tid] = { name: (teamsById[tid] || {}).name || tid, wins: 0, losses: 0, points: 0, weis: 0, trumps: {}, gamesPlayed: 0 };
+                return stats[tid];
+            };
+
+            const gameLog = [];
+
+            matches.forEach(m => {
+                if (!m.teamA || !m.teamB || m.teamA === 'BYE' || m.teamB === 'BYE') return;
+                const sA = ensure(m.teamA), sB = ensure(m.teamB);
+                if (!sA || !sB) return;
+                const rounds = m.rounds || [];
+                if (rounds.length === 0 && !m.winnerId) return; // noch nicht gespielt
+
+                let totalA = 0, totalB = 0;
+                rounds.forEach(r => {
+                    const mult = mults[r.trumpId] || 1;
+                    const valA = r.pA === 157 ? 257 : r.pA;
+                    const valB = r.pB === 157 ? 257 : r.pB;
+                    totalA += (valA * mult) + (r.wA * mult);
+                    totalB += (valB * mult) + (r.wB * mult);
+                    sA.weis += r.wA || 0;
+                    sB.weis += r.wB || 0;
+                    if (r.trumpId) {
+                        sA.trumps[r.trumpId] = (sA.trumps[r.trumpId] || 0) + 1;
+                        sB.trumps[r.trumpId] = (sB.trumps[r.trumpId] || 0) + 1;
+                    }
+                });
+                sA.points += totalA; sB.points += totalB;
+                if (m.winnerId) {
+                    sA.gamesPlayed++; sB.gamesPlayed++;
+                    if (m.winnerId === m.teamA) { sA.wins++; sB.losses++; } else { sB.wins++; sA.losses++; }
+                    gameLog.push({ round: m.round, nameA: sA.name, nameB: sB.name, totalA, totalB, winner: m.winnerId === m.teamA ? sA.name : sB.name });
+                } else if (rounds.length) {
+                    gameLog.push({ round: m.round, nameA: sA.name, nameB: sB.name, totalA, totalB, winner: null });
+                }
+            });
+
+            const teamList = Object.values(stats).sort((a, b) => b.points - a.points);
+            return { teamList, gameLog };
+        };
+
+        const suitIconLabel = (suitId) => {
+            const s = TRUMP_SUITS.find(x => x.id === suitId);
+            return s ? `${s.icon} ${s.label}` : suitId;
+        };
+
+        const renderTourneyStats = () => {
+            if (!bracketDoc) return '';
+            const { teamList, gameLog } = computeTourneyStats();
+            if (teamList.length === 0) return '';
+
+            return `
+            <div class="retro-card p-0 overflow-hidden">
+                <button onclick="toggleTourneyStats()" class="w-full flex items-center justify-between px-5 py-4 bg-slate-900 text-white">
+                    <span class="font-comic text-lg uppercase flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-5 h-5"></i> Turnier-Statistik</span>
+                    <i data-lucide="${showTourneyStats ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5"></i>
+                </button>
+                ${showTourneyStats ? `
+                <div class="p-5 space-y-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs sm:text-sm">
+                            <thead>
+                                <tr class="text-left text-[10px] uppercase text-slate-400 border-b-2 border-slate-200">
+                                    <th class="py-2 pr-2">Team</th>
+                                    <th class="py-2 px-2 text-center">Siege</th>
+                                    <th class="py-2 px-2 text-center">Niederlagen</th>
+                                    <th class="py-2 px-2 text-center">Punkte</th>
+                                    <th class="py-2 px-2 text-center">Weis</th>
+                                    <th class="py-2 pl-2">Meist gespielter Trumpf</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${teamList.map(t => {
+                                    const topTrump = Object.entries(t.trumps).sort((a,b)=>b[1]-a[1])[0];
+                                    return `
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 pr-2 font-bold">${t.name}</td>
+                                        <td class="py-2 px-2 text-center text-green-700 font-bold">${t.wins}</td>
+                                        <td class="py-2 px-2 text-center text-red-600 font-bold">${t.losses}</td>
+                                        <td class="py-2 px-2 text-center font-mono">${t.points}</td>
+                                        <td class="py-2 px-2 text-center font-mono">${t.weis}</td>
+                                        <td class="py-2 pl-2">${topTrump ? suitIconLabel(topTrump[0]) + ` (${topTrump[1]}×)` : '—'}</td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Trumpf-Verteilung pro Team</h5>
+                        <div class="space-y-2">
+                            ${teamList.map(t => `
+                                <div class="flex items-center gap-2 flex-wrap text-xs">
+                                    <span class="font-bold w-28 truncate shrink-0">${t.name}</span>
+                                    ${TRUMP_SUITS.map(s => t.trumps[s.id] ? `<span class="bg-slate-100 rounded-full px-2 py-0.5 border border-slate-200">${s.icon} ${t.trumps[s.id]}×</span>` : '').join('')}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Alle Einzelspiele</h5>
+                        <div class="space-y-1">
+                            ${gameLog.map(g => `
+                                <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-3 py-2 text-xs">
+                                    <span class="text-slate-400 font-mono w-24 shrink-0 truncate">${g.round}</span>
+                                    <span class="flex-1 text-center">${g.nameA} <b class="font-mono">${g.totalA}</b> — <b class="font-mono">${g.totalB}</b> ${g.nameB}</span>
+                                    ${g.winner ? `<span class="text-[9px] uppercase font-bold text-yellow-600 shrink-0 flex items-center gap-1"><i data-lucide="crown" class="w-3 h-3"></i>${g.winner}</span>` : '<span class="text-[9px] uppercase text-slate-300 shrink-0">läuft</span>'}
+                                </div>
+                            `).join('') || '<div class="text-slate-400 text-xs italic">Noch keine Spiele erfasst.</div>'}
+                        </div>
+                    </div>
+                </div>` : ''}
+            </div>`;
+        };
+
+        window.toggleTourneyStats = () => { showTourneyStats = !showTourneyStats; renderApp(); };
+
         window.openScoringModal = (matchId) => {
             scoringMatchId = matchId;
             scoringTrump = null;
@@ -925,12 +1135,18 @@
             if (window.lucide) window.lucide.createIcons();
         };
 
+        window.syncMatchPoints = (src) => {
+            const inA = document.getElementById('score-pa'); const inB = document.getElementById('score-pb');
+            let val = parseInt(src === 'a' ? inA.value : inB.value); if (isNaN(val)) val = 0; if (val > 157) val = 157; if (val < 0) val = 0;
+            if (src === 'a') { inA.value = val; inB.value = 157 - val; } else { inB.value = val; inA.value = 157 - val; }
+        };
+
         window.submitMatchRound = async () => {
             const pa = parseInt(document.getElementById('score-pa').value) || 0;
             const pb = parseInt(document.getElementById('score-pb').value) || 0;
+            if (pa + pb !== 157) return alert('Die Punkte von beiden Teams müssen zusammen 157 ergeben (Kartenpunkte + Stöck).');
             const wa = parseInt(document.getElementById('score-wa').value) || 0;
             const wb = parseInt(document.getElementById('score-wb').value) || 0;
-            if (pa === 0 && pb === 0) return alert('Bitte Punkte eingeben.');
             const matches = JSON.parse(JSON.stringify(bracketDoc.matches));
             const m = matches.find(x => x.id === scoringMatchId);
             if (!m) return;
@@ -959,7 +1175,19 @@
                 }
             }
             await updateDoc(doc(db, TCOL.BRACKETS, currentTourneyId), { matches });
+
+            // Champion ermitteln & aufs Event-Dokument schreiben, damit er auch in der Übersicht sichtbar ist
+            let championJustWon = false;
+            if (m.id === 'gf' || m.id === 'gf2') {
+                const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm);
+                const champion = computeChampion(matches, teamsById);
+                if (champion) {
+                    await updateDoc(doc(db, TCOL.TOURNEYS, currentTourneyId), { status: 'finished', championName: champion });
+                    championJustWon = true;
+                }
+            }
             closeModal(null, true);
+            if (championJustWon) { window.celebrate(true); } else { window.celebrate(false); }
         };
 
         window.resetTourneyTeamsAndBracket = async (tourneyId) => {
@@ -970,6 +1198,56 @@
             await batch.commit();
             await deleteDoc(doc(db, TCOL.BRACKETS, tourneyId)).catch(() => {});
             await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'registration' });
+        };
+
+        // Startet mit denselben angemeldeten Teilnehmern eine neue Runde: Teams neu auslosen + neuen Baum generieren.
+        window.startNewRoundSameParticipants = async (tourneyId) => {
+            if (!isAdmin()) return;
+            if (tourneyRegs.length < 4 || tourneyRegs.length % 2 !== 0) return alert('Mind. 4 Angemeldete (gerade Anzahl) nötig.');
+            if (!confirm('Neue Runde mit den gleichen Teilnehmern starten? Der bisherige Turnierbaum wird ersetzt.')) return;
+
+            const shuffled = [...tourneyRegs].sort(() => Math.random() - 0.5);
+            const batch = writeBatch(db);
+            shuffled.forEach((r, idx) => { batch.update(doc(db, TCOL.REGS, r.id), { teamNumber: Math.floor(idx / 2) }); });
+            await batch.commit();
+
+            const teamsMap = {};
+            shuffled.forEach((r, idx) => { const tn = Math.floor(idx / 2); (teamsMap[tn] = teamsMap[tn] || []).push(r.name.split(' ')[0]); });
+            let teamList = Object.keys(teamsMap).sort((a,b)=>a-b).map(tn => ({ id: 'team-' + tn, name: teamsMap[tn].join(' & ') }));
+            teamList = [...teamList].sort(() => Math.random() - 0.5);
+            const size = [4, 8, 16].find(n => teamList.length <= n) || 16;
+            while (teamList.length < size) teamList.push({ id: 'BYE', name: 'Freilos' });
+
+            const template = BRACKET_TEMPLATES2[size];
+            const matches = template.map(tpl => {
+                const m = { id: tpl.id, round: tpl.round, isLB: !!tpl.isLB, isGrandFinal: !!tpl.isGrandFinal, winnerTo: tpl.winnerTo || null, loserTo: tpl.loserTo || null, teamA: null, teamB: null, winnerId: null, rounds: [] };
+                if (tpl.teamASeed !== undefined) m.teamA = teamList[tpl.teamASeed].id;
+                if (tpl.teamBSeed !== undefined) m.teamB = teamList[tpl.teamBSeed].id;
+                return m;
+            });
+            const resolveByes = (list) => {
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    list.forEach(m => {
+                        if (!m.winnerId && m.teamA && m.teamB) {
+                            let winner = null, loser = null;
+                            if (m.teamA === 'BYE' && m.teamB !== 'BYE') { winner = m.teamB; loser = 'BYE'; }
+                            else if (m.teamB === 'BYE' && m.teamA !== 'BYE') { winner = m.teamA; loser = 'BYE'; }
+                            if (winner) {
+                                m.winnerId = winner; changed = true;
+                                if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winner; }
+                                if (m.loserTo && loser !== 'BYE') { const [mid, slot] = m.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loser; }
+                            }
+                        }
+                    });
+                }
+            };
+            resolveByes(matches);
+
+            await setDoc(doc(db, TCOL.BRACKETS, tourneyId), { teams: teamList.filter(t=>t.id!=='BYE'), matches, createdAt: serverTimestamp() });
+            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'running', championName: null });
+            window.location.href = 'bracket.html?id=' + tourneyId;
         };
 
         let NAV_MODE = 'context';
@@ -1030,6 +1308,26 @@
 
         window.toggleNavMenu = () => { document.getElementById('nav-menu-panel')?.classList.toggle('hidden'); };
 
+        // --- JUBEL-EFFEKT (Konfetti) --- big=true für grössere Feier (z.B. Turniersieger)
+        window.celebrate = (big) => {
+            const colors = ['#D80018', '#fde68a', '#d97706', '#1a1a1a', '#908059', '#ffffff'];
+            const count = big ? 140 : 60;
+            const duration = big ? 3200 : 2000;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti-piece';
+                const size = 6 + Math.random() * (big ? 10 : 6);
+                el.style.left = (Math.random() * 100) + 'vw';
+                el.style.width = size + 'px';
+                el.style.height = (size * (0.4 + Math.random() * 0.6)) + 'px';
+                el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                el.style.animationDuration = (duration / 1000 * (0.7 + Math.random() * 0.6)) + 's';
+                el.style.animationDelay = (Math.random() * (big ? 0.6 : 0.3)) + 's';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), duration + 800);
+            }
+        };
+
         const renderNavDropdown = (activeKey) => {
             const items = NAV_ITEMS.filter(navItemAllowed);
             return `
@@ -1050,8 +1348,8 @@
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
                 <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
                     <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
-                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform p-0.5">
-                            <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+                            <img src="${BG_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-cover">
                         </div>
                         <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
                     </a>

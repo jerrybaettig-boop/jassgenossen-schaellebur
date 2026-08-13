@@ -89,10 +89,27 @@ Für die Freispiele-Liste auf der Event-Seite wird eine einfache Firestore-Abfra
 - **##5 Kontext-Navigation:** Auf `event.html` und `bracket.html` ist die generische Navigation komplett weg — dort gibt's nur noch "← Zurück" (zu Jass-Events bzw. zum jeweiligen Event) plus Home-Icon. Kein Ablenken durch irrelevante Menüpunkte mehr, während man im Turnier steckt.
 - **##6 Avatar-Auswahl bei der Registrierung:** 20 witzige, jass-thematisch benannte Avatare (via DiceBear, kostenlos, kein eigenes Hosting nötig) stehen bei der Registrierung zur Auswahl, plus das Google-Foto als Alternative falls vorhanden. **Nicht umgesetzt:** eigenes Foto machen/hochladen (Kamera/Datei-Upload) — das würde Firebase Storage plus zusätzliche Regeln brauchen, die ich hier nicht anlegen und testen konnte. Sagt Bescheid, falls das noch gewünscht ist, das lässt sich nachrüsten.
 
+## Update (4. Runde)
+
+- **##1 Logo im Header:** Zeigt jetzt die Schälle (`Schälle.png`) statt des kleinteiligen Wappens — deutlich besser erkennbar in der kleinen Grösse.
+- **##2 Automatische Punkte-Gegenrechnung:** In allen drei Erfassungsmasken (Turnierbaum-Resultat, eingebettetes Event-Freispiel, eigenständige Freispiel-Seite) rechnet die Eingabe jetzt exakt wie bei "Match": Tippt ihr bei Team 1 z.B. 10 ein, setzt sich Team 2 automatisch auf 147 — die beiden Felder ergeben immer 157 (Kartenpunkte + Stöck), unabhängig vom gewählten Trumpf. Der Multiplikator (1×/2×/3× je nach Event-Regeln und gespieltem Trumpf) wird wie gehabt erst bei der Endsumme draufgerechnet, nicht auf die 157 selbst. Ein Speichern mit falscher Summe wird blockiert.
+- **##3 Turnier-Statistik:** Neu unten im Turnierbaum ein aufklappbarer Bereich "Turnier-Statistik" mit: Tabelle pro Team (Siege, Niederlagen, Punkte total, Weis total, meistgespielter Trumpf), Trumpf-Verteilung pro Team als Chips, und eine Liste aller Einzelspiele mit Resultat. Alles wird live aus den bereits gespeicherten Turnierbaum-Daten berechnet, keine zusätzliche Datenbank-Struktur nötig.
+- **##4 Klub-Geschichte:** Der Text "D'Gschicht vo de Jassgenosse Schällebuur" ist jetzt auf der Startseite eingebaut — mit dunklem Titel-Banner (Schälle-Musterung im Hintergrund), den Absätzen als Fliesstext und den zwei Publikumslieblingen (Chrüüterschnaps & "Der Bürgermeister") als hervorgehobene Karten.
+
+## Update (5. Runde)
+
+- **##1 Verbindungslinien im Turnierbaum:** Es gibt jetzt echte, live berechnete Linien zwischen den Matches (per SVG, per JavaScript nach jedem Render neu gezeichnet — reagiert auch auf Fenstergrösse/Scrollen). Gold & durchgezogen = der Weg ist bereits entschieden, grau gestrichelt = der Pfad ist noch offen. Aus technischen Gründen zeichne ich die Linien nur **innerhalb** von Winner-Bracket bzw. Loser-Bracket (also "Runde 1 → Runde 2 → ..."); die Übergänge WB-Final/LB-Final → Grand Final sind weiterhin ohne Linie, aber klar als eigene, farblich abgesetzte Sektion sichtbar. Eine durchgehende Linie über alle drei Sektionen hinweg wäre technisch aufwändiger und fehleranfälliger geworden (verschiedene Scroll-Container) — falls euch das wichtig ist, sagt Bescheid, das lässt sich nachrüsten.
+- **##2 Abgeschlossene Spiele klar erkennbar + Admin-Korrektur:** Entschiedene Matches sehen jetzt sichtbar "fertig" aus (Schloss-Icon, gedämpfte Optik, dezenter "Admin: wieder öffnen"-Button statt des auffälligen roten Start-Buttons). Sobald das Turnier komplett entschieden ist, wird das automatisch auf dem Event gespeichert (Status "beendet" + Champion-Name) — der Champion ist jetzt gut sichtbar: auf der Jass-Events-Übersicht (goldener Rahmen + Pokal-Icon auf der Karte), auf der Event-Seite (grosses Banner) und im Turnierbaum selber. Auf der Event-Seite gibt's für Admins jetzt ausserdem einen Button **"Neue Runde starten (gleiche Teilnehmer)"**, der Teams neu auslost und sofort einen neuen Turnierbaum mit denselben Angemeldeten erstellt — perfekt für Runde 2/3 am gleichen Abend.
+- **##3 Jubel-Konfetti:** Bei jedem abgeschlossenen Match gibt's einen kleinen Konfetti-Regen, beim Turniersieger einen grösseren (mehr Teilchen, länger). Rein CSS/JS, keine externe Bibliothek nötig, respektiert automatisch `prefers-reduced-motion` (kein Konfetti bei entsprechender Systemeinstellung).
+
+
+
+
+
+
+
+
 ## Bekannte Einschränkungen / offene Punkte
-
-
-
 
 - Die neuen Seiten (`events`, `event`, `bracket`, `freispiel`, `index`) sind nur auf Deutsch (kein DE/EN-Umschalter wie bei den bestehenden Seiten) – lässt sich bei Bedarf nachrüsten.
 - Der Turnierbaum unterstützt 4, 8 oder 16 Teams (Doppel-K.O., gleiche Logik wie zuvor).

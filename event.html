@@ -231,6 +231,29 @@
         .bracket-col { min-width: 220px; }
         .bracket-match { background:#fff; }
         .bracket-connector { position:relative; }
+
+        /* --- TURNIERBAUM: VERBINDUNGSLINIEN --- */
+        .bracket-canvas { position: relative; }
+        .bracket-svg-lines { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+
+        /* --- KONFETTI / JUBEL-EFFEKT --- */
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 2px;
+            animation-name: confetti-fall;
+            animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
+            animation-fill-mode: forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .confetti-piece { animation: none; display: none; }
+        }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -784,8 +807,8 @@
                         </button>`).join('')}
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
-                    <input type="number" id="ev-fg-pa" placeholder="Punkte" class="retro-input px-2 py-2 text-center text-lg">
-                    <input type="number" id="ev-fg-pb" placeholder="Punkte" class="retro-input px-2 py-2 text-center text-lg">
+                    <input type="number" id="ev-fg-pa" min="0" max="157" placeholder="Punkte" oninput="syncEvFreePoints('a')" class="retro-input px-2 py-2 text-center text-lg">
+                    <input type="number" id="ev-fg-pb" min="0" max="157" placeholder="Punkte" oninput="syncEvFreePoints('b')" class="retro-input px-2 py-2 text-center text-lg">
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-3">
                     <input type="number" id="ev-fg-wa" placeholder="Weis" class="border-b-2 border-slate-300 bg-transparent text-center py-1 text-sm">
@@ -814,12 +837,18 @@
             renderApp();
         };
         window.selectEventFreeTrump = (id) => { evFreeGame.trump = id; renderApp(); };
+        window.syncEvFreePoints = (src) => {
+            const inA = document.getElementById('ev-fg-pa'); const inB = document.getElementById('ev-fg-pb');
+            let val = parseInt(src === 'a' ? inA.value : inB.value); if (isNaN(val)) val = 0; if (val > 157) val = 157; if (val < 0) val = 0;
+            if (src === 'a') { inA.value = val; inB.value = 157 - val; } else { inB.value = val; inA.value = 157 - val; }
+        };
+
         window.submitEventFreeRound = () => {
             const pa = parseInt(document.getElementById('ev-fg-pa').value) || 0;
             const pb = parseInt(document.getElementById('ev-fg-pb').value) || 0;
+            if (pa + pb !== 157) return alert('Die Punkte von beiden Teams müssen zusammen 157 ergeben (Kartenpunkte + Stöck).');
             const wa = parseInt(document.getElementById('ev-fg-wa').value) || 0;
             const wb = parseInt(document.getElementById('ev-fg-wb').value) || 0;
-            if (pa === 0 && pb === 0) return alert('Bitte Punkte eingeben.');
             evFreeGame.rounds.push({ trumpId: evFreeGame.trump, pA: pa, pB: pb, wA: wa, wB: wb });
             renderApp();
         };
@@ -876,6 +905,13 @@
                     <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Zählweise</div>
                     ${renderRulesTable(tourney.rules)}
                 </div>
+
+                ${tourney.championName ? `
+                <div class="relative overflow-hidden rounded-2xl border-4 border-black bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 p-6 text-center shadow-[6px_6px_0_black]">
+                    <i data-lucide="trophy" class="w-9 h-9 mx-auto text-slate-900 mb-1"></i>
+                    <div class="text-[10px] uppercase text-slate-800/70 font-bold tracking-[0.3em] mb-1">Turnier beendet — Champion</div>
+                    <div class="text-3xl font-comic text-slate-900">${tourney.championName}</div>
+                </div>` : ''}
 
                 ${(tourney.status === 'running' || tourney.status === 'finished') ? `
                 <a href="bracket.html?id=${tourney.id}" class="retro-btn w-full py-3 text-lg flex items-center justify-center gap-2">
@@ -947,6 +983,12 @@
                         <button onclick="generateTourneyBracket('${tourney.id}')" ${teamCount < 2 ? 'disabled' : ''} class="retro-btn py-2 text-xs ${teamCount < 2 ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none' : ''}">Turnier starten</button>
                         <button onclick="setTourneyStatus('${tourney.id}','finished')" class="retro-btn-secondary retro-btn py-2 text-xs">Als beendet markieren</button>
                     </div>
+
+                    ${tourney.championName ? `
+                    <div class="mb-3 p-3 bg-amber-50 border-2 border-amber-300 rounded-lg">
+                        <p class="text-[11px] text-amber-800 mb-2">🏆 Turnier ist entschieden. Gleiche Teilnehmer nochmal gegeneinander antreten lassen?</p>
+                        <button onclick="startNewRoundSameParticipants('${tourney.id}')" class="w-full retro-btn py-2 text-xs flex items-center justify-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Neue Runde starten (gleiche Teilnehmer)</button>
+                    </div>` : ''}
 
                     <div class="border-t border-slate-200 pt-3 flex justify-between">
                         <button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="text-red-500 text-xs font-bold hover:underline">Teams & Turnierbaum zurücksetzen</button>
@@ -1076,6 +1118,56 @@
             await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'registration' });
         };
 
+        // Startet mit denselben angemeldeten Teilnehmern eine neue Runde: Teams neu auslosen + neuen Baum generieren.
+        window.startNewRoundSameParticipants = async (tourneyId) => {
+            if (!isAdmin()) return;
+            if (tourneyRegs.length < 4 || tourneyRegs.length % 2 !== 0) return alert('Mind. 4 Angemeldete (gerade Anzahl) nötig.');
+            if (!confirm('Neue Runde mit den gleichen Teilnehmern starten? Der bisherige Turnierbaum wird ersetzt.')) return;
+
+            const shuffled = [...tourneyRegs].sort(() => Math.random() - 0.5);
+            const batch = writeBatch(db);
+            shuffled.forEach((r, idx) => { batch.update(doc(db, TCOL.REGS, r.id), { teamNumber: Math.floor(idx / 2) }); });
+            await batch.commit();
+
+            const teamsMap = {};
+            shuffled.forEach((r, idx) => { const tn = Math.floor(idx / 2); (teamsMap[tn] = teamsMap[tn] || []).push(r.name.split(' ')[0]); });
+            let teamList = Object.keys(teamsMap).sort((a,b)=>a-b).map(tn => ({ id: 'team-' + tn, name: teamsMap[tn].join(' & ') }));
+            teamList = [...teamList].sort(() => Math.random() - 0.5);
+            const size = [4, 8, 16].find(n => teamList.length <= n) || 16;
+            while (teamList.length < size) teamList.push({ id: 'BYE', name: 'Freilos' });
+
+            const template = BRACKET_TEMPLATES2[size];
+            const matches = template.map(tpl => {
+                const m = { id: tpl.id, round: tpl.round, isLB: !!tpl.isLB, isGrandFinal: !!tpl.isGrandFinal, winnerTo: tpl.winnerTo || null, loserTo: tpl.loserTo || null, teamA: null, teamB: null, winnerId: null, rounds: [] };
+                if (tpl.teamASeed !== undefined) m.teamA = teamList[tpl.teamASeed].id;
+                if (tpl.teamBSeed !== undefined) m.teamB = teamList[tpl.teamBSeed].id;
+                return m;
+            });
+            const resolveByes = (list) => {
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    list.forEach(m => {
+                        if (!m.winnerId && m.teamA && m.teamB) {
+                            let winner = null, loser = null;
+                            if (m.teamA === 'BYE' && m.teamB !== 'BYE') { winner = m.teamB; loser = 'BYE'; }
+                            else if (m.teamB === 'BYE' && m.teamA !== 'BYE') { winner = m.teamA; loser = 'BYE'; }
+                            if (winner) {
+                                m.winnerId = winner; changed = true;
+                                if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winner; }
+                                if (m.loserTo && loser !== 'BYE') { const [mid, slot] = m.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loser; }
+                            }
+                        }
+                    });
+                }
+            };
+            resolveByes(matches);
+
+            await setDoc(doc(db, TCOL.BRACKETS, tourneyId), { teams: teamList.filter(t=>t.id!=='BYE'), matches, createdAt: serverTimestamp() });
+            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'running', championName: null });
+            window.location.href = 'bracket.html?id=' + tourneyId;
+        };
+
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
 
@@ -1131,6 +1223,26 @@
 
         window.toggleNavMenu = () => { document.getElementById('nav-menu-panel')?.classList.toggle('hidden'); };
 
+        // --- JUBEL-EFFEKT (Konfetti) --- big=true für grössere Feier (z.B. Turniersieger)
+        window.celebrate = (big) => {
+            const colors = ['#D80018', '#fde68a', '#d97706', '#1a1a1a', '#908059', '#ffffff'];
+            const count = big ? 140 : 60;
+            const duration = big ? 3200 : 2000;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti-piece';
+                const size = 6 + Math.random() * (big ? 10 : 6);
+                el.style.left = (Math.random() * 100) + 'vw';
+                el.style.width = size + 'px';
+                el.style.height = (size * (0.4 + Math.random() * 0.6)) + 'px';
+                el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                el.style.animationDuration = (duration / 1000 * (0.7 + Math.random() * 0.6)) + 's';
+                el.style.animationDelay = (Math.random() * (big ? 0.6 : 0.3)) + 's';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), duration + 800);
+            }
+        };
+
         const renderNavDropdown = (activeKey) => {
             const items = NAV_ITEMS.filter(navItemAllowed);
             return `
@@ -1151,8 +1263,8 @@
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
                 <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
                     <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
-                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform p-0.5">
-                            <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+                            <img src="${BG_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-cover">
                         </div>
                         <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
                     </a>

@@ -231,6 +231,29 @@
         .bracket-col { min-width: 220px; }
         .bracket-match { background:#fff; }
         .bracket-connector { position:relative; }
+
+        /* --- TURNIERBAUM: VERBINDUNGSLINIEN --- */
+        .bracket-canvas { position: relative; }
+        .bracket-svg-lines { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+
+        /* --- KONFETTI / JUBEL-EFFEKT --- */
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 2px;
+            animation-name: confetti-fall;
+            animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
+            animation-fill-mode: forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .confetti-piece { animation: none; display: none; }
+        }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -719,16 +742,32 @@
             return `
             <div class="space-y-10 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
 
-                <!-- ÜBER UNS -->
-                <div class="retro-card p-6 sm:p-8 text-center bg-gradient-to-b from-white to-slate-50">
-                    <div class="inline-block bg-black text-yellow-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Seit jeher am Tisch</div>
-                    <h3 class="text-3xl sm:text-4xl font-comic text-slate-900 transform -rotate-1 mb-3">D'Jassgenosse Schällebur</h3>
-                    <p class="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                        Vier Farben, ein Tisch, kein Pardon. Bei der Jass-Liga Schällebur wird geschoben, gewiest und getrumpft, dass es
-                        chlöpft — mit einer Prise Ernst und einer grossen Portion Freude am Spiel. Ob Stammtisch-Match unter Mitgliedern
-                        oder grosses Turnier mit Gästen: hier trefft ihr euch, hier zählt jeder Stich.
-                    </p>
-                    <p class="text-[11px] text-slate-400 mt-4 italic">(Platzhalter-Text — gerne durch eure eigene Klub-Geschichte ersetzen.)</p>
+                <!-- ÜBER UNS: D'GSCHICHT VO DE JASSGENOSSE SCHÄLLEBUUR -->
+                <div class="retro-card p-0 overflow-hidden text-left">
+                    <div class="bg-slate-900 px-6 sm:px-10 py-8 sm:py-10 text-center relative">
+                        <div class="absolute inset-0 opacity-10" style="background-image: url('${BG_BASE64}'); background-size: 140px; background-repeat: repeat;"></div>
+                        <div class="relative z-10">
+                            <div class="inline-block bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Est. 2020 · Schaffuuse</div>
+                            <h3 class="text-3xl sm:text-4xl font-comic text-white transform -rotate-1">D'Gschicht vo de<br>Jassgenosse Schällebuur</h3>
+                        </div>
+                    </div>
+                    <div class="p-6 sm:p-10 space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed max-w-2xl mx-auto">
+                        <p>Alles het aagfange i de schönschte Stadt vo de Schwiiz – z'Schaffuuse.</p>
+                        <p>Vier Manne, es Poker-Turnier, und en Obig wo nöd ganz so glaufe isch, wie's sött gsii wär: D'vier Gründigsmitglieder händ relativ zackig ihres ganzes Kapital a de Pokertisch glo. Statt aber truurig hei z'gah, händ si churzerhand entschide: <span class="font-bold">"Denn jasse mer halt."</span> Und genau das isch de magisch Momänt gsii, wo d'Jassgenosse Schällebuur uf d'Wält cho sind.</p>
+                        <p>Sit dem trifft mer sich regelmässig – nöd für es paar Rundli, sondern für ganzi Nächt voll Jasse. Jedes Mal übernimmt öpper anders d'Gaschtgäberschaft, und do wird nöd gschpart: Es git jedes Mal e kulinarischi Reis, wo mit spannende und hitzige Jassspiel begleitet wird.</p>
+                        <p class="font-bold text-slate-900">Und zwöi Sache dörfed a keim Event fähle:</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 not-italic">
+                            <div class="retro-card !min-h-0 p-4 bg-amber-50 !border-amber-300 flex items-center gap-3">
+                                <span class="text-2xl">🌿</span>
+                                <span class="font-bold text-sm text-amber-900">De Schällebuur Chrüüterschnaps <span class="font-normal text-amber-700">(mit Honig)</span></span>
+                            </div>
+                            <div class="retro-card !min-h-0 p-4 bg-amber-50 !border-amber-300 flex items-center gap-3">
+                                <span class="text-2xl">🥃</span>
+                                <span class="font-bold text-sm text-amber-900">"Der Bürgermeister" <span class="font-normal text-amber-700">vom Hus Tuchschmid</span></span>
+                            </div>
+                        </div>
+                        <p class="italic text-slate-500 text-center pt-2">Ohni die zwöi Läckerschmöcker – kei gluckte Event.</p>
+                    </div>
                 </div>
 
                 <div class="text-center">
@@ -811,6 +850,26 @@
 
         window.toggleNavMenu = () => { document.getElementById('nav-menu-panel')?.classList.toggle('hidden'); };
 
+        // --- JUBEL-EFFEKT (Konfetti) --- big=true für grössere Feier (z.B. Turniersieger)
+        window.celebrate = (big) => {
+            const colors = ['#D80018', '#fde68a', '#d97706', '#1a1a1a', '#908059', '#ffffff'];
+            const count = big ? 140 : 60;
+            const duration = big ? 3200 : 2000;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti-piece';
+                const size = 6 + Math.random() * (big ? 10 : 6);
+                el.style.left = (Math.random() * 100) + 'vw';
+                el.style.width = size + 'px';
+                el.style.height = (size * (0.4 + Math.random() * 0.6)) + 'px';
+                el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                el.style.animationDuration = (duration / 1000 * (0.7 + Math.random() * 0.6)) + 's';
+                el.style.animationDelay = (Math.random() * (big ? 0.6 : 0.3)) + 's';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), duration + 800);
+            }
+        };
+
         const renderNavDropdown = (activeKey) => {
             const items = NAV_ITEMS.filter(navItemAllowed);
             return `
@@ -831,8 +890,8 @@
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
                 <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
                     <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
-                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform p-0.5">
-                            <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+                            <img src="${BG_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-cover">
                         </div>
                         <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
                     </a>

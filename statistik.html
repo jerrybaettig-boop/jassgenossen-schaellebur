@@ -231,6 +231,29 @@
         .bracket-col { min-width: 220px; }
         .bracket-match { background:#fff; }
         .bracket-connector { position:relative; }
+
+        /* --- TURNIERBAUM: VERBINDUNGSLINIEN --- */
+        .bracket-canvas { position: relative; }
+        .bracket-svg-lines { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+
+        /* --- KONFETTI / JUBEL-EFFEKT --- */
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 2px;
+            animation-name: confetti-fall;
+            animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
+            animation-fill-mode: forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .confetti-piece { animation: none; display: none; }
+        }
     </style>
 </head>
 <body class="pb-28 md:pb-0 min-h-screen flex flex-col">
@@ -943,6 +966,26 @@
 
         window.toggleNavMenu = () => { document.getElementById('nav-menu-panel')?.classList.toggle('hidden'); };
 
+        // --- JUBEL-EFFEKT (Konfetti) --- big=true für grössere Feier (z.B. Turniersieger)
+        window.celebrate = (big) => {
+            const colors = ['#D80018', '#fde68a', '#d97706', '#1a1a1a', '#908059', '#ffffff'];
+            const count = big ? 140 : 60;
+            const duration = big ? 3200 : 2000;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti-piece';
+                const size = 6 + Math.random() * (big ? 10 : 6);
+                el.style.left = (Math.random() * 100) + 'vw';
+                el.style.width = size + 'px';
+                el.style.height = (size * (0.4 + Math.random() * 0.6)) + 'px';
+                el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                el.style.animationDuration = (duration / 1000 * (0.7 + Math.random() * 0.6)) + 's';
+                el.style.animationDelay = (Math.random() * (big ? 0.6 : 0.3)) + 's';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), duration + 800);
+            }
+        };
+
         const renderNavDropdown = (activeKey) => {
             const items = NAV_ITEMS.filter(navItemAllowed);
             return `
@@ -963,8 +1006,8 @@
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
                 <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
                     <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
-                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform p-0.5">
-                            <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+                            <img src="${BG_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-cover">
                         </div>
                         <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
                     </a>
