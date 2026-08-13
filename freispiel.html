@@ -669,7 +669,7 @@
                             <div class="w-12 h-16 border-2 border-black rounded-lg flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:translate-y-[-2px] transition-all card-back-pattern" style="background-image: url('${BG_BASE64}');">
                                 <div class="bg-black/50 p-1 rounded-full"><i data-lucide="key" class="w-4 h-4 text-white"></i></div>
                             </div>
-                            <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-500 uppercase">${t('loginTitle')}</div>
+                            <div class="mt-1 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-500 uppercase">${user && user.isAnonymous ? 'Gast · Login' : t('loginTitle')}</div>
                         </button>
                     `}
                 </div>
@@ -900,8 +900,8 @@
                             <button onclick="signOutUser()" class="w-9 h-9 rounded-full border-2 border-black overflow-hidden bg-black block" title="Abmelden">
                                 <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
                             </button>` : `
-                            <button onclick="openLoginModal()" class="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center bg-white" title="Login">
-                                <i data-lucide="key" class="w-4 h-4"></i>
+                            <button onclick="openLoginModal()" class="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center bg-white" title="${user && user.isAnonymous ? 'Als Gast unterwegs — für Login antippen' : 'Login'}">
+                                ${user && user.isAnonymous ? '<span class="text-[8px] font-bold uppercase">Gast</span>' : '<i data-lucide="key" class="w-4 h-4"></i>'}
                             </button>`}
                     </div>
                 </div>
@@ -915,7 +915,7 @@
             const isHome = PAGE_KEY === 'home';
             document.getElementById('app').innerHTML = `
                 ${forcedLoginNow ? renderLoginModal() : ''}
-                ${(user && !userData) ? renderRegistration() : ''}
+                ${(user && !user.isAnonymous && !userData) ? renderRegistration() : ''}
                 ${(userData && userData.role === 'pending') ? renderPendingScreen() : (isHome ? `
                 ${renderHeader()}
                 <main class="max-w-6xl mx-auto -mt-8 relative z-10 min-h-screen flex flex-col">
