@@ -327,6 +327,9 @@
         };
 
         const URL_FALLBACK = "https://ui-avatars.com/api/?background=000&color=fff";
+        // Auswahl an Spass-Avataren fürs Registrieren (Jass-Motto). DiceBear-API, keine eigene Bild-Hosting nötig.
+        const AVATAR_SEEDS = ['Eichel','Rose','Schelle','Schilte','Trumpf','Weis','Stich','Obenabe','Undeufe','Schieber','Bock','Konter','Puur','Under','Ober','Koenig','Ass','Nell','Banz','Wys'];
+        const AVATAR_CHOICES = AVATAR_SEEDS.map(seed => `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=f3f0e6,fde68a,fecaca,bfdbfe&radius=12`);
         const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings', GENJASS: 'jass_genjass_reg', BRACKET: 'jass_bracket' };
         
 
@@ -424,6 +427,7 @@
         let users = [];
         let currentLang = 'de';
         let registrationRole = 'active';
+        let selectedRegAvatar = null;
         let tourneys = [];
         let tourneyRegs = [];
         let tourney = null;
@@ -600,15 +604,40 @@
         `;
 
 
-        const renderRegistration = () => `
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur">
-                <div class="retro-card p-8 w-full max-w-sm shadow-2xl relative">
+        const renderRegistration = () => {
+            const googlePhoto = auth.currentUser?.photoURL || '';
+            const effectiveAvatar = selectedRegAvatar || googlePhoto;
+            return `
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur overflow-y-auto">
+                <div class="retro-card p-6 sm:p-8 w-full max-w-md shadow-2xl relative my-8">
                     <h2 class="text-3xl font-comic text-slate-900 mb-4 text-center">${t('registerTitle')}</h2>
                     <div class="space-y-4">
                         <div>
                             <label class="text-xs font-bold uppercase text-slate-500">Name</label>
                             <input type="text" id="reg-name" class="retro-input w-full px-4 py-2 text-lg" placeholder="Name" value="${auth.currentUser?.displayName || ''}">
                         </div>
+
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-500 block mb-2">Dein Avatar (optional)</label>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-14 h-14 rounded-full border-2 border-black overflow-hidden bg-slate-100 shrink-0">
+                                    ${effectiveAvatar ? `<img src="${effectiveAvatar}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="user" class="w-6 h-6"></i></div>`}
+                                </div>
+                                <p class="text-[11px] text-slate-400">Wähl einen Spass-Avatar oder lass dein Google-Bild stehen — ganz optional.</p>
+                            </div>
+                            <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-1 bg-slate-50 rounded-lg border border-slate-200">
+                                ${googlePhoto ? `
+                                <button type="button" onclick="selectRegAvatar('')" class="aspect-square rounded-full overflow-hidden border-2 ${!selectedRegAvatar ? 'border-red-600 ring-2 ring-red-300' : 'border-slate-200'}" title="Google-Foto">
+                                    <img src="${googlePhoto}" class="w-full h-full object-cover">
+                                </button>` : ''}
+                                ${AVATAR_CHOICES.map(url => `
+                                    <button type="button" onclick="selectRegAvatar('${url}')" class="aspect-square rounded-full overflow-hidden border-2 bg-white ${selectedRegAvatar === url ? 'border-red-600 ring-2 ring-red-300' : 'border-slate-200'}">
+                                        <img src="${url}" class="w-full h-full object-cover" loading="lazy">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
                         <div>
                             <label class="text-xs font-bold uppercase text-slate-500">Membership</label>
                             <div class="grid grid-cols-1 gap-2 mt-1">
@@ -625,8 +654,7 @@
                     </div>
                 </div>
             </div>
-        `;
-
+        `;};
 
         const renderPendingScreen = () => `
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-100">
@@ -835,6 +863,7 @@
         ];
         const navItemAllowed = (i) => i.visibility === 'all' || (i.visibility === 'members' && isMember()) || (i.visibility === 'admin' && isAdmin());
 
+        // Für die grosse Startseite (Hero + Pillen-Reihe, unverändert schön)
         const renderTopNav = (activeKey) => {
             const items = NAV_ITEMS.filter(navItemAllowed);
             return `
@@ -855,6 +884,13 @@
             </nav>`;
         };
 
+        // Minimaler Bottom-Nav für Kontext-Seiten (Event/Turnier): nur Home + Zurück
+        const renderContextBottomNav = (backInfo) => `
+            <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300">
+                <a href="index.html" class="flex flex-col items-center gap-1 p-2 rounded-lg text-slate-400 hover:text-slate-800"><i data-lucide="home" class="w-5 h-5"></i><span class="text-[9px] font-bold uppercase">Hauptmenü</span></a>
+                ${backInfo ? `<a href="${backInfo.href}" class="flex flex-col items-center gap-1 p-2 rounded-lg text-slate-400 hover:text-slate-800"><i data-lucide="arrow-left" class="w-5 h-5"></i><span class="text-[9px] font-bold uppercase">${backInfo.label}</span></a>` : ''}
+            </nav>`;
+
         const renderFooter = () => `
             <footer class="text-center py-8 text-slate-400 text-xs pb-32 md:pb-8 relative z-10 font-mono">
                 <div class="flex justify-center gap-4 mb-2">
@@ -864,17 +900,40 @@
                 <p class="uppercase tracking-widest">&copy; 2025 Jassgenossen Schällebur</p>
             </footer>`;
 
-        // Kompakter, sticky Header für alle Seiten ausser der Startseite:
-        // links = zurück zum Hauptmenü, Mitte = Seitentitel, rechts = Login/Avatar.
-        const renderCompactHeader = (title) => `
+        window.toggleNavMenu = () => { document.getElementById('nav-menu-panel')?.classList.toggle('hidden'); };
+
+        const renderNavDropdown = (activeKey) => {
+            const items = NAV_ITEMS.filter(navItemAllowed);
+            return `
+            <div class="relative">
+                <button onclick="toggleNavMenu()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-black bg-white font-comic text-sm uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all">
+                    <i data-lucide="menu" class="w-4 h-4"></i><span class="hidden sm:inline">Menü</span><i data-lucide="chevron-down" class="w-3 h-3"></i>
+                </button>
+                <div id="nav-menu-panel" class="hidden absolute right-0 mt-2 w-56 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0_black] z-50 overflow-hidden">
+                    ${items.map(i => `<a href="${i.href}" class="flex items-center gap-3 px-4 py-3 text-sm font-bold border-b border-slate-100 last:border-0 hover:bg-yellow-50 ${activeKey===i.key?'bg-yellow-50 text-red-700':'text-slate-700'}"><i data-lucide="${i.icon}" class="w-4 h-4"></i>${i.label}</a>`).join('')}
+                </div>
+            </div>`;
+        };
+
+        // Kompakter, sticky Header für alle Seiten ausser der Startseite.
+        // navMode 'full'    -> Dropdown-Menü mit allen Bereichen
+        // navMode 'context' -> nur "← zurück"-Link (z.B. zurück zum Event/Turnier), kein allgemeines Menü
+        const renderCompactHeader = (title, navMode, backInfo) => `
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
                 <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
                     <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
-                        <div class="w-9 h-9 rounded-full bg-black text-yellow-400 flex items-center justify-center group-hover:scale-105 transition-transform"><i data-lucide="home" class="w-5 h-5"></i></div>
+                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform p-0.5">
+                            <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                        </div>
                         <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
                     </a>
+                    ${navMode === 'context' && backInfo ? `
+                        <a href="${backInfo.href}" class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-black uppercase shrink-0">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> ${backInfo.label}
+                        </a>` : ''}
                     <h1 class="font-comic text-lg sm:text-2xl text-slate-900 uppercase truncate text-center flex-1">${title}</h1>
-                    <div class="shrink-0">
+                    <div class="shrink-0 flex items-center gap-2">
+                        ${navMode === 'full' ? renderNavDropdown(PAGE_KEY) : ''}
                         ${userData && userData.role !== 'pending' ? `
                             <button onclick="signOutUser()" class="w-9 h-9 rounded-full border-2 border-black overflow-hidden bg-black block" title="Abmelden">
                                 <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
@@ -887,11 +946,14 @@
             </header>`;
 
         // mountPage: gemeinsamer Seitenrahmen (Header, Login/Registrierung/Pending-Gates, Nav, Footer)
-        // PAGE_KEY, PAGE_TITLE, AUTO_LOGIN_MODE ('none' | 'members' | 'required') werden pro Seite gesetzt.
+        // Pro Seite gesetzt: PAGE_KEY, PAGE_TITLE, AUTO_LOGIN_MODE ('none'|'members'|'required'),
+        // NAV_MODE ('full'|'context'), und bei 'context' eine Funktion getContextBack() -> {label, href}.
         const mountPage = (contentHtml) => {
             const forcedLoginNow = (AUTO_LOGIN_MODE === 'members' && !user && !window.guestMode)
                 || (AUTO_LOGIN_MODE === 'required' && !user && !userData && !window.guestMode);
             const isHome = PAGE_KEY === 'home';
+            const navMode = (typeof NAV_MODE !== 'undefined') ? NAV_MODE : 'full';
+            const backInfo = (navMode === 'context' && typeof getContextBack === 'function') ? getContextBack() : null;
             document.getElementById('app').innerHTML = `
                 ${forcedLoginNow ? renderLoginModal() : ''}
                 ${(user && !user.isAnonymous && !userData) ? renderRegistration() : ''}
@@ -904,13 +966,13 @@
                 </main>
                 ${renderBottomNav(PAGE_KEY)}
                 ` : `
-                ${renderCompactHeader(PAGE_TITLE)}
+                ${renderCompactHeader(PAGE_TITLE, navMode, backInfo)}
                 <main class="max-w-6xl mx-auto relative z-10 min-h-screen flex flex-col pt-6">
-                    ${renderTopNav(PAGE_KEY)}
+                    ${navMode === 'context' && backInfo ? `<a href="${backInfo.href}" class="sm:hidden inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-black uppercase mb-4 px-2"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> ${backInfo.label}</a>` : ''}
                     ${contentHtml}
                     ${renderFooter()}
                 </main>
-                ${renderBottomNav(PAGE_KEY)}
+                ${navMode === 'full' ? renderBottomNav(PAGE_KEY) : renderContextBottomNav(backInfo)}
                 `)}
             `;
             if (window.lucide) window.lucide.createIcons();
@@ -934,6 +996,7 @@
 
         window.signOutUser = async () => { await signOut(auth); userData = null; window.guestMode = false; window.location.reload(); };
 
+                window.selectRegAvatar = (url) => { selectedRegAvatar = url; renderApp(); };
         window.completeRegistration = async () => {
             const name = document.getElementById('reg-name').value;
             const role = registrationRole;
@@ -942,7 +1005,7 @@
             let roleKey = '';
             const legacy = LEGACY_DEBTS.find(l => (user.email && l.email && user.email.toLowerCase() === l.email.toLowerCase()) || (name && name.toLowerCase().includes(l.name.toLowerCase())));
             if(legacy) roleKey = legacy.roleKey;
-            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), { id: user.uid, name, role: isAdminUser ? 'admin' : 'pending', roleName: role === 'active' ? 'Aktivmitglied' : 'Gönner', avatar: user.photoURL || '', joined: serverTimestamp(), email: user.email || '', roleKey: roleKey });
+            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), { id: user.uid, name, role: isAdminUser ? 'admin' : 'pending', roleName: role === 'active' ? 'Aktivmitglied' : 'Gönner', avatar: selectedRegAvatar || user.photoURL || '', joined: serverTimestamp(), email: user.email || '', roleKey: roleKey });
         };
 
 
@@ -961,7 +1024,11 @@
             // Gäste bekommen automatisch eine anonyme Firebase-Session (stabile uid),
             // damit Firestore-Regeln "request.auth != null" verlangen können statt komplett offen zu sein,
             // und damit z.B. eigene Turnierbaum-Resultate später der eigenen Anmeldung zugeordnet werden können.
-            try { if (!auth.currentUser) { await signInAnonymously(auth); } } catch(e) { console.error('Anonyme Anmeldung fehlgeschlagen:', e); }
+            // Anonyme Gast-Anmeldung: NUR wenn nach dem ersten echten Auth-Check wirklich niemand eingeloggt ist.
+            // (auth.currentUser ist direkt nach getAuth() oft noch null, auch wenn im Hintergrund eine echte
+            // Google-Session wiederhergestellt wird — das hat vorher dazu geführt, dass eingeloggte Member
+            // teils in eine anonyme Session "verschoben" wurden. Darum zuerst auf onAuthStateChanged warten.)
+            let authFirstCheckDone = false;
 
             onSnapshot(query(collection(db, COLLECTIONS.USERS)), sn => {
                 users = sn.docs.map(d=>({id:d.id, ...d.data()}));
@@ -974,6 +1041,13 @@
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;
+                if (!authFirstCheckDone) {
+                    authFirstCheckDone = true;
+                    if (!u) {
+                        try { await signInAnonymously(auth); } catch(e) { console.error('Anonyme Anmeldung fehlgeschlagen:', e); }
+                        return; // signInAnonymously löst onAuthStateChanged erneut aus -> dort wird gerendert
+                    }
+                }
                 if (user && !user.isAnonymous) {
                     const userRef = doc(db, COLLECTIONS.USERS, user.uid);
                     const snap = await getDoc(userRef);

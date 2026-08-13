@@ -80,7 +80,18 @@ Wichtig: Diese Regeln lassen **jeden mit gültiger Firebase-Session** (also auch
 ### Kleiner technischer Hinweis
 Für die Freispiele-Liste auf der Event-Seite wird eine einfache Firestore-Abfrage ohne zusammengesetzten Index verwendet (Sortierung passiert im Browser). Falls Firestore beim ersten Live-Test trotzdem einen Hinweis auf einen fehlenden Index anzeigt, einfach auf den von Firebase automatisch generierten Link klicken – erledigt sich in der Regel von selbst.
 
+## Update (3. Runde)
+
+- **##1 Header/Logo:** Der kompakte Header zeigt jetzt euer Logo (rundes Icon) statt eines generischen Home-Icons. Auf allen "vollen" Seiten (Statistik, Member, Jass-Events, Freispiel, Match, Termine, Admin) ist die Navigationsleiste zu einem **Dropdown-Menü** im Header zusammengeklappt ("Menü ▾") — deutlich aufgeräumter als die Pillen-Reihe vorher. Die Startseite behält ihren grossen Hero mit der Pillen-Reihe darunter, das war ja schon gut so.
+- **##2 Login-Bug behoben:** Das war ein Race-Condition-Fehler — die automatische Gast-Anmeldung hat teils *vor* Abschluss der echten Session-Wiederherstellung ausgelöst und dadurch eingeloggte Mitglieder gelegentlich in eine anonyme Session "verschoben". Jetzt wird zuerst der erste echte Auth-Status abgewartet, bevor überhaupt entschieden wird, ob eine anonyme Anmeldung nötig ist. Sollte jetzt zuverlässig funktionieren — bitte auf Vercel gegentesten (mehrfach zwischen Seiten wechseln, auch mit langsamerer Verbindung).
+- **##3 Turnierbaum-Redesign:** Deutlich mehr "Esports"-Charakter im Comic-Look: schwarze Match-Karten mit Gold-Akzenten, Live-Anzeige (pulsierender roter Punkt) für laufende Spiele, Krone bei gewonnenen Reihen, grosser Champion-Banner mit Gold-Verlauf und Trophäen-Icon, farbige Badges für Winner-/Loser-Bracket/Grand-Final. Echte SVG-Verbindungslinien zwischen den Matches habe ich bewusst weggelassen (das bräuchte exakte Pixel-Berechnungen je nach Bildschirmgrösse und wird schnell fehleranfällig) — der Look ist aber schon deutlich "spielerischer" als vorher.
+- **##4 Admin kann alles bearbeiten:** Admins können jetzt jedes Match öffnen — auch bereits entschiedene — und Runden nachtragen oder den Sieger korrigieren ("Bearbeiten"-Button statt nur bei offenen Spielen). Achtung: Falls im Baum schon Folge-Spiele auf Basis des alten (falschen) Resultats gespielt wurden, kann eine nachträgliche Korrektur zu Inkonsistenzen weiter oben im Baum führen — das zeigt die App als Hinweis direkt im Bearbeiten-Dialog an, eine automatische Kaskaden-Korrektur gibt es (noch) nicht.
+- **##5 Kontext-Navigation:** Auf `event.html` und `bracket.html` ist die generische Navigation komplett weg — dort gibt's nur noch "← Zurück" (zu Jass-Events bzw. zum jeweiligen Event) plus Home-Icon. Kein Ablenken durch irrelevante Menüpunkte mehr, während man im Turnier steckt.
+- **##6 Avatar-Auswahl bei der Registrierung:** 20 witzige, jass-thematisch benannte Avatare (via DiceBear, kostenlos, kein eigenes Hosting nötig) stehen bei der Registrierung zur Auswahl, plus das Google-Foto als Alternative falls vorhanden. **Nicht umgesetzt:** eigenes Foto machen/hochladen (Kamera/Datei-Upload) — das würde Firebase Storage plus zusätzliche Regeln brauchen, die ich hier nicht anlegen und testen konnte. Sagt Bescheid, falls das noch gewünscht ist, das lässt sich nachrüsten.
+
 ## Bekannte Einschränkungen / offene Punkte
+
+
 
 
 - Die neuen Seiten (`events`, `event`, `bracket`, `freispiel`, `index`) sind nur auf Deutsch (kein DE/EN-Umschalter wie bei den bestehenden Seiten) – lässt sich bei Bedarf nachrüsten.

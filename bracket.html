@@ -327,6 +327,9 @@
         };
 
         const URL_FALLBACK = "https://ui-avatars.com/api/?background=000&color=fff";
+        // Auswahl an Spass-Avataren fürs Registrieren (Jass-Motto). DiceBear-API, keine eigene Bild-Hosting nötig.
+        const AVATAR_SEEDS = ['Eichel','Rose','Schelle','Schilte','Trumpf','Weis','Stich','Obenabe','Undeufe','Schieber','Bock','Konter','Puur','Under','Ober','Koenig','Ass','Nell','Banz','Wys'];
+        const AVATAR_CHOICES = AVATAR_SEEDS.map(seed => `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=f3f0e6,fde68a,fecaca,bfdbfe&radius=12`);
         const COLLECTIONS = { GAMES: 'jass_games', USERS: 'jass_users', EVENTS: 'jass_events', SETTINGS: 'jass_settings', GENJASS: 'jass_genjass_reg', BRACKET: 'jass_bracket' };
         
 
@@ -424,6 +427,7 @@
         let users = [];
         let currentLang = 'de';
         let registrationRole = 'active';
+        let selectedRegAvatar = null;
         let tourneys = [];
         let tourneyRegs = [];
         let tourney = null;
@@ -600,15 +604,40 @@
         `;
 
 
-        const renderRegistration = () => `
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur">
-                <div class="retro-card p-8 w-full max-w-sm shadow-2xl relative">
+        const renderRegistration = () => {
+            const googlePhoto = auth.currentUser?.photoURL || '';
+            const effectiveAvatar = selectedRegAvatar || googlePhoto;
+            return `
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur overflow-y-auto">
+                <div class="retro-card p-6 sm:p-8 w-full max-w-md shadow-2xl relative my-8">
                     <h2 class="text-3xl font-comic text-slate-900 mb-4 text-center">${t('registerTitle')}</h2>
                     <div class="space-y-4">
                         <div>
                             <label class="text-xs font-bold uppercase text-slate-500">Name</label>
                             <input type="text" id="reg-name" class="retro-input w-full px-4 py-2 text-lg" placeholder="Name" value="${auth.currentUser?.displayName || ''}">
                         </div>
+
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-500 block mb-2">Dein Avatar (optional)</label>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-14 h-14 rounded-full border-2 border-black overflow-hidden bg-slate-100 shrink-0">
+                                    ${effectiveAvatar ? `<img src="${effectiveAvatar}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i data-lucide="user" class="w-6 h-6"></i></div>`}
+                                </div>
+                                <p class="text-[11px] text-slate-400">Wähl einen Spass-Avatar oder lass dein Google-Bild stehen — ganz optional.</p>
+                            </div>
+                            <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-1 bg-slate-50 rounded-lg border border-slate-200">
+                                ${googlePhoto ? `
+                                <button type="button" onclick="selectRegAvatar('')" class="aspect-square rounded-full overflow-hidden border-2 ${!selectedRegAvatar ? 'border-red-600 ring-2 ring-red-300' : 'border-slate-200'}" title="Google-Foto">
+                                    <img src="${googlePhoto}" class="w-full h-full object-cover">
+                                </button>` : ''}
+                                ${AVATAR_CHOICES.map(url => `
+                                    <button type="button" onclick="selectRegAvatar('${url}')" class="aspect-square rounded-full overflow-hidden border-2 bg-white ${selectedRegAvatar === url ? 'border-red-600 ring-2 ring-red-300' : 'border-slate-200'}">
+                                        <img src="${url}" class="w-full h-full object-cover" loading="lazy">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
                         <div>
                             <label class="text-xs font-bold uppercase text-slate-500">Membership</label>
                             <div class="grid grid-cols-1 gap-2 mt-1">
@@ -625,8 +654,7 @@
                     </div>
                 </div>
             </div>
-        `;
-
+        `;};
 
         const renderPendingScreen = () => `
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-100">
@@ -722,28 +750,47 @@
                 return (teamsById[tid] || {}).name || 'TBD';
             };
 
+            const renderTeamRow = (m, slot, total, isWinnerRow, canAct) => {
+                const name = teamName(m.id, slot);
+                const isTBD = name === 'TBD';
+                const isBye = name === 'Freilos';
+                return `
+                <div class="flex items-center justify-between px-3 py-2 relative ${isWinnerRow ? 'bg-gradient-to-r from-yellow-300 to-amber-400 font-bold text-slate-900' : 'bg-slate-900/95 text-slate-200'} ${isTBD || isBye ? 'opacity-40' : ''}">
+                    <span class="text-xs sm:text-sm truncate flex items-center gap-1.5">
+                        ${isWinnerRow ? '<i data-lucide="crown" class="w-3.5 h-3.5 text-slate-900 shrink-0"></i>' : ''}
+                        ${name}
+                    </span>
+                    <span class="text-xs sm:text-sm font-mono font-bold shrink-0 ml-2">${(m.rounds||[]).length ? total : ''}</span>
+                </div>`;
+            };
+
             const renderMatchCard = (m) => {
-                const nameA = teamName(m.id, 'A');
-                const nameB = teamName(m.id, 'B');
+                if (!m) return '';
                 const done = !!m.winnerId;
+                const live = !done && (m.rounds || []).length > 0;
                 const totalA = matchSumPoints(m, mults, 'A');
                 const totalB = matchSumPoints(m, mults, 'B');
-                const canEnter = !done && m.teamA && m.teamB && m.teamA !== 'BYE' && m.teamB !== 'BYE' && (isAdmin() || teamHasUser(m.teamA) || teamHasUser(m.teamB));
+                const teamsKnown = m.teamA && m.teamB && m.teamA !== 'BYE' && m.teamB !== 'BYE';
+                const canEnterAsParticipant = !done && teamsKnown && (teamHasUser(m.teamA) || teamHasUser(m.teamB));
+                const canEnterAsAdmin = isAdmin() && teamsKnown;
+                const canAct = canEnterAsAdmin || canEnterAsParticipant;
+
                 return `
-                <div class="bracket-match retro-card p-2 !rounded-lg mb-6 !shadow-[3px_3px_0_black]">
-                    <div class="text-[9px] font-bold uppercase text-slate-400 mb-1">${m.round}</div>
-                    <div class="space-y-1">
-                        <div class="flex items-center justify-between px-2 py-1 rounded ${done && m.winnerId===m.teamA ? 'bg-green-100 font-bold text-green-800' : 'bg-slate-50'}">
-                            <span class="text-xs truncate">${nameA}</span>
-                            <span class="text-xs font-mono">${(m.rounds||[]).length ? totalA : ''}</span>
+                <div class="bracket-match-wrap relative mb-7">
+                    <div class="bracket-match rounded-lg overflow-hidden border-2 border-black ${live ? 'ring-2 ring-swiss-red animate-pulse' : ''} ${done ? 'shadow-[3px_3px_0_#d4af37]' : 'shadow-[3px_3px_0_black]'}">
+                        <div class="flex items-center justify-between px-2 py-1 bg-black">
+                            <span class="text-[9px] font-bold uppercase text-yellow-400 tracking-wider">${m.round}</span>
+                            ${live ? '<span class="flex items-center gap-1 text-[8px] font-bold uppercase text-red-400"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>Live</span>' : ''}
+                            ${done ? '<i data-lucide="trophy" class="w-3 h-3 text-yellow-400"></i>' : ''}
                         </div>
-                        <div class="flex items-center justify-between px-2 py-1 rounded ${done && m.winnerId===m.teamB ? 'bg-green-100 font-bold text-green-800' : 'bg-slate-50'}">
-                            <span class="text-xs truncate">${nameB}</span>
-                            <span class="text-xs font-mono">${(m.rounds||[]).length ? totalB : ''}</span>
+                        <div class="divide-y divide-black/40">
+                            ${renderTeamRow(m, 'A', totalA, done && m.winnerId === m.teamA, canAct)}
+                            ${renderTeamRow(m, 'B', totalB, done && m.winnerId === m.teamB, canAct)}
                         </div>
                     </div>
-                    ${canEnter ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-2 text-[10px] bg-black text-white py-1.5 rounded uppercase font-bold">${(m.rounds||[]).length ? 'Weiterspielen / Resultat' : 'Spiel starten'}</button>` : ''}
-                    ${(done) ? `<div class="text-[9px] text-center mt-1 text-yellow-600 font-bold uppercase flex items-center justify-center gap-1"><i data-lucide="crown" class="w-3 h-3"></i> entschieden</div>` : ''}
+                    ${canAct ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[10px] ${done ? 'bg-white border-2 border-black text-slate-700' : 'bg-swiss-red text-white border-2 border-black'} py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1">
+                        <i data-lucide="${done ? 'pencil' : (live ? 'play' : 'swords')}" class="w-3 h-3"></i> ${done ? 'Bearbeiten' : (live ? 'Weiterspielen' : 'Spiel starten')}
+                    </button>` : ''}
                 </div>`;
             };
 
@@ -757,39 +804,57 @@
             const wbRounds = groupByRound(wbMatches);
             const lbRounds = groupByRound(lbMatches);
 
+            const renderBracketSection = (title, icon, colorClass, rounds) => `
+                <div>
+                    <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full ${colorClass} border-2 border-black shadow-[2px_2px_0_black]">
+                        <i data-lucide="${icon}" class="w-4 h-4"></i>
+                        <span class="font-comic text-sm uppercase tracking-wide">${title}</span>
+                    </div>
+                    <div class="bracket-scroll flex gap-8 pb-4">
+                        ${Object.entries(rounds).map(([round, ms]) => `
+                            <div class="bracket-col shrink-0 flex flex-col justify-around">
+                                <div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">${round}</div>
+                                ${ms.map(renderMatchCard).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+
             return `
             <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-6xl mx-auto w-full">
-                <div class="flex items-center gap-2 text-xs px-1">
-                    <a href="event.html?id=${tourney.id}" class="text-slate-400 hover:text-black font-bold uppercase">← ${tourney.name}</a>
-                </div>
                 <div class="flex items-center justify-between px-1">
-                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">Turnierbaum</h3>
-                    ${isAdmin() ? `<button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="bg-white border-2 border-red-400 text-red-500 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-red-50">Zurücksetzen</button>` : ''}
+                    <div>
+                        <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">Turnierbaum</h3>
+                        <p class="text-xs text-slate-400 font-mono uppercase">${tourney.name}</p>
+                    </div>
+                    ${isAdmin() ? `<button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="bg-white border-2 border-red-400 text-red-500 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-red-50 shrink-0">Zurücksetzen</button>` : ''}
                 </div>
 
                 ${champion ? `
-                <div class="retro-card p-6 text-center !border-yellow-500 bg-yellow-50">
-                    <div class="text-xs uppercase text-yellow-700 font-bold tracking-widest mb-1">Champion</div>
-                    <div class="text-4xl font-comic text-yellow-700">🏆 ${champion}</div>
-                </div>` : ''}
+                <div class="relative overflow-hidden rounded-2xl border-4 border-black bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 p-8 text-center shadow-[6px_6px_0_black]">
+                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(black 1px, transparent 1px); background-size: 14px 14px;"></div>
+                    <div class="relative z-10">
+                        <i data-lucide="trophy" class="w-12 h-12 mx-auto text-slate-900 mb-2 drop-shadow"></i>
+                        <div class="text-xs uppercase text-slate-800/70 font-bold tracking-[0.3em] mb-1">Champion</div>
+                        <div class="text-5xl font-comic text-slate-900 drop-shadow-sm">${champion}</div>
+                    </div>
+                </div>` : `
+                <div class="retro-card p-3 bg-slate-50 !border-slate-300 flex items-center gap-3 text-xs text-slate-500">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+                    ${isAdmin() ? 'Als Admin könnt ihr jedes Spiel öffnen, um es zu starten oder ein bereits entschiedenes Resultat zu korrigieren.' : 'Klickt euer Match an, um live Resultate einzutragen.'}
+                </div>`}
+
+                ${renderBracketSection('Winner Bracket', 'trending-up', 'bg-blue-100 text-blue-800', wbRounds)}
+                ${Object.keys(lbRounds).length ? renderBracketSection('Loser Bracket', 'trending-down', 'bg-red-100 text-red-800', lbRounds) : ''}
 
                 <div>
-                    <h4 class="font-bold text-sm uppercase text-blue-700 mb-3">Winner Bracket</h4>
-                    <div class="bracket-scroll flex gap-6 pb-2">
-                        ${Object.entries(wbRounds).map(([round, ms]) => `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${round}</div>${ms.map(renderMatchCard).join('')}</div>`).join('')}
+                    <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 border-2 border-black shadow-[2px_2px_0_black]">
+                        <i data-lucide="award" class="w-4 h-4"></i>
+                        <span class="font-comic text-sm uppercase tracking-wide">Grand Final</span>
                     </div>
-                </div>
-                <div>
-                    <h4 class="font-bold text-sm uppercase text-red-700 mb-3">Loser Bracket</h4>
-                    <div class="bracket-scroll flex gap-6 pb-2">
-                        ${Object.entries(lbRounds).map(([round, ms]) => `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${round}</div>${ms.map(renderMatchCard).join('')}</div>`).join('')}
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-bold text-sm uppercase text-yellow-700 mb-3">Grand Final</h4>
-                    <div class="bracket-scroll flex gap-6 pb-2">
+                    <div class="bracket-scroll flex gap-8 pb-4">
                         <div class="bracket-col shrink-0">${renderMatchCard(gf)}</div>
-                        ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">Entscheidungsspiel</div>${renderMatchCard(gf2)}</div>` : ''}
+                        ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Entscheidungsspiel</div>${renderMatchCard(gf2)}</div>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -805,13 +870,18 @@
             const nameB = (teamsById[m.teamB] || {}).name || 'Team B';
             const totalA = matchSumPoints(m, mults, 'A');
             const totalB = matchSumPoints(m, mults, 'B');
+            const done = !!m.winnerId;
             if (!scoringTrump) scoringTrump = modes[0].id;
 
             return `
             <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
-                <div class="retro-card p-5 w-full max-w-md bg-white relative max-h-[92vh] overflow-y-auto">
+                <div class="retro-card p-5 w-full max-w-md bg-white relative max-h-[92vh] overflow-y-auto border-4 border-black">
                     <button onclick="closeModal(null, true)" class="absolute top-2 right-2 text-slate-400 hover:text-black"><i data-lucide="x"></i></button>
-                    <h2 class="text-xl font-comic text-slate-900 mb-3">${m.round}</h2>
+                    <div class="flex items-center gap-2 mb-3">
+                        <h2 class="text-xl font-comic text-slate-900">${m.round}</h2>
+                        ${done ? '<span class="text-[9px] font-bold uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-300">Bereits entschieden — Admin-Korrektur</span>' : ''}
+                    </div>
+                    ${done && isAdmin() ? `<p class="text-[11px] text-slate-400 mb-3">Achtung: Wenn nachfolgende Spiele im Baum bereits gespielt wurden, kann eine Korrektur hier zu Inkonsistenzen weiter oben im Baum führen — im Zweifel danach auch die Folge-Matches prüfen.</p>` : ''}
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <div class="retro-card !min-h-0 bg-blue-50 p-2 text-center !border-blue-800"><div class="text-[10px] uppercase text-blue-400 font-bold">${nameA}</div><div class="text-3xl font-comic text-blue-900">${totalA}</div></div>
                         <div class="retro-card !min-h-0 bg-red-50 p-2 text-center !border-red-800"><div class="text-[10px] uppercase text-red-400 font-bold">${nameB}</div><div class="text-3xl font-comic text-red-900">${totalB}</div></div>
@@ -838,10 +908,10 @@
                     ${(m.rounds||[]).length ? `<div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${m.rounds.length} Runde(n) gespielt</div>` : ''}
 
                     <div class="border-t border-slate-200 pt-3">
-                        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Spiel abschliessen</div>
+                        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${done ? 'Sieger korrigieren' : 'Spiel abschliessen'}</div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="finalizeMatch('${m.id}','A')" class="retro-btn-secondary retro-btn py-2 text-xs">${nameA} gewinnt</button>
-                            <button onclick="finalizeMatch('${m.id}','B')" class="retro-btn-secondary retro-btn py-2 text-xs">${nameB} gewinnt</button>
+                            <button onclick="finalizeMatch('${m.id}','A')" class="retro-btn-secondary retro-btn py-2 text-xs ${done && m.winnerId===m.teamA ? '!bg-yellow-400' : ''}">${nameA} gewinnt</button>
+                            <button onclick="finalizeMatch('${m.id}','B')" class="retro-btn-secondary retro-btn py-2 text-xs ${done && m.winnerId===m.teamB ? '!bg-yellow-400' : ''}">${nameB} gewinnt</button>
                         </div>
                     </div>
                 </div>
@@ -902,6 +972,9 @@
             await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'registration' });
         };
 
+        let NAV_MODE = 'context';
+        const getContextBack = () => ({ label: tourney ? tourney.name : 'Event', href: tourney ? ('event.html?id=' + tourney.id) : 'events.html' });
+
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
 
@@ -918,6 +991,7 @@
         ];
         const navItemAllowed = (i) => i.visibility === 'all' || (i.visibility === 'members' && isMember()) || (i.visibility === 'admin' && isAdmin());
 
+        // Für die grosse Startseite (Hero + Pillen-Reihe, unverändert schön)
         const renderTopNav = (activeKey) => {
             const items = NAV_ITEMS.filter(navItemAllowed);
             return `
@@ -938,6 +1012,13 @@
             </nav>`;
         };
 
+        // Minimaler Bottom-Nav für Kontext-Seiten (Event/Turnier): nur Home + Zurück
+        const renderContextBottomNav = (backInfo) => `
+            <nav id="mobile-nav" class="fixed bottom-4 left-4 right-4 bg-white border-4 border-black rounded-xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] px-2 py-2 flex justify-around items-center z-50 md:hidden transition-all duration-300">
+                <a href="index.html" class="flex flex-col items-center gap-1 p-2 rounded-lg text-slate-400 hover:text-slate-800"><i data-lucide="home" class="w-5 h-5"></i><span class="text-[9px] font-bold uppercase">Hauptmenü</span></a>
+                ${backInfo ? `<a href="${backInfo.href}" class="flex flex-col items-center gap-1 p-2 rounded-lg text-slate-400 hover:text-slate-800"><i data-lucide="arrow-left" class="w-5 h-5"></i><span class="text-[9px] font-bold uppercase">${backInfo.label}</span></a>` : ''}
+            </nav>`;
+
         const renderFooter = () => `
             <footer class="text-center py-8 text-slate-400 text-xs pb-32 md:pb-8 relative z-10 font-mono">
                 <div class="flex justify-center gap-4 mb-2">
@@ -947,17 +1028,40 @@
                 <p class="uppercase tracking-widest">&copy; 2025 Jassgenossen Schällebur</p>
             </footer>`;
 
-        // Kompakter, sticky Header für alle Seiten ausser der Startseite:
-        // links = zurück zum Hauptmenü, Mitte = Seitentitel, rechts = Login/Avatar.
-        const renderCompactHeader = (title) => `
+        window.toggleNavMenu = () => { document.getElementById('nav-menu-panel')?.classList.toggle('hidden'); };
+
+        const renderNavDropdown = (activeKey) => {
+            const items = NAV_ITEMS.filter(navItemAllowed);
+            return `
+            <div class="relative">
+                <button onclick="toggleNavMenu()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-black bg-white font-comic text-sm uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-[1px_1px_0_black] transition-all">
+                    <i data-lucide="menu" class="w-4 h-4"></i><span class="hidden sm:inline">Menü</span><i data-lucide="chevron-down" class="w-3 h-3"></i>
+                </button>
+                <div id="nav-menu-panel" class="hidden absolute right-0 mt-2 w-56 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0_black] z-50 overflow-hidden">
+                    ${items.map(i => `<a href="${i.href}" class="flex items-center gap-3 px-4 py-3 text-sm font-bold border-b border-slate-100 last:border-0 hover:bg-yellow-50 ${activeKey===i.key?'bg-yellow-50 text-red-700':'text-slate-700'}"><i data-lucide="${i.icon}" class="w-4 h-4"></i>${i.label}</a>`).join('')}
+                </div>
+            </div>`;
+        };
+
+        // Kompakter, sticky Header für alle Seiten ausser der Startseite.
+        // navMode 'full'    -> Dropdown-Menü mit allen Bereichen
+        // navMode 'context' -> nur "← zurück"-Link (z.B. zurück zum Event/Turnier), kein allgemeines Menü
+        const renderCompactHeader = (title, navMode, backInfo) => `
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-4 border-black">
                 <div class="max-w-6xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
                     <a href="index.html" class="flex items-center gap-2 shrink-0 group" title="Zurück zum Hauptmenü">
-                        <div class="w-9 h-9 rounded-full bg-black text-yellow-400 flex items-center justify-center group-hover:scale-105 transition-transform"><i data-lucide="home" class="w-5 h-5"></i></div>
+                        <div class="w-9 h-9 rounded-full bg-black flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform p-0.5">
+                            <img src="${LOGO_BASE64}" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                        </div>
                         <span class="hidden sm:inline font-comic text-base text-slate-800 uppercase">Hauptmenü</span>
                     </a>
+                    ${navMode === 'context' && backInfo ? `
+                        <a href="${backInfo.href}" class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-black uppercase shrink-0">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> ${backInfo.label}
+                        </a>` : ''}
                     <h1 class="font-comic text-lg sm:text-2xl text-slate-900 uppercase truncate text-center flex-1">${title}</h1>
-                    <div class="shrink-0">
+                    <div class="shrink-0 flex items-center gap-2">
+                        ${navMode === 'full' ? renderNavDropdown(PAGE_KEY) : ''}
                         ${userData && userData.role !== 'pending' ? `
                             <button onclick="signOutUser()" class="w-9 h-9 rounded-full border-2 border-black overflow-hidden bg-black block" title="Abmelden">
                                 <img src="${getAvatarUrl(userData)}" onerror="this.src='${URL_FALLBACK}'" class="w-full h-full object-cover">
@@ -970,11 +1074,14 @@
             </header>`;
 
         // mountPage: gemeinsamer Seitenrahmen (Header, Login/Registrierung/Pending-Gates, Nav, Footer)
-        // PAGE_KEY, PAGE_TITLE, AUTO_LOGIN_MODE ('none' | 'members' | 'required') werden pro Seite gesetzt.
+        // Pro Seite gesetzt: PAGE_KEY, PAGE_TITLE, AUTO_LOGIN_MODE ('none'|'members'|'required'),
+        // NAV_MODE ('full'|'context'), und bei 'context' eine Funktion getContextBack() -> {label, href}.
         const mountPage = (contentHtml) => {
             const forcedLoginNow = (AUTO_LOGIN_MODE === 'members' && !user && !window.guestMode)
                 || (AUTO_LOGIN_MODE === 'required' && !user && !userData && !window.guestMode);
             const isHome = PAGE_KEY === 'home';
+            const navMode = (typeof NAV_MODE !== 'undefined') ? NAV_MODE : 'full';
+            const backInfo = (navMode === 'context' && typeof getContextBack === 'function') ? getContextBack() : null;
             document.getElementById('app').innerHTML = `
                 ${forcedLoginNow ? renderLoginModal() : ''}
                 ${(user && !user.isAnonymous && !userData) ? renderRegistration() : ''}
@@ -987,13 +1094,13 @@
                 </main>
                 ${renderBottomNav(PAGE_KEY)}
                 ` : `
-                ${renderCompactHeader(PAGE_TITLE)}
+                ${renderCompactHeader(PAGE_TITLE, navMode, backInfo)}
                 <main class="max-w-6xl mx-auto relative z-10 min-h-screen flex flex-col pt-6">
-                    ${renderTopNav(PAGE_KEY)}
+                    ${navMode === 'context' && backInfo ? `<a href="${backInfo.href}" class="sm:hidden inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-black uppercase mb-4 px-2"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> ${backInfo.label}</a>` : ''}
                     ${contentHtml}
                     ${renderFooter()}
                 </main>
-                ${renderBottomNav(PAGE_KEY)}
+                ${navMode === 'full' ? renderBottomNav(PAGE_KEY) : renderContextBottomNav(backInfo)}
                 `)}
             `;
             if (window.lucide) window.lucide.createIcons();
@@ -1017,6 +1124,7 @@
 
         window.signOutUser = async () => { await signOut(auth); userData = null; window.guestMode = false; window.location.reload(); };
 
+                window.selectRegAvatar = (url) => { selectedRegAvatar = url; renderApp(); };
         window.completeRegistration = async () => {
             const name = document.getElementById('reg-name').value;
             const role = registrationRole;
@@ -1025,7 +1133,7 @@
             let roleKey = '';
             const legacy = LEGACY_DEBTS.find(l => (user.email && l.email && user.email.toLowerCase() === l.email.toLowerCase()) || (name && name.toLowerCase().includes(l.name.toLowerCase())));
             if(legacy) roleKey = legacy.roleKey;
-            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), { id: user.uid, name, role: isAdminUser ? 'admin' : 'pending', roleName: role === 'active' ? 'Aktivmitglied' : 'Gönner', avatar: user.photoURL || '', joined: serverTimestamp(), email: user.email || '', roleKey: roleKey });
+            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), { id: user.uid, name, role: isAdminUser ? 'admin' : 'pending', roleName: role === 'active' ? 'Aktivmitglied' : 'Gönner', avatar: selectedRegAvatar || user.photoURL || '', joined: serverTimestamp(), email: user.email || '', roleKey: roleKey });
         };
 
 
@@ -1048,7 +1156,11 @@
             // Gäste bekommen automatisch eine anonyme Firebase-Session (stabile uid),
             // damit Firestore-Regeln "request.auth != null" verlangen können statt komplett offen zu sein,
             // und damit z.B. eigene Turnierbaum-Resultate später der eigenen Anmeldung zugeordnet werden können.
-            try { if (!auth.currentUser) { await signInAnonymously(auth); } } catch(e) { console.error('Anonyme Anmeldung fehlgeschlagen:', e); }
+            // Anonyme Gast-Anmeldung: NUR wenn nach dem ersten echten Auth-Check wirklich niemand eingeloggt ist.
+            // (auth.currentUser ist direkt nach getAuth() oft noch null, auch wenn im Hintergrund eine echte
+            // Google-Session wiederhergestellt wird — das hat vorher dazu geführt, dass eingeloggte Member
+            // teils in eine anonyme Session "verschoben" wurden. Darum zuerst auf onAuthStateChanged warten.)
+            let authFirstCheckDone = false;
 
             onSnapshot(query(collection(db, COLLECTIONS.USERS)), sn => {
                 users = sn.docs.map(d=>({id:d.id, ...d.data()}));
@@ -1066,6 +1178,13 @@
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;
+                if (!authFirstCheckDone) {
+                    authFirstCheckDone = true;
+                    if (!u) {
+                        try { await signInAnonymously(auth); } catch(e) { console.error('Anonyme Anmeldung fehlgeschlagen:', e); }
+                        return; // signInAnonymously löst onAuthStateChanged erneut aus -> dort wird gerendert
+                    }
+                }
                 if (user && !user.isAnonymous) {
                     const userRef = doc(db, COLLECTIONS.USERS, user.uid);
                     const snap = await getDoc(userRef);
