@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Home · Jass-Liga Schällebur</title>
+    <title>Jass-Events · Jass-Liga Schällebur</title>
     <!-- Favicon Platzhalter -->
     <link id="app-favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     
@@ -431,7 +431,7 @@
         let currentTourneyId = null;
         let freeGameEventId = null;
 
-        const PAGE_KEY = 'home';
+        const PAGE_KEY = 'jassevents';
         const AUTO_LOGIN_MODE = 'none';
 
         // --- D. TRANSLATIONS ---
@@ -674,35 +674,147 @@
         `;
 
 
-        const HOME_CARDS = [
-            { href: 'statistik.html', icon: 'trophy', title: 'Statistik', desc: 'Rangliste, Schulden und Jass-Historie der Liga.' },
-            { href: 'match.html', icon: 'calculator', title: 'Match', desc: 'Die Jasstafel — ein Spiel unter Mitgliedern live erfassen.' },
-            { href: 'members.html', icon: 'users', title: 'Member', desc: 'Alle Mitglieder, Profile und Beitragsinfos.' },
-            { href: 'termine.html', icon: 'calendar', title: 'Termine', desc: 'Nächste Jassrunden planen, zu- oder absagen.' },
-            { href: 'events.html', icon: 'flag', title: 'Jass-Events', desc: 'Turniere: Anmeldung, Turnierbaum, Historie.' },
-            { href: 'freispiel.html', icon: 'shuffle', title: 'Freispiel', desc: 'Spontanes Spiel ohne Turnier erfassen — auch als Gast.' },
-        ];
+        const statusBadge = (s) => {
+            const map = {
+                registration: '<span class="text-[10px] font-bold uppercase bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-300">Anmeldung offen</span>',
+                running: '<span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-700 px-2 py-1 rounded-full border border-amber-300">Läuft</span>',
+                draft: '<span class="text-[10px] font-bold uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded-full border border-slate-300">Entwurf</span>',
+                finished: '<span class="text-[10px] font-bold uppercase bg-slate-800 text-white px-2 py-1 rounded-full">Beendet</span>',
+            };
+            return map[s] || map.draft;
+        };
 
-        const renderHome = () => `
-            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
-                <div class="text-center">
-                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1 mb-2">Willkommen</h3>
-                    <p class="text-slate-500 text-sm">Wähl einen Bereich.</p>
+        let newTourneyRulePreset = 'klassisch';
+        let newTourneyCustomMults = { eichel:1, rose:1, schilte:2, schelle:2, obenabe:3, undeufe:3 };
+
+        const renderTourneyCard = (ev) => {
+            const regCount = tourneyRegs.filter(r => r.tourneyId === ev.id).length;
+            const d = ev.date ? ev.date.toDate().toLocaleDateString('de-CH', {day:'2-digit', month:'2-digit', year:'numeric'}) : '';
+            return `
+            <a href="event.html?id=${ev.id}" class="retro-card p-4 flex items-center justify-between hover:scale-[1.01] transition-transform">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">${statusBadge(ev.status)}</div>
+                    <div class="font-comic text-2xl text-slate-900 leading-none">${ev.name}</div>
+                    <div class="text-xs text-slate-500 mt-1">${d} · ${regCount} angemeldet</div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    ${HOME_CARDS.map(c => `
-                        <a href="${c.href}" class="retro-card p-4 flex items-start gap-4 hover:scale-[1.02] hover:shadow-xl transition-all">
-                            <div class="w-12 h-12 shrink-0 rounded-full bg-slate-900 text-yellow-400 flex items-center justify-center">
-                                <i data-lucide="${c.icon}" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <div class="font-comic text-xl text-slate-900 uppercase leading-none mb-1">${c.title}</div>
-                                <div class="text-xs text-slate-500">${c.desc}</div>
-                            </div>
-                        </a>
-                    `).join('')}
+                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i>
+            </a>`;
+        };
+
+        const renderEventsOverview = () => {
+            const registration = tourneys.filter(e => e.status === 'registration');
+            const running = tourneys.filter(e => e.status === 'running');
+            const drafts = tourneys.filter(e => e.status === 'draft');
+            const finished = tourneys.filter(e => e.status === 'finished').sort((a,b)=> (b.date?.toDate()||0) - (a.date?.toDate()||0));
+
+            return `
+            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">Jass-Events</h3>
+                    ${isAdmin() ? `<button onclick="openCreateTourneyModal()" class="bg-black text-yellow-400 px-3 py-1 text-sm font-bold rounded border-2 border-yellow-400 shadow-md hover:scale-105 transition"><i data-lucide="plus" class="w-4 h-4 inline mr-1"></i> Neues Event</button>` : ''}
+                </div>
+
+                <div class="retro-card p-3 bg-slate-50 !border-slate-300 flex items-center gap-3 text-xs text-slate-500">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+                    Turniere mit Anmeldung, Turnierbaum und Live-Resultaten. Für ein spontanes Spiel ohne Turnier: <a href="freispiel.html" class="underline font-bold text-slate-700">Freispiel erfassen</a>.
+                </div>
+
+                ${registration.length ? `<div><h4 class="font-bold text-sm uppercase text-green-700 mb-3 border-b-2 border-slate-200 pb-1">Anmeldung offen</h4><div class="grid gap-3">${registration.map(renderTourneyCard).join('')}</div></div>` : ''}
+                ${running.length ? `<div><h4 class="font-bold text-sm uppercase text-amber-700 mb-3 border-b-2 border-slate-200 pb-1">Laufend</h4><div class="grid gap-3">${running.map(renderTourneyCard).join('')}</div></div>` : ''}
+                ${(isAdmin() && drafts.length) ? `<div><h4 class="font-bold text-sm uppercase text-slate-400 mb-3 border-b-2 border-slate-200 pb-1">Entwürfe (nur für Admins sichtbar)</h4><div class="grid gap-3">${drafts.map(renderTourneyCard).join('')}</div></div>` : ''}
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-slate-500 mb-3 border-b-2 border-slate-200 pb-1">Historie</h4>
+                    <div class="grid gap-3">
+                        ${finished.length ? finished.map(renderTourneyCard).join('') : '<div class="text-slate-400 text-sm italic">Noch keine vergangenen Events.</div>'}
+                    </div>
                 </div>
             </div>`;
+        };
+
+        const renderRulePresetPicker = (selected, mults) => `
+            <div class="space-y-2">
+                ${Object.entries(RULE_PRESETS).map(([key, p]) => `
+                    <label class="retro-card p-3 flex items-start gap-3 cursor-pointer !min-h-0 ${selected===key ? 'bg-yellow-50 !border-yellow-500' : ''}">
+                        <input type="radio" name="rule-preset" value="${key}" ${selected===key?'checked':''} onchange="setTourneyRulePreset('${key}')" class="mt-1 w-4 h-4 accent-red-600">
+                        <span>
+                            <span class="block font-bold text-sm">${p.label}</span>
+                            <span class="block text-xs text-slate-500">${p.desc}</span>
+                        </span>
+                    </label>
+                `).join('')}
+                ${selected === 'custom' ? `
+                <div class="grid grid-cols-3 gap-2 mt-2 p-3 bg-slate-50 rounded border border-slate-200">
+                    ${TRUMP_SUITS.map(s => `
+                        <div class="text-center">
+                            <div class="text-lg">${s.icon}</div>
+                            <div class="text-[10px] font-bold uppercase text-slate-500">${s.label}</div>
+                            <input type="number" min="1" max="9" value="${mults[s.id]}" onchange="setTourneyCustomMult('${s.id}', this.value)" class="retro-input w-full text-center py-1 mt-1">
+                        </div>
+                    `).join('')}
+                </div>
+                <p class="text-[10px] text-slate-400 px-1">Hinweis: Es gibt keine einheitliche offizielle Multiplikator-Tabelle für alle Klubs — legt fest, was bei euch gilt.</p>
+                ` : ''}
+            </div>`;
+
+        const renderCreateTourneyModal = () => `
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
+                <div class="retro-card p-6 w-full max-w-lg bg-white relative max-h-[90vh] overflow-y-auto">
+                    <button onclick="closeModal(null, true)" class="absolute top-2 right-2 text-slate-400 hover:text-black"><i data-lucide="x"></i></button>
+                    <h2 class="text-2xl font-comic text-slate-900 mb-4">Neues Jass-Event</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-500 block mb-1">Name</label>
+                            <input type="text" id="new-tourney-name" class="retro-input w-full px-3 py-2" placeholder="z.B. Generationen Jass 2026">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-500 block mb-1">Datum</label>
+                            <input type="date" id="new-tourney-date" class="retro-input w-full px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-500 block mb-1">Beschreibung</label>
+                            <textarea id="new-tourney-desc" class="retro-input w-full px-3 py-2" rows="2" placeholder="Kurzbeschrieb, Ort, Besonderheiten..."></textarea>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-500 block mb-2">Zählweise für dieses Event</label>
+                            ${renderRulePresetPicker(newTourneyRulePreset, newTourneyCustomMults)}
+                        </div>
+                        <button onclick="submitNewTourney()" class="w-full retro-btn py-3 mt-2">Event anlegen</button>
+                    </div>
+                </div>
+            </div>`;
+
+        window.openCreateTourneyModal = () => {
+            if (!isAdmin()) return;
+            newTourneyRulePreset = 'klassisch';
+            newTourneyCustomMults = { ...RULE_PRESETS.klassisch.mults };
+            document.getElementById('modal-container').innerHTML = renderCreateTourneyModal();
+            if (window.lucide) window.lucide.createIcons();
+        };
+        window.setTourneyRulePreset = (key) => {
+            newTourneyRulePreset = key;
+            if (key !== 'custom') newTourneyCustomMults = { ...RULE_PRESETS[key].mults };
+            document.getElementById('modal-container').innerHTML = renderCreateTourneyModal();
+            if (window.lucide) window.lucide.createIcons();
+        };
+        window.setTourneyCustomMult = (suitId, val) => { newTourneyCustomMults[suitId] = parseInt(val) || 1; };
+
+        window.submitNewTourney = async () => {
+            if (!isAdmin()) return;
+            const name = document.getElementById('new-tourney-name').value.trim();
+            const dateVal = document.getElementById('new-tourney-date').value;
+            const desc = document.getElementById('new-tourney-desc').value.trim();
+            if (!name || !dateVal) return alert('Bitte Name und Datum angeben.');
+            const mults = newTourneyRulePreset === 'custom' ? newTourneyCustomMults : RULE_PRESETS[newTourneyRulePreset].mults;
+            await addDoc(collection(db, TCOL.TOURNEYS), {
+                name, description: desc,
+                date: new Date(dateVal),
+                status: 'registration',
+                rules: { preset: newTourneyRulePreset, mults },
+                createdAt: serverTimestamp(),
+            });
+            closeModal(null, true);
+        };
 
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
@@ -799,7 +911,7 @@
 
 
         const renderApp = () => {
-            mountPage(renderHome())
+            mountPage(renderEventsOverview())
         };
 
 
@@ -816,6 +928,8 @@
                 if(userData?.role === 'admin') pendingUsers = users.filter(u => u.role === 'pending');
                 renderApp();
             });
+            onSnapshot(query(collection(db, TCOL.TOURNEYS), orderBy('date', 'desc')), sn => { tourneys = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+            onSnapshot(query(collection(db, TCOL.REGS)), sn => { tourneyRegs = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;

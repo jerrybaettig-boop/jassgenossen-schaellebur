@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Home · Jass-Liga Schällebur</title>
+    <title>Event · Jass-Liga Schällebur</title>
     <!-- Favicon Platzhalter -->
     <link id="app-favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     
@@ -431,7 +431,7 @@
         let currentTourneyId = null;
         let freeGameEventId = null;
 
-        const PAGE_KEY = 'home';
+        const PAGE_KEY = 'jassevents';
         const AUTO_LOGIN_MODE = 'none';
 
         // --- D. TRANSLATIONS ---
@@ -674,35 +674,254 @@
         `;
 
 
-        const HOME_CARDS = [
-            { href: 'statistik.html', icon: 'trophy', title: 'Statistik', desc: 'Rangliste, Schulden und Jass-Historie der Liga.' },
-            { href: 'match.html', icon: 'calculator', title: 'Match', desc: 'Die Jasstafel — ein Spiel unter Mitgliedern live erfassen.' },
-            { href: 'members.html', icon: 'users', title: 'Member', desc: 'Alle Mitglieder, Profile und Beitragsinfos.' },
-            { href: 'termine.html', icon: 'calendar', title: 'Termine', desc: 'Nächste Jassrunden planen, zu- oder absagen.' },
-            { href: 'events.html', icon: 'flag', title: 'Jass-Events', desc: 'Turniere: Anmeldung, Turnierbaum, Historie.' },
-            { href: 'freispiel.html', icon: 'shuffle', title: 'Freispiel', desc: 'Spontanes Spiel ohne Turnier erfassen — auch als Gast.' },
-        ];
+        const statusBadge = (s) => {
+            const map = {
+                registration: '<span class="text-[10px] font-bold uppercase bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-300">Anmeldung offen</span>',
+                running: '<span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-700 px-2 py-1 rounded-full border border-amber-300">Läuft</span>',
+                draft: '<span class="text-[10px] font-bold uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded-full border border-slate-300">Entwurf</span>',
+                finished: '<span class="text-[10px] font-bold uppercase bg-slate-800 text-white px-2 py-1 rounded-full">Beendet</span>',
+            };
+            return map[s] || map.draft;
+        };
 
-        const renderHome = () => `
-            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
-                <div class="text-center">
-                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1 mb-2">Willkommen</h3>
-                    <p class="text-slate-500 text-sm">Wähl einen Bereich.</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    ${HOME_CARDS.map(c => `
-                        <a href="${c.href}" class="retro-card p-4 flex items-start gap-4 hover:scale-[1.02] hover:shadow-xl transition-all">
-                            <div class="w-12 h-12 shrink-0 rounded-full bg-slate-900 text-yellow-400 flex items-center justify-center">
-                                <i data-lucide="${c.icon}" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <div class="font-comic text-xl text-slate-900 uppercase leading-none mb-1">${c.title}</div>
-                                <div class="text-xs text-slate-500">${c.desc}</div>
-                            </div>
-                        </a>
-                    `).join('')}
-                </div>
+        const renderRulesTable = (rules) => {
+            const modes = trumpModesFromRules(rules);
+            return `
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                ${modes.map(m => `
+                    <div class="retro-card p-2 text-center !min-h-0 !rounded-lg">
+                        <div class="text-xl">${m.icon}</div>
+                        <div class="text-[9px] font-bold uppercase text-slate-500">${m.label}</div>
+                        <div class="text-xs font-comic bg-yellow-400 text-black rounded px-1 inline-block mt-1">${m.mult}×</div>
+                    </div>
+                `).join('')}
             </div>`;
+        };
+
+        const renderTourneyDetail = () => {
+            if (!tourney) {
+                return `<div class="px-4 py-12 text-center text-slate-400 italic">Event wird geladen oder existiert nicht (mehr).</div>`;
+            }
+            const myReg = tourneyRegs.find(r => user && r.uid === user.uid);
+            const teamed = tourneyRegs.filter(r => r.teamNumber != null);
+            const teamsMap = {};
+            teamed.forEach(r => { (teamsMap[r.teamNumber] = teamsMap[r.teamNumber] || []).push(r); });
+            const teamCount = Object.keys(teamsMap).length;
+            const canDraw = tourneyRegs.length >= 4 && tourneyRegs.length % 2 === 0;
+            const bracketSize = [4, 8, 16].filter(n => n <= teamCount).pop();
+            const shareUrl = window.location.href;
+
+            return `
+            <div class="space-y-6 animate-in fade-in duration-500 px-2 pb-24 max-w-3xl mx-auto w-full">
+                <div class="flex items-center gap-2 text-xs">
+                    <a href="events.html" class="text-slate-400 hover:text-black font-bold uppercase">← Jass-Events</a>
+                </div>
+
+                <div class="retro-card p-5">
+                    <div class="flex items-center gap-2 mb-2">${statusBadge(tourney.status)}</div>
+                    <h2 class="text-3xl font-comic text-slate-900 leading-none mb-1">${tourney.name}</h2>
+                    <div class="text-sm text-slate-500 mb-3">${tourney.date ? tourney.date.toDate().toLocaleDateString('de-CH', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) : ''}</div>
+                    ${tourney.description ? `<p class="text-sm text-slate-600 mb-4">${tourney.description}</p>` : ''}
+                    <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Zählweise</div>
+                    ${renderRulesTable(tourney.rules)}
+                </div>
+
+                ${(tourney.status === 'running' || tourney.status === 'finished') ? `
+                <a href="bracket.html?id=${tourney.id}" class="retro-btn w-full py-3 text-lg flex items-center justify-center gap-2">
+                    <i data-lucide="git-branch" class="w-5 h-5"></i> Turnierbaum ${tourney.status === 'finished' ? 'ansehen' : 'live verfolgen'}
+                </a>` : ''}
+
+                <a href="freispiel.html?eventId=${tourney.id}" class="w-full block text-center py-2 text-xs font-bold text-slate-400 hover:text-black uppercase tracking-widest">
+                    + Sonderspiel/Freispiel im Rahmen dieses Events erfassen
+                </a>
+
+                ${(tourney.status === 'registration' || tourney.status === 'draft') ? `
+                <div class="retro-card p-5">
+                    <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Anmeldung</h4>
+                    ${myReg ? `<div class="text-sm text-green-700 font-bold flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Du bist angemeldet als ${myReg.name}</div>` : `
+                    <div class="flex gap-2">
+                        <input type="text" id="reg-self-name" placeholder="${user ? (userData?.name || 'Dein Name') : 'Dein Name (auch als Gast)'}" value="${userData?.name || ''}" class="retro-input flex-1 px-3 py-2">
+                        <button onclick="registerSelfForTourney('${tourney.id}')" class="retro-btn px-4">Anmelden</button>
+                    </div>`}
+                </div>` : ''}
+
+                <div class="retro-card p-5">
+                    <h4 class="font-bold text-sm uppercase mb-3">Angemeldet (${tourneyRegs.length})</h4>
+                    ${tourneyRegs.length === 0 ? '<div class="text-slate-400 text-sm italic">Noch niemand angemeldet.</div>' : `
+                    <div class="space-y-2">
+                        ${tourneyRegs.map(r => `
+                            <div class="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-sm">${r.name}</span>
+                                    ${r.isGuest ? '<span class="text-[9px] uppercase bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full">Gast</span>' : ''}
+                                    ${r.teamNumber != null ? `<span class="text-[9px] uppercase bg-black text-white px-1.5 py-0.5 rounded-full">Team ${parseInt(r.teamNumber)+1}</span>` : ''}
+                                </div>
+                                ${isAdmin() ? `<button onclick="removeTourneyReg('${r.id}')" class="text-slate-300 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>`}
+                </div>
+
+                ${isAdmin() ? `
+                <div class="retro-card p-5 !border-slate-800">
+                    <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4"></i> Admin-Bereich</h4>
+
+                    <div class="mb-4">
+                        <label class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Gast erfassen</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-guest-name" placeholder="Name des Gasts" class="retro-input flex-1 px-3 py-2 text-sm">
+                            <button onclick="adminAddGuestToTourney('${tourney.id}')" class="retro-btn py-2 px-3 text-xs">+ Gast</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Link zum Anmelden teilen</label>
+                        <div class="flex gap-2">
+                            <input readonly id="tourney-share-url" value="${shareUrl}" class="retro-input flex-1 px-3 py-2 text-xs">
+                            <button onclick="copyTourneyLink()" class="retro-btn py-2 px-3 text-xs">Kopieren</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        ${tourney.status === 'registration'
+                            ? `<button onclick="setTourneyStatus('${tourney.id}','draft')" class="retro-btn-secondary retro-btn py-2 text-xs">Anmeldung schliessen</button>`
+                            : `<button onclick="setTourneyStatus('${tourney.id}','registration')" class="retro-btn-secondary retro-btn py-2 text-xs">Anmeldung öffnen</button>`}
+                        <button onclick="drawTourneyTeams('${tourney.id}')" ${!canDraw ? 'disabled' : ''} class="retro-btn py-2 text-xs ${!canDraw ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none' : ''}">Teams auslosen</button>
+                    </div>
+                    ${!canDraw ? '<p class="text-[10px] text-slate-400 mb-3">Für die Auslosung braucht es mind. 4 Angemeldete (gerade Anzahl).</p>' : ''}
+
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button onclick="generateTourneyBracket('${tourney.id}')" ${teamCount < 2 ? 'disabled' : ''} class="retro-btn py-2 text-xs ${teamCount < 2 ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none' : ''}">Turnier starten</button>
+                        <button onclick="setTourneyStatus('${tourney.id}','finished')" class="retro-btn-secondary retro-btn py-2 text-xs">Als beendet markieren</button>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-3 flex justify-between">
+                        <button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="text-red-500 text-xs font-bold hover:underline">Teams & Turnierbaum zurücksetzen</button>
+                        <button onclick="deleteTourney('${tourney.id}')" class="text-red-500 text-xs font-bold hover:underline">Event löschen</button>
+                    </div>
+                </div>` : ''}
+            </div>`;
+        };
+
+        window.registerSelfForTourney = async (tourneyId) => {
+            const nameInput = document.getElementById('reg-self-name');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) return alert('Bitte Namen eingeben.');
+            const already = tourneyRegs.find(r => (user && r.uid === user.uid) || r.name.toLowerCase() === name.toLowerCase());
+            if (already) return alert('Diese Person ist bereits angemeldet.');
+            await addDoc(collection(db, TCOL.REGS), {
+                tourneyId, uid: user ? user.uid : null, name,
+                avatar: (userData && userData.avatar) || (user && user.photoURL) || '',
+                isGuest: !user, teamNumber: null, timestamp: serverTimestamp(),
+            });
+        };
+
+        window.adminAddGuestToTourney = async (tourneyId) => {
+            if (!isAdmin()) return;
+            const input = document.getElementById('admin-guest-name');
+            const name = input ? input.value.trim() : '';
+            if (!name) return;
+            await addDoc(collection(db, TCOL.REGS), {
+                tourneyId, uid: null, name, avatar: '', isGuest: true, teamNumber: null, timestamp: serverTimestamp(),
+            });
+            input.value = '';
+        };
+
+        window.removeTourneyReg = async (regId) => {
+            if (!isAdmin()) return;
+            if (!confirm('Anmeldung entfernen?')) return;
+            await deleteDoc(doc(db, TCOL.REGS, regId));
+        };
+
+        window.copyTourneyLink = () => {
+            const el = document.getElementById('tourney-share-url');
+            el.select();
+            navigator.clipboard?.writeText(el.value);
+            alert('Link kopiert!');
+        };
+
+        window.setTourneyStatus = async (tourneyId, status) => {
+            if (!isAdmin()) return;
+            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status });
+        };
+
+        window.drawTourneyTeams = async (tourneyId) => {
+            if (!isAdmin()) return;
+            if (tourneyRegs.length < 4 || tourneyRegs.length % 2 !== 0) return alert('Mind. 4 Angemeldete (gerade Anzahl) nötig.');
+            if (!confirm('Teams neu auslosen?')) return;
+            const shuffled = [...tourneyRegs].sort(() => Math.random() - 0.5);
+            const batch = writeBatch(db);
+            shuffled.forEach((r, idx) => { batch.update(doc(db, TCOL.REGS, r.id), { teamNumber: Math.floor(idx / 2) }); });
+            await batch.commit();
+        };
+
+        window.generateTourneyBracket = async (tourneyId) => {
+            if (!isAdmin()) return;
+            const teamed = tourneyRegs.filter(r => r.teamNumber != null);
+            const teamsMap = {};
+            teamed.forEach(r => { (teamsMap[r.teamNumber] = teamsMap[r.teamNumber] || []).push(r.name.split(' ')[0]); });
+            let teamList = Object.keys(teamsMap).sort((a,b)=>a-b).map(tn => ({ id: 'team-' + tn, name: teamsMap[tn].join(' & ') }));
+            if (teamList.length < 2) return alert('Zu wenig Teams. Bitte zuerst Teams auslosen.');
+            if (!confirm('Turnier jetzt starten? Der Turnierbaum wird erstellt.')) return;
+
+            teamList = [...teamList].sort(() => Math.random() - 0.5);
+            const size = [4, 8, 16].find(n => teamList.length <= n) || 16;
+            while (teamList.length < size) teamList.push({ id: 'BYE', name: 'Freilos' });
+
+            const template = BRACKET_TEMPLATES2[size];
+            const matches = template.map(tpl => {
+                const m = { id: tpl.id, round: tpl.round, isLB: !!tpl.isLB, isGrandFinal: !!tpl.isGrandFinal, winnerTo: tpl.winnerTo || null, loserTo: tpl.loserTo || null, teamA: null, teamB: null, winnerId: null, rounds: [] };
+                if (tpl.teamASeed !== undefined) m.teamA = teamList[tpl.teamASeed].id;
+                if (tpl.teamBSeed !== undefined) m.teamB = teamList[tpl.teamBSeed].id;
+                return m;
+            });
+
+            const resolveByes = (list) => {
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    list.forEach(m => {
+                        if (!m.winnerId && m.teamA && m.teamB) {
+                            let winner = null, loser = null;
+                            if (m.teamA === 'BYE' && m.teamB !== 'BYE') { winner = m.teamB; loser = 'BYE'; }
+                            else if (m.teamB === 'BYE' && m.teamA !== 'BYE') { winner = m.teamA; loser = 'BYE'; }
+                            if (winner) {
+                                m.winnerId = winner; changed = true;
+                                if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winner; }
+                                if (m.loserTo && loser !== 'BYE') { const [mid, slot] = m.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loser; }
+                            }
+                        }
+                    });
+                }
+            };
+            resolveByes(matches);
+
+            await setDoc(doc(db, TCOL.BRACKETS, tourneyId), { teams: teamList.filter(t=>t.id!=='BYE'), matches, createdAt: serverTimestamp() });
+            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'running' });
+            window.location.href = 'bracket.html?id=' + tourneyId;
+        };
+
+
+        window.deleteTourney = async (tourneyId) => {
+            if (!isAdmin()) return;
+            if (!confirm('Event inkl. aller Anmeldungen und des Turnierbaums komplett löschen?')) return;
+            const batch = writeBatch(db);
+            tourneyRegs.forEach(r => batch.delete(doc(db, TCOL.REGS, r.id)));
+            batch.delete(doc(db, TCOL.TOURNEYS, tourneyId));
+            await batch.commit();
+            await deleteDoc(doc(db, TCOL.BRACKETS, tourneyId)).catch(() => {});
+            window.location.href = 'events.html';
+        };
+
+        window.resetTourneyTeamsAndBracket = async (tourneyId) => {
+            if (!isAdmin()) return;
+            if (!confirm('Teams und Turnierbaum wirklich zurücksetzen? Die Anmeldungen bleiben erhalten.')) return;
+            const batch = writeBatch(db);
+            tourneyRegs.forEach(r => batch.update(doc(db, TCOL.REGS, r.id), { teamNumber: null }));
+            await batch.commit();
+            await deleteDoc(doc(db, TCOL.BRACKETS, tourneyId)).catch(() => {});
+            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'registration' });
+        };
 
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
@@ -799,7 +1018,7 @@
 
 
         const renderApp = () => {
-            mountPage(renderHome())
+            mountPage(renderTourneyDetail())
         };
 
 
@@ -816,6 +1035,12 @@
                 if(userData?.role === 'admin') pendingUsers = users.filter(u => u.role === 'pending');
                 renderApp();
             });
+
+            currentTourneyId = new URLSearchParams(window.location.search).get('id');
+            if (currentTourneyId) {
+                onSnapshot(doc(db, TCOL.TOURNEYS, currentTourneyId), sn => { tourney = sn.exists() ? { id: sn.id, ...sn.data() } : null; renderApp(); });
+                onSnapshot(query(collection(db, TCOL.REGS), where('tourneyId', '==', currentTourneyId)), sn => { tourneyRegs = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+            }
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;

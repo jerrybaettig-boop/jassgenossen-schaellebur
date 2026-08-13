@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Home · Jass-Liga Schällebur</title>
+    <title>Turnierbaum · Jass-Liga Schällebur</title>
     <!-- Favicon Platzhalter -->
     <link id="app-favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     
@@ -431,7 +431,7 @@
         let currentTourneyId = null;
         let freeGameEventId = null;
 
-        const PAGE_KEY = 'home';
+        const PAGE_KEY = 'jassevents';
         const AUTO_LOGIN_MODE = 'none';
 
         // --- D. TRANSLATIONS ---
@@ -674,35 +674,230 @@
         `;
 
 
-        const HOME_CARDS = [
-            { href: 'statistik.html', icon: 'trophy', title: 'Statistik', desc: 'Rangliste, Schulden und Jass-Historie der Liga.' },
-            { href: 'match.html', icon: 'calculator', title: 'Match', desc: 'Die Jasstafel — ein Spiel unter Mitgliedern live erfassen.' },
-            { href: 'members.html', icon: 'users', title: 'Member', desc: 'Alle Mitglieder, Profile und Beitragsinfos.' },
-            { href: 'termine.html', icon: 'calendar', title: 'Termine', desc: 'Nächste Jassrunden planen, zu- oder absagen.' },
-            { href: 'events.html', icon: 'flag', title: 'Jass-Events', desc: 'Turniere: Anmeldung, Turnierbaum, Historie.' },
-            { href: 'freispiel.html', icon: 'shuffle', title: 'Freispiel', desc: 'Spontanes Spiel ohne Turnier erfassen — auch als Gast.' },
-        ];
+        let scoringMatchId = null;
+        let scoringTrump = null;
 
-        const renderHome = () => `
-            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-4xl mx-auto w-full">
-                <div class="text-center">
-                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1 mb-2">Willkommen</h3>
-                    <p class="text-slate-500 text-sm">Wähl einen Bereich.</p>
+        const teamHasUser = (teamId) => {
+            if (!user || !teamId || teamId === 'BYE') return false;
+            const n = parseInt(String(teamId).replace('team-', ''));
+            return tourneyRegs.some(r => r.teamNumber === n && r.uid === user.uid);
+        };
+
+        const matchSumPoints = (m, mults, side) => (m.rounds || []).reduce((acc, r) => {
+            const cardPts = side === 'A' ? r.pA : r.pB;
+            const val = cardPts === 157 ? 257 : cardPts;
+            const weis = side === 'A' ? r.wA : r.wB;
+            const mult = mults[r.trumpId] || 1;
+            return acc + (val * mult) + (weis * mult);
+        }, 0);
+
+        const renderTourneyBracket = () => {
+            if (!tourney) return `<div class="px-4 py-12 text-center text-slate-400 italic">Event wird geladen...</div>`;
+            if (!bracketDoc || !bracketDoc.matches) {
+                return `
+                <div class="px-4 py-12 text-center animate-in fade-in">
+                    <div class="retro-card p-8 bg-slate-50 border-dashed max-w-md mx-auto">
+                        <i data-lucide="git-branch" class="w-12 h-12 mx-auto text-slate-300 mb-4"></i>
+                        <h3 class="font-comic text-xl text-slate-800 mb-2">Turnierbaum</h3>
+                        <p class="text-sm text-slate-500 mb-2">Für "${tourney.name}" wurde noch kein Turnier gestartet.</p>
+                        <a href="event.html?id=${tourney.id}" class="text-xs font-bold text-blue-600 underline">Zum Event</a>
+                    </div>
+                </div>`;
+            }
+
+            const matches = bracketDoc.matches;
+            const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const teamsById = {};
+            (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm);
+
+            const teamName = (mId, slot) => {
+                const m = matches.find(x => x.id === mId);
+                if (!m) return 'TBD';
+                const tid = slot === 'A' ? m.teamA : m.teamB;
+                if (!tid) return 'TBD';
+                if (tid === 'BYE') return 'Freilos';
+                return (teamsById[tid] || {}).name || 'TBD';
+            };
+
+            const renderMatchCard = (m) => {
+                const nameA = teamName(m.id, 'A');
+                const nameB = teamName(m.id, 'B');
+                const done = !!m.winnerId;
+                const totalA = matchSumPoints(m, mults, 'A');
+                const totalB = matchSumPoints(m, mults, 'B');
+                const canEnter = !done && m.teamA && m.teamB && m.teamA !== 'BYE' && m.teamB !== 'BYE' && (isAdmin() || teamHasUser(m.teamA) || teamHasUser(m.teamB));
+                return `
+                <div class="bracket-match retro-card p-2 !rounded-lg mb-6 !shadow-[3px_3px_0_black]">
+                    <div class="text-[9px] font-bold uppercase text-slate-400 mb-1">${m.round}</div>
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between px-2 py-1 rounded ${done && m.winnerId===m.teamA ? 'bg-green-100 font-bold text-green-800' : 'bg-slate-50'}">
+                            <span class="text-xs truncate">${nameA}</span>
+                            <span class="text-xs font-mono">${(m.rounds||[]).length ? totalA : ''}</span>
+                        </div>
+                        <div class="flex items-center justify-between px-2 py-1 rounded ${done && m.winnerId===m.teamB ? 'bg-green-100 font-bold text-green-800' : 'bg-slate-50'}">
+                            <span class="text-xs truncate">${nameB}</span>
+                            <span class="text-xs font-mono">${(m.rounds||[]).length ? totalB : ''}</span>
+                        </div>
+                    </div>
+                    ${canEnter ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-2 text-[10px] bg-black text-white py-1.5 rounded uppercase font-bold">${(m.rounds||[]).length ? 'Weiterspielen / Resultat' : 'Spiel starten'}</button>` : ''}
+                    ${(done) ? `<div class="text-[9px] text-center mt-1 text-yellow-600 font-bold uppercase flex items-center justify-center gap-1"><i data-lucide="crown" class="w-3 h-3"></i> entschieden</div>` : ''}
+                </div>`;
+            };
+
+            const wbMatches = matches.filter(m => !m.isLB && !m.isGrandFinal);
+            const lbMatches = matches.filter(m => m.isLB);
+            const gf = matches.find(m => m.id === 'gf');
+            const gf2 = matches.find(m => m.id === 'gf2');
+            const champion = gf2 ? (gf2.winnerId ? teamsById[gf2.winnerId]?.name : null) : (gf && gf.winnerId === gf.teamA ? teamsById[gf.winnerId]?.name : null);
+
+            const groupByRound = (list) => { const g = {}; list.forEach(m => { (g[m.round] = g[m.round] || []).push(m); }); return g; };
+            const wbRounds = groupByRound(wbMatches);
+            const lbRounds = groupByRound(lbMatches);
+
+            return `
+            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-6xl mx-auto w-full">
+                <div class="flex items-center gap-2 text-xs px-1">
+                    <a href="event.html?id=${tourney.id}" class="text-slate-400 hover:text-black font-bold uppercase">← ${tourney.name}</a>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    ${HOME_CARDS.map(c => `
-                        <a href="${c.href}" class="retro-card p-4 flex items-start gap-4 hover:scale-[1.02] hover:shadow-xl transition-all">
-                            <div class="w-12 h-12 shrink-0 rounded-full bg-slate-900 text-yellow-400 flex items-center justify-center">
-                                <i data-lucide="${c.icon}" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <div class="font-comic text-xl text-slate-900 uppercase leading-none mb-1">${c.title}</div>
-                                <div class="text-xs text-slate-500">${c.desc}</div>
-                            </div>
-                        </a>
-                    `).join('')}
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">Turnierbaum</h3>
+                    ${isAdmin() ? `<button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="bg-white border-2 border-red-400 text-red-500 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-red-50">Zurücksetzen</button>` : ''}
+                </div>
+
+                ${champion ? `
+                <div class="retro-card p-6 text-center !border-yellow-500 bg-yellow-50">
+                    <div class="text-xs uppercase text-yellow-700 font-bold tracking-widest mb-1">Champion</div>
+                    <div class="text-4xl font-comic text-yellow-700">🏆 ${champion}</div>
+                </div>` : ''}
+
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-blue-700 mb-3">Winner Bracket</h4>
+                    <div class="bracket-scroll flex gap-6 pb-2">
+                        ${Object.entries(wbRounds).map(([round, ms]) => `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${round}</div>${ms.map(renderMatchCard).join('')}</div>`).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-red-700 mb-3">Loser Bracket</h4>
+                    <div class="bracket-scroll flex gap-6 pb-2">
+                        ${Object.entries(lbRounds).map(([round, ms]) => `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">${round}</div>${ms.map(renderMatchCard).join('')}</div>`).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm uppercase text-yellow-700 mb-3">Grand Final</h4>
+                    <div class="bracket-scroll flex gap-6 pb-2">
+                        <div class="bracket-col shrink-0">${renderMatchCard(gf)}</div>
+                        ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-xs font-bold uppercase text-slate-400 mb-2">Entscheidungsspiel</div>${renderMatchCard(gf2)}</div>` : ''}
+                    </div>
                 </div>
             </div>`;
+        };
+
+        const renderScoringModal = () => {
+            const m = (bracketDoc.matches || []).find(x => x.id === scoringMatchId);
+            if (!m) return '';
+            const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const modes = trumpModesFromRules(tourney.rules);
+            const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm);
+            const nameA = (teamsById[m.teamA] || {}).name || 'Team A';
+            const nameB = (teamsById[m.teamB] || {}).name || 'Team B';
+            const totalA = matchSumPoints(m, mults, 'A');
+            const totalB = matchSumPoints(m, mults, 'B');
+            if (!scoringTrump) scoringTrump = modes[0].id;
+
+            return `
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
+                <div class="retro-card p-5 w-full max-w-md bg-white relative max-h-[92vh] overflow-y-auto">
+                    <button onclick="closeModal(null, true)" class="absolute top-2 right-2 text-slate-400 hover:text-black"><i data-lucide="x"></i></button>
+                    <h2 class="text-xl font-comic text-slate-900 mb-3">${m.round}</h2>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="retro-card !min-h-0 bg-blue-50 p-2 text-center !border-blue-800"><div class="text-[10px] uppercase text-blue-400 font-bold">${nameA}</div><div class="text-3xl font-comic text-blue-900">${totalA}</div></div>
+                        <div class="retro-card !min-h-0 bg-red-50 p-2 text-center !border-red-800"><div class="text-[10px] uppercase text-red-400 font-bold">${nameB}</div><div class="text-3xl font-comic text-red-900">${totalB}</div></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        ${modes.map(tm => `
+                            <button onclick="scoringTrump='${tm.id}'; document.getElementById('modal-container').innerHTML = renderScoringModal(); if(window.lucide) window.lucide.createIcons();"
+                                class="flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${scoringTrump === tm.id ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">
+                                <span class="text-xl">${tm.icon}</span>
+                                <span class="text-[9px] font-bold uppercase mt-1">${tm.label} <span class="bg-yellow-400 text-black px-1 rounded">${tm.mult}×</span></span>
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div><label class="block text-[10px] font-bold text-blue-900 uppercase text-center mb-1">Punkte ${nameA}</label><input type="number" id="score-pa" placeholder="0" class="retro-input w-full h-12 text-center text-2xl"></div>
+                        <div><label class="block text-[10px] font-bold text-red-900 uppercase text-center mb-1">Punkte ${nameB}</label><input type="number" id="score-pb" placeholder="0" class="retro-input w-full h-12 text-center text-2xl"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div><label class="block text-[10px] font-bold text-blue-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wa" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
+                        <div><label class="block text-[10px] font-bold text-red-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wb" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
+                    </div>
+                    <button onclick="submitMatchRound()" class="w-full retro-btn py-3 mb-4">Runde speichern</button>
+
+                    ${(m.rounds||[]).length ? `<div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${m.rounds.length} Runde(n) gespielt</div>` : ''}
+
+                    <div class="border-t border-slate-200 pt-3">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Spiel abschliessen</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="finalizeMatch('${m.id}','A')" class="retro-btn-secondary retro-btn py-2 text-xs">${nameA} gewinnt</button>
+                            <button onclick="finalizeMatch('${m.id}','B')" class="retro-btn-secondary retro-btn py-2 text-xs">${nameB} gewinnt</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        window.openScoringModal = (matchId) => {
+            scoringMatchId = matchId;
+            scoringTrump = null;
+            document.getElementById('modal-container').innerHTML = renderScoringModal();
+            if (window.lucide) window.lucide.createIcons();
+        };
+
+        window.submitMatchRound = async () => {
+            const pa = parseInt(document.getElementById('score-pa').value) || 0;
+            const pb = parseInt(document.getElementById('score-pb').value) || 0;
+            const wa = parseInt(document.getElementById('score-wa').value) || 0;
+            const wb = parseInt(document.getElementById('score-wb').value) || 0;
+            if (pa === 0 && pb === 0) return alert('Bitte Punkte eingeben.');
+            const matches = JSON.parse(JSON.stringify(bracketDoc.matches));
+            const m = matches.find(x => x.id === scoringMatchId);
+            if (!m) return;
+            m.rounds = m.rounds || [];
+            m.rounds.push({ trumpId: scoringTrump, pA: pa, pB: pb, wA: wa, wB: wb });
+            await updateDoc(doc(db, TCOL.BRACKETS, currentTourneyId), { matches });
+            document.getElementById('score-pa').value = '';
+            document.getElementById('score-pb').value = '';
+            document.getElementById('score-wa').value = '';
+            document.getElementById('score-wb').value = '';
+        };
+
+        window.finalizeMatch = async (matchId, winningSlot) => {
+            if (!confirm('Spiel wirklich abschliessen? Der Sieger rückt im Turnierbaum weiter.')) return;
+            const matches = JSON.parse(JSON.stringify(bracketDoc.matches));
+            const m = matches.find(x => x.id === matchId);
+            if (!m) return;
+            const winnerId = winningSlot === 'A' ? m.teamA : m.teamB;
+            const loserId = winningSlot === 'A' ? m.teamB : m.teamA;
+            m.winnerId = winnerId;
+            if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = matches.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winnerId; }
+            if (m.loserTo) { const [mid, slot] = m.loserTo.split(':'); const target = matches.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loserId; }
+            if (m.id === 'gf' && winningSlot === 'B') {
+                if (!matches.find(x => x.id === 'gf2')) {
+                    matches.push({ id: 'gf2', round: 'Entscheidungsspiel', isGrandFinal: true, winnerTo: null, loserTo: null, teamA: m.teamA, teamB: m.teamB, winnerId: null, rounds: [] });
+                }
+            }
+            await updateDoc(doc(db, TCOL.BRACKETS, currentTourneyId), { matches });
+            closeModal(null, true);
+        };
+
+        window.resetTourneyTeamsAndBracket = async (tourneyId) => {
+            if (!isAdmin()) return;
+            if (!confirm('Teams und Turnierbaum wirklich zurücksetzen? Die Anmeldungen bleiben erhalten.')) return;
+            const batch = writeBatch(db);
+            tourneyRegs.forEach(r => batch.update(doc(db, TCOL.REGS, r.id), { teamNumber: null }));
+            await batch.commit();
+            await deleteDoc(doc(db, TCOL.BRACKETS, tourneyId)).catch(() => {});
+            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'registration' });
+        };
 
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
@@ -799,7 +994,11 @@
 
 
         const renderApp = () => {
-            mountPage(renderHome())
+            mountPage(renderTourneyBracket());
+            if (scoringMatchId && bracketDoc) {
+                const mc = document.getElementById('modal-container');
+                if (mc) { mc.innerHTML = renderScoringModal(); if (window.lucide) window.lucide.createIcons(); }
+            }
         };
 
 
@@ -816,6 +1015,13 @@
                 if(userData?.role === 'admin') pendingUsers = users.filter(u => u.role === 'pending');
                 renderApp();
             });
+
+            currentTourneyId = new URLSearchParams(window.location.search).get('id');
+            if (currentTourneyId) {
+                onSnapshot(doc(db, TCOL.TOURNEYS, currentTourneyId), sn => { tourney = sn.exists() ? { id: sn.id, ...sn.data() } : null; renderApp(); });
+                onSnapshot(query(collection(db, TCOL.REGS), where('tourneyId', '==', currentTourneyId)), sn => { tourneyRegs = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
+                onSnapshot(doc(db, TCOL.BRACKETS, currentTourneyId), sn => { bracketDoc = sn.exists() ? sn.data() : null; renderApp(); });
+            }
 
             onAuthStateChanged(auth, async (u) => {
                 user = u;
