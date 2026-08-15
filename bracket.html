@@ -1012,6 +1012,7 @@
                             <button onclick="finalizeMatch('${m.id}','A')" class="retro-btn-secondary retro-btn py-2 text-xs ${done && m.winnerId===m.teamA ? '!bg-yellow-400' : ''}">${nameA} gewinnt</button>
                             <button onclick="finalizeMatch('${m.id}','B')" class="retro-btn-secondary retro-btn py-2 text-xs ${done && m.winnerId===m.teamB ? '!bg-yellow-400' : ''}">${nameB} gewinnt</button>
                         </div>
+                        ${isAdmin() ? `<button onclick="resetMatchCompletely('${m.id}')" class="w-full mt-3 text-[9px] font-bold uppercase text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded py-1.5 flex items-center justify-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Admin: Match komplett zurücksetzen</button>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -1336,6 +1337,35 @@
             }
             closeModal(null, true);
             if (championJustWon) { window.celebrate(true); } else { window.celebrate(false); }
+        };
+
+        // Admin: EIN einzelnes Match komplett zurücksetzen (alle Runden löschen + Sieger aufheben).
+        // Bewusst OHNE automatische Kaskaden-Korrektur der Folge-Matches im Baum (wie schon bei der
+        // Sieger-Korrektur) — falls im Baum bereits mit dem alten Resultat weitergespielt wurde, muss das
+        // manuell geprüft werden. Der Dialog weist explizit darauf hin.
+        window.resetMatchCompletely = async (matchId) => {
+            if (!isAdmin()) return;
+            if (!confirm('Dieses Match wirklich KOMPLETT zurücksetzen? Alle erfassten Runden dieses Matches gehen verloren, der Sieger wird aufgehoben. Falls im Turnierbaum bereits mit dem bisherigen Resultat weitergespielt wurde, danach unbedingt die Folge-Matches prüfen.')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    m.rounds = [];
+                    m.winnerId = null;
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Match zurücksetzen fehlgeschlagen', err);
+                alert('Konnte das Match nicht zurücksetzen (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
         };
 
         window.resetTourneyTeamsAndBracket = async (tourneyId) => {
