@@ -264,7 +264,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- A. KONFIGURATION ---
     const firebaseConfig = {
@@ -984,9 +984,27 @@
                         <div><label class="block text-[10px] font-bold text-blue-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wa" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
                         <div><label class="block text-[10px] font-bold text-red-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wb" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
                     </div>
-                    <button onclick="submitMatchRound()" class="w-full retro-btn py-3 mb-4">Runde speichern</button>
+                    <button id="submit-round-btn" onclick="submitMatchRound()" class="w-full retro-btn py-3 mb-4">Runde speichern</button>
 
-                    ${(m.rounds||[]).length ? `<div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${m.rounds.length} Runde(n) gespielt</div>` : ''}
+                    ${(m.rounds||[]).length ? `
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">${m.rounds.length} Runde(n) gespielt</div>
+                            <button onclick="undoLastRound('${m.id}')" class="text-[9px] font-bold uppercase text-red-500 hover:text-red-700 flex items-center gap-1"><i data-lucide="undo-2" class="w-3 h-3"></i> Letzte Runde rückgängig</button>
+                        </div>
+                        <div class="space-y-1 max-h-40 overflow-y-auto">
+                            ${m.rounds.map((r, idx) => {
+                                const mode = modes.find(tm => tm.id === r.trumpId);
+                                return `
+                                <div class="flex items-center justify-between text-[11px] bg-slate-50 rounded px-2 py-1 border border-slate-200">
+                                    <span class="text-slate-400 w-5">${idx + 1}.</span>
+                                    <span class="w-6 text-center">${mode ? mode.icon : '?'}</span>
+                                    <span class="flex-1 text-center font-mono"><span class="text-blue-700">${r.pA}</span> : <span class="text-red-700">${r.pB}</span>${(r.wA || r.wB) ? ` <span class="text-slate-400">(Weis ${r.wA || 0}/${r.wB || 0})</span>` : ''}</span>
+                                    ${isAdmin() ? `<button onclick="deleteRoundAt('${m.id}', ${idx})" class="text-slate-300 hover:text-red-600 ml-1"><i data-lucide="x" class="w-3 h-3"></i></button>` : ''}
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>` : ''}
 
                     <div class="border-t border-slate-200 pt-3">
                         <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${done ? 'Sieger korrigieren' : 'Spiel abschliessen'}</div>
@@ -1160,28 +1178,114 @@
         // sobald ein Team 2500 Punkte erreicht hat.
         const MATCH_TARGET_POINTS = 2500;
 
+        // WICHTIG: Diese Funktion läuft über eine Firestore-Transaction statt eines einfachen updateDoc.
+        // Grund: bracketDoc.matches ist EIN einziges Array-Feld für ALLE Matches des Turniers. Beim alten
+        // Code wurde beim Speichern einer Runde das komplette Array (Stand aus dem lokalen, evtl. veralteten
+        // bracketDoc) zurückgeschrieben. Wenn gleichzeitig ein anderes Match gespeichert wurde (z.B. weil ein
+        // Handy kurz im Hintergrund war/Screen-Lock/schwaches Netz), hat die zeitlich zweite Schreibung die
+        // erste überschrieben -> Runden bzw. ganze andere Matches gingen verloren oder wirkten "blockiert".
+        // Die Transaction liest den Stand immer frisch direkt vor dem Schreiben und Firestore wiederholt sie
+        // automatisch, falls zwischenzeitlich ein anderes Gerät geschrieben hat.
         window.submitMatchRound = async () => {
             const pa = parseInt(document.getElementById('score-pa').value) || 0;
             const pb = parseInt(document.getElementById('score-pb').value) || 0;
             if (pa + pb !== 157) return alert('Die Punkte von beiden Teams müssen zusammen 157 ergeben (Kartenpunkte + Stöck).');
             const wa = parseInt(document.getElementById('score-wa').value) || 0;
             const wb = parseInt(document.getElementById('score-wb').value) || 0;
-            const matches = JSON.parse(JSON.stringify(bracketDoc.matches));
-            const m = matches.find(x => x.id === scoringMatchId);
-            if (!m) return;
-            m.rounds = m.rounds || [];
-            m.rounds.push({ trumpId: scoringTrump, pA: pa, pB: pb, wA: wa, wB: wb });
-            await updateDoc(doc(db, TCOL.BRACKETS, currentTourneyId), { matches });
+            const matchId = scoringMatchId;
+            const trumpId = scoringTrump;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            const btn = document.getElementById('submit-round-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Speichert…'; }
+
+            let freshMatches;
+            try {
+                freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    m.rounds = m.rounds || [];
+                    m.rounds.push({ trumpId, pA: pa, pB: pb, wA: wa, wB: wb, enteredAt: Date.now() });
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+            } catch (err) {
+                console.error('Runde speichern fehlgeschlagen', err);
+                if (btn) { btn.disabled = false; btn.textContent = 'Runde speichern'; }
+                alert('Die Runde konnte nicht gespeichert werden (Verbindungsproblem?). Bitte Internetverbindung prüfen und nochmals versuchen — die Eingabe ist NICHT verloren, sie steht noch im Formular.');
+                return;
+            }
+
             document.getElementById('score-pa').value = '';
             document.getElementById('score-pb').value = '';
             document.getElementById('score-wa').value = '';
             document.getElementById('score-wb').value = '';
+            if (btn) { btn.disabled = false; btn.textContent = 'Runde speichern'; }
+
+            // bracketDoc lokal sofort nachführen, damit die Rundenliste im Modal ohne Wartezeit auf den
+            // nächsten onSnapshot-Callback aktuell ist.
+            bracketDoc = { ...bracketDoc, matches: freshMatches };
+            const m = freshMatches.find(x => x.id === matchId);
+            document.getElementById('modal-container').innerHTML = renderScoringModal();
+            if (window.lucide) window.lucide.createIcons();
 
             const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
             const totalA = matchSumPoints(m, mults, 'A'), totalB = matchSumPoints(m, mults, 'B');
             if (totalA >= MATCH_TARGET_POINTS || totalB >= MATCH_TARGET_POINTS) {
                 alert(`${totalA >= MATCH_TARGET_POINTS ? nameAOf(m) : nameBOf(m)} hat ${MATCH_TARGET_POINTS} Punkte erreicht — Spiel wird automatisch abgeschlossen!`);
-                await window.finalizeMatch(scoringMatchId, totalA >= totalB ? 'A' : 'B', true);
+                await window.finalizeMatch(matchId, totalA >= totalB ? 'A' : 'B', true);
+            }
+        };
+
+        // Letzte erfasste Runde eines Matches rückgängig machen (Korrektur bei Vertippen).
+        // Für alle, die das Match auch erfassen dürfen (Teilnehmer ihres eigenen Matches + Admins).
+        window.undoLastRound = async (matchId) => {
+            if (!confirm('Die zuletzt erfasste Runde wirklich löschen?')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m || !(m.rounds || []).length) throw new Error('nothing-to-undo');
+                    m.rounds.pop();
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Runde löschen fehlgeschlagen', err);
+                alert('Konnte die Runde nicht löschen (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
+        };
+
+        // Admin: eine beliebige (nicht nur die letzte) Runde eines Matches löschen.
+        window.deleteRoundAt = async (matchId, roundIndex) => {
+            if (!isAdmin()) return;
+            if (!confirm('Diese Runde wirklich löschen?')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m || !(m.rounds || [])[roundIndex]) throw new Error('round-missing');
+                    m.rounds.splice(roundIndex, 1);
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Runde löschen fehlgeschlagen', err);
+                alert('Konnte die Runde nicht löschen (Verbindungsproblem?). Bitte nochmals versuchen.');
             }
         };
 
@@ -1190,20 +1294,35 @@
 
         window.finalizeMatch = async (matchId, winningSlot, skipConfirm) => {
             if (!skipConfirm && !confirm('Spiel wirklich abschliessen? Der Sieger rückt im Turnierbaum weiter.')) return;
-            const matches = JSON.parse(JSON.stringify(bracketDoc.matches));
-            const m = matches.find(x => x.id === matchId);
-            if (!m) return;
-            const winnerId = winningSlot === 'A' ? m.teamA : m.teamB;
-            const loserId = winningSlot === 'A' ? m.teamB : m.teamA;
-            m.winnerId = winnerId;
-            if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = matches.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winnerId; }
-            if (m.loserTo) { const [mid, slot] = m.loserTo.split(':'); const target = matches.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loserId; }
-            if (m.id === 'gf' && winningSlot === 'B') {
-                if (!matches.find(x => x.id === 'gf2')) {
-                    matches.push({ id: 'gf2', round: 'Entscheidungsspiel', isGrandFinal: true, winnerTo: null, loserTo: null, teamA: m.teamA, teamB: m.teamB, winnerId: null, rounds: [] });
-                }
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            let matches, m;
+            try {
+                matches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const list = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const match = list.find(x => x.id === matchId);
+                    if (!match) throw new Error('match-missing');
+                    const winnerId = winningSlot === 'A' ? match.teamA : match.teamB;
+                    const loserId = winningSlot === 'A' ? match.teamB : match.teamA;
+                    match.winnerId = winnerId;
+                    if (match.winnerTo) { const [mid, slot] = match.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winnerId; }
+                    if (match.loserTo) { const [mid, slot] = match.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loserId; }
+                    if (match.id === 'gf' && winningSlot === 'B') {
+                        if (!list.find(x => x.id === 'gf2')) {
+                            list.push({ id: 'gf2', round: 'Entscheidungsspiel', isGrandFinal: true, winnerTo: null, loserTo: null, teamA: match.teamA, teamB: match.teamB, winnerId: null, rounds: [] });
+                        }
+                    }
+                    tx.update(bracketRef, { matches: list });
+                    return list;
+                });
+                m = matches.find(x => x.id === matchId);
+            } catch (err) {
+                console.error('Match abschliessen fehlgeschlagen', err);
+                alert('Konnte das Spiel nicht abschliessen (Verbindungsproblem?). Bitte nochmals versuchen.');
+                return;
             }
-            await updateDoc(doc(db, TCOL.BRACKETS, currentTourneyId), { matches });
+            bracketDoc = { ...bracketDoc, matches };
 
             // Champion ermitteln & aufs Event-Dokument schreiben, damit er auch in der Übersicht sichtbar ist
             let championJustWon = false;
