@@ -433,11 +433,13 @@
                 { id: 'lb2-2', round: 'LB R2', isLB:true, winnerTo:'lb3-1:B' },
                 { id: 'lb2-3', round: 'LB R2', isLB:true, winnerTo:'lb3-2:A' },
                 { id: 'lb2-4', round: 'LB R2', isLB:true, winnerTo:'lb3-2:B' },
-                { id: 'wbf1', round: 'WB Halbfinal', winnerTo:'wbf:A', loserTo:'lb3-1:B' },
-                { id: 'wbf2', round: 'WB Halbfinal', winnerTo:'wbf:B', loserTo:'lb3-2:B' },
-                { id: 'lb3-1', round: 'LB R3', isLB:true, winnerTo:'lb4:A' },
-                { id: 'lb3-2', round: 'LB R3', isLB:true, winnerTo:'lb4:B' },
-                { id: 'lb4', round: 'LB Halbfinal', isLB:true, winnerTo:'lbf:A' },
+                { id: 'wbf1', round: 'WB Halbfinal', winnerTo:'wbf:A', loserTo:'lb4-1:B' },
+                { id: 'wbf2', round: 'WB Halbfinal', winnerTo:'wbf:B', loserTo:'lb4-2:B' },
+                { id: 'lb3-1', round: 'LB R3', isLB:true, winnerTo:'lb4-1:A' },
+                { id: 'lb3-2', round: 'LB R3', isLB:true, winnerTo:'lb4-2:A' },
+                { id: 'lb4-1', round: 'LB R4', isLB:true, winnerTo:'lb5:A' },
+                { id: 'lb4-2', round: 'LB R4', isLB:true, winnerTo:'lb5:B' },
+                { id: 'lb5', round: 'LB Halbfinal', isLB:true, winnerTo:'lbf:A' },
                 { id: 'wbf', round: 'WB Final', winnerTo:'gf:A', loserTo:'lbf:B' },
                 { id: 'lbf', round: 'LB Final', isLB:true, winnerTo:'gf:B' },
                 { id: 'gf', round: 'Grand Final', isGrandFinal:true }
@@ -847,7 +849,9 @@
                 const totalB = matchSumPoints(m, mults, 'B');
                 const teamsKnown = m.teamA && m.teamB && m.teamA !== 'BYE' && m.teamB !== 'BYE';
                 const canEnterAsParticipant = !done && teamsKnown && (teamHasUser(m.teamA) || teamHasUser(m.teamB));
-                const canEnterAsAdmin = isAdmin() && teamsKnown;
+                // Admins dürfen ein Match auch öffnen, wenn noch nicht beide Teams feststehen — z.B. um nach
+                // einer Bracket-Unstimmigkeit die Teams manuell zuzuweisen (siehe "Admin: Team manuell zuweisen").
+                const canEnterAsAdmin = isAdmin();
                 const canAct = canEnterAsAdmin || canEnterAsParticipant;
 
                 return `
@@ -865,7 +869,9 @@
                     </div>
                     ${canAct ? (done
                         ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[9px] bg-white border border-slate-300 text-slate-400 py-1 rounded uppercase hover:text-slate-700 hover:border-slate-400 transition-colors flex items-center justify-center gap-1"><i data-lucide="lock-open" class="w-3 h-3"></i> Admin: wieder öffnen</button>`
-                        : `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[10px] bg-swiss-red text-white border-2 border-black py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1"><i data-lucide="${live ? 'play' : 'swords'}" class="w-3 h-3"></i> ${live ? 'Weiterspielen' : 'Spiel starten'}</button>`
+                        : !teamsKnown
+                            ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[9px] bg-amber-400 text-amber-950 border-2 border-black py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1"><i data-lucide="user-cog" class="w-3 h-3"></i> Admin: Teams zuweisen</button>`
+                            : `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[10px] bg-swiss-red text-white border-2 border-black py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1"><i data-lucide="${live ? 'play' : 'swords'}" class="w-3 h-3"></i> ${live ? 'Weiterspielen' : 'Spiel starten'}</button>`
                     ) : ''}
                 </div>`;
             };
@@ -908,6 +914,8 @@
                     </div>
                     ${isAdmin() ? `<button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="bg-white border-2 border-red-400 text-red-500 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-red-50 shrink-0">Zurücksetzen</button>` : ''}
                 </div>
+
+                ${renderClaimBanner()}
 
                 ${champion ? `
                 <div class="relative overflow-hidden rounded-2xl border-4 border-black bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 p-8 text-center shadow-[6px_6px_0_black]">
@@ -952,6 +960,9 @@
             const totalA = matchSumPoints(m, mults, 'A');
             const totalB = matchSumPoints(m, mults, 'B');
             const done = !!m.winnerId;
+            const hasA = m.teamA && m.teamA !== 'BYE';
+            const hasB = m.teamB && m.teamB !== 'BYE';
+            const teamsKnown = hasA && hasB;
             if (!scoringTrump) scoringTrump = modes[0].id;
 
             return `
@@ -963,10 +974,42 @@
                         ${done ? '<span class="text-[9px] font-bold uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-300">Bereits entschieden — Admin-Korrektur</span>' : ''}
                     </div>
                     ${done && isAdmin() ? `<p class="text-[11px] text-slate-400 mb-3">Achtung: Wenn nachfolgende Spiele im Baum bereits gespielt wurden, kann eine Korrektur hier zu Inkonsistenzen weiter oben im Baum führen — im Zweifel danach auch die Folge-Matches prüfen.</p>` : ''}
+                    ${isAdmin() ? `
+                    <div class="mb-4 border border-amber-300 bg-amber-50 rounded p-3">
+                        <div class="text-[10px] font-bold uppercase text-amber-700 mb-2">Admin: Team manuell zuweisen</div>
+                        <p class="text-[10px] text-amber-600 mb-2">Für Fälle wie fehlende Gegner durch eine falsche Bracket-Zuordnung — überschreibt direkt, ohne Runden/Resultate zu löschen.</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[9px] text-amber-600 mb-1">Team A</label>
+                                <select id="manual-team-a" class="w-full text-xs border border-amber-300 rounded p-1 bg-white">
+                                    <option value="">— leer —</option>
+                                    ${(bracketDoc.teams||[]).map(tm => `<option value="${tm.id}" ${m.teamA===tm.id?'selected':''}>${tm.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-amber-600 mb-1">Team B</label>
+                                <select id="manual-team-b" class="w-full text-xs border border-amber-300 rounded p-1 bg-white">
+                                    <option value="">— leer —</option>
+                                    ${(bracketDoc.teams||[]).map(tm => `<option value="${tm.id}" ${m.teamB===tm.id?'selected':''}>${tm.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="assignTeamsManually('${m.id}')" class="w-full mt-2 text-[10px] font-bold uppercase bg-amber-400 hover:bg-amber-500 text-amber-950 py-1.5 rounded">Zuweisung übernehmen</button>
+                    </div>` : ''}
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <div class="retro-card !min-h-0 bg-blue-50 p-2 text-center !border-blue-800"><div class="text-[10px] uppercase text-blue-400 font-bold">${nameA}</div><div class="text-3xl font-comic text-blue-900">${totalA}</div></div>
                         <div class="retro-card !min-h-0 bg-red-50 p-2 text-center !border-red-800"><div class="text-[10px] uppercase text-red-400 font-bold">${nameB}</div><div class="text-3xl font-comic text-red-900">${totalB}</div></div>
                     </div>
+
+                    ${!teamsKnown && !done ? `
+                    <div class="mb-4 border border-green-300 bg-green-50 rounded p-3">
+                        <div class="text-[10px] font-bold uppercase text-green-700 mb-2 flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5"></i> Noch kein Gegner bekannt</div>
+                        <p class="text-[11px] text-green-700 mb-2">Solange nur ein Team feststeht, kann hier keine Runde erfasst werden. Falls das andere Team wirklich fehlt (z.B. eigentlicher Gegner steht durch einen Bracket-Fehler nicht hier, sondern gehört eigentlich hierher), oben "Admin: Team manuell zuweisen" nutzen.</p>
+                        ${isAdmin() && (hasA !== hasB) ? `<button onclick="advanceByeWinner('${m.id}')" class="w-full text-[10px] font-bold uppercase bg-green-500 hover:bg-green-600 text-white py-2 rounded border-2 border-black shadow-[2px_2px_0_black]">Freilos: ${hasA ? nameA : nameB} kommt automatisch weiter</button>` : ''}
+                    </div>
+                    ` : ''}
+
+                    ${teamsKnown ? `
                     <div class="grid grid-cols-3 gap-2 mb-3">
                         ${modes.map(tm => `
                             <button type="button" data-trump-btn="${tm.id}" onclick="selectScoringTrump('${tm.id}')"
@@ -985,6 +1028,7 @@
                         <div><label class="block text-[10px] font-bold text-red-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wb" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
                     </div>
                     <button id="submit-round-btn" onclick="submitMatchRound()" class="w-full retro-btn py-3 mb-4">Runde speichern</button>
+                    ` : ''}
 
                     ${(m.rounds||[]).length ? `
                     <div class="mb-4">
@@ -1006,6 +1050,7 @@
                         </div>
                     </div>` : ''}
 
+                    ${teamsKnown ? `
                     <div class="border-t border-slate-200 pt-3">
                         <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${done ? 'Sieger korrigieren' : 'Spiel abschliessen'}</div>
                         <div class="grid grid-cols-2 gap-2">
@@ -1014,6 +1059,7 @@
                         </div>
                         ${isAdmin() ? `<button onclick="resetMatchCompletely('${m.id}')" class="w-full mt-3 text-[9px] font-bold uppercase text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded py-1.5 flex items-center justify-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Admin: Match komplett zurücksetzen</button>` : ''}
                     </div>
+                    ` : ''}
                 </div>
             </div>`;
         };
@@ -1179,7 +1225,42 @@
         // sobald ein Team 2500 Punkte erreicht hat.
         const MATCH_TARGET_POINTS = 2500;
 
-        // WICHTIG: Diese Funktion läuft über eine Firestore-Transaction statt eines einfachen updateDoc.
+        // WICHTIG: Der Grund, warum bisher nur Admins "Spiel starten" sehen: Wenn ein Admin Teilnehmer per
+        // Name erfasst hat (statt dass sie sich selbst über den Link angemeldet haben), hat deren Anmeldung
+        // KEINE uid (uid: null) — teamHasUser() vergleicht aber die uid des eingeloggten Geräts mit der uid
+        // der Anmeldung. Ohne verknüpfte uid kann das nie zutreffen, egal wer eingeloggt ist.
+        // Lösung: Teilnehmer können sich selbst mit ihrer Anmeldung verknüpfen ("Das bin ich").
+        const renderClaimBanner = () => {
+            if (!user || !tourneyRegs.length) return '';
+            const alreadyClaimed = tourneyRegs.some(r => r.uid === user.uid);
+            if (alreadyClaimed) return '';
+            const unclaimed = tourneyRegs.filter(r => !r.uid);
+            if (!unclaimed.length) return '';
+            return `
+            <div class="retro-card p-3 bg-blue-50 !border-blue-300">
+                <div class="text-[11px] font-bold uppercase text-blue-700 mb-2 flex items-center gap-1.5"><i data-lucide="user-check" class="w-3.5 h-3.5"></i> Siehst du noch keinen "Spiel starten"-Button? Wähle deinen Namen:</div>
+                <div class="flex flex-wrap gap-1.5">
+                    ${unclaimed.map(r => `<button onclick="claimRegistration('${r.id}')" class="text-[11px] bg-white border border-blue-300 text-blue-700 px-2.5 py-1 rounded-full hover:bg-blue-100">${r.name}</button>`).join('')}
+                </div>
+            </div>`;
+        };
+
+        window.claimRegistration = async (regId) => {
+            if (!user) return;
+            const reg = tourneyRegs.find(r => r.id === regId);
+            if (!reg) return;
+            if (reg.uid) return alert('Diese Anmeldung ist bereits einem Gerät/Account zugeordnet.');
+            if (tourneyRegs.some(r => r.uid === user.uid)) return alert('Du bist diesem Turnier bereits als Teilnehmer zugeordnet.');
+            if (!confirm(`Bist du "${reg.name}"? Dieses Gerät/dieser Account wird damit verknüpft.`)) return;
+            try {
+                await updateDoc(doc(db, TCOL.REGS, regId), { uid: user.uid });
+            } catch (err) {
+                console.error('Zuordnung fehlgeschlagen', err);
+                alert('Konnte die Zuordnung nicht speichern (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
+        };
+
+
         // Grund: bracketDoc.matches ist EIN einziges Array-Feld für ALLE Matches des Turniers. Beim alten
         // Code wurde beim Speichern einer Runde das komplette Array (Stand aus dem lokalen, evtl. veralteten
         // bracketDoc) zurückgeschrieben. Wenn gleichzeitig ein anderes Match gespeichert wurde (z.B. weil ein
@@ -1343,6 +1424,74 @@
         // Bewusst OHNE automatische Kaskaden-Korrektur der Folge-Matches im Baum (wie schon bei der
         // Sieger-Korrektur) — falls im Baum bereits mit dem alten Resultat weitergespielt wurde, muss das
         // manuell geprüft werden. Der Dialog weist explizit darauf hin.
+        // Admin: Team ohne Gegner (echtes Freilos-Szenario, z.B. durch den Bracket-Strukturfehler entstanden)
+        // sicher weiterschicken. WICHTIG: Rührt NUR die teamA/teamB-Zuordnung an, NIE m.rounds — es werden also
+        // nirgendwo Punkte/Resultate verändert oder gelöscht. Ausserdem wird das Ziel-Slot nur beschrieben,
+        // falls es dort noch leer ist, damit ein bereits korrekt gesetztes Team nicht überschrieben wird.
+        window.advanceByeWinner = async (matchId) => {
+            if (!isAdmin()) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    const hasA = m.teamA && m.teamA !== 'BYE';
+                    const hasB = m.teamB && m.teamB !== 'BYE';
+                    if (hasA === hasB) throw new Error('not-single-team');
+                    const winner = hasA ? m.teamA : m.teamB;
+                    m.winnerId = winner;
+                    if (m.winnerTo) {
+                        const [mid, slot] = m.winnerTo.split(':');
+                        const target = matches.find(x => x.id === mid);
+                        const key = slot === 'A' ? 'teamA' : 'teamB';
+                        if (target && !target[key]) target[key] = winner;
+                    }
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Freilos-Sieger konnte nicht vermerkt werden', err);
+                if (err.message === 'not-single-team') { alert('Diese Funktion geht nur, wenn genau ein Team im Match bekannt ist (echtes Freilos-Szenario).'); return; }
+                alert('Konnte den Freilos-Sieger nicht vermerken (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
+        };
+
+        // Admin: Team A / Team B eines Matches manuell setzen — z.B. um die aktuell falsch verdrahtete
+        // 16er-Bracket-Zuordnung im laufenden Turnier zu reparieren, ohne Runden/Resultate zu verlieren.
+        window.assignTeamsManually = async (matchId) => {
+            if (!isAdmin()) return;
+            const teamA = document.getElementById('manual-team-a').value || null;
+            const teamB = document.getElementById('manual-team-b').value || null;
+            if (teamA && teamA === teamB) return alert('Team A und Team B dürfen nicht dasselbe Team sein.');
+            if (!confirm('Team-Zuweisung für dieses Match wirklich manuell überschreiben?')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    m.teamA = teamA;
+                    m.teamB = teamB;
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Team-Zuweisung fehlgeschlagen', err);
+                alert('Konnte die Team-Zuweisung nicht speichern (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
+        };
+
         window.resetMatchCompletely = async (matchId) => {
             if (!isAdmin()) return;
             if (!confirm('Dieses Match wirklich KOMPLETT zurücksetzen? Alle erfassten Runden dieses Matches gehen verloren, der Sieger wird aufgehoben. Falls im Turnierbaum bereits mit dem bisherigen Resultat weitergespielt wurde, danach unbedingt die Folge-Matches prüfen.')) return;
