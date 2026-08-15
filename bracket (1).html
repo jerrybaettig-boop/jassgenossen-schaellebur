@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Event · Jass-Liga Schällebur</title>
+    <title>Turnierbaum · Jass-Liga Schällebur</title>
     <!-- Favicon Platzhalter -->
     <link id="app-favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
     
@@ -264,7 +264,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, doc, writeBatch, setDoc, getDoc, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- A. KONFIGURATION ---
     const firebaseConfig = {
@@ -463,7 +463,7 @@
         let freeGameEventId = null;
 
         const PAGE_KEY = 'jassevents';
-        const PAGE_TITLE = 'Event';
+        const PAGE_TITLE = 'Turnierbaum';
         const AUTO_LOGIN_MODE = 'none';
 
         // --- D. TRANSLATIONS ---
@@ -730,402 +730,737 @@
         `;
 
 
-        const statusBadge = (s) => {
-            const map = {
-                registration: '<span class="text-[10px] font-bold uppercase bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-300">Anmeldung offen</span>',
-                running: '<span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-700 px-2 py-1 rounded-full border border-amber-300">Läuft</span>',
-                draft: '<span class="text-[10px] font-bold uppercase bg-slate-100 text-slate-500 px-2 py-1 rounded-full border border-slate-300">Entwurf</span>',
-                finished: '<span class="text-[10px] font-bold uppercase bg-slate-800 text-white px-2 py-1 rounded-full">Beendet</span>',
-            };
-            return map[s] || map.draft;
+        const computeChampion = (matches, teamsById) => {
+            const gf = matches.find(m => m.id === 'gf');
+            const gf2 = matches.find(m => m.id === 'gf2');
+            if (gf2) return gf2.winnerId ? ((teamsById[gf2.winnerId] || {}).name || null) : null;
+            if (gf && gf.winnerId === gf.teamA) return (teamsById[gf.winnerId] || {}).name || null;
+            return null;
         };
 
-        let NAV_MODE = 'context';
-        const getContextBack = () => ({ label: 'Jass-Events', href: 'events.html' });
+        let scoringMatchId = null;
+        let scoringTrump = null;
 
-        let evFreeGame = { open: false, step: 'setup', team1: '', team2: '', rounds: [], trump: null };
-
-        const evFreeGameSum = (side) => {
-            const mults = (tourney && tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
-            return evFreeGame.rounds.reduce((acc, r) => {
-                const cardPts = side === 'A' ? r.pA : r.pB;
-                const val = cardPts === 157 ? 257 : cardPts;
-                const weis = side === 'A' ? r.wA : r.wB;
-                const mult = mults[r.trumpId] || 1;
-                return acc + (val * mult) + (weis * mult);
-            }, 0);
+        const teamHasUser = (teamId) => {
+            if (!user || !teamId || teamId === 'BYE') return false;
+            const n = parseInt(String(teamId).replace('team-', ''));
+            return tourneyRegs.some(r => r.teamNumber === n && r.uid === user.uid);
         };
 
-        const renderEventFreeGamesSection = () => {
-            if (!tourney) return '';
-            const games = eventFreeGames || [];
-            return `
-            <div class="retro-card p-5">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-bold text-sm uppercase flex items-center gap-2"><i data-lucide="shuffle" class="w-4 h-4"></i> Sonderspiele / Freispiele</h4>
-                    ${!evFreeGame.open ? `<button onclick="toggleEventFreeGame(true)" class="text-xs font-bold bg-black text-yellow-400 px-3 py-1.5 rounded uppercase">+ Neues Freispiel</button>` : ''}
-                </div>
-                <p class="text-xs text-slate-500 mb-3">Für spontane Spiele ausserhalb des Turnierbaums — bleibt hier im Event, keine separate Seite nötig.</p>
+        const matchSumPoints = (m, mults, side) => (m.rounds || []).reduce((acc, r) => {
+            const cardPts = side === 'A' ? r.pA : r.pB;
+            const val = cardPts === 157 ? 257 : cardPts;
+            const weis = side === 'A' ? r.wA : r.wB;
+            const mult = mults[r.trumpId] || 1;
+            return acc + (val * mult) + (weis * mult);
+        }, 0);
 
-                ${evFreeGame.open ? renderEventFreeGameForm() : ''}
-
-                <div class="space-y-2 mt-3">
-                    ${games.length === 0 ? '<div class="text-slate-400 text-sm italic">Noch keine erfasst.</div>' : games.map(g => `
-                        <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded p-2 text-xs">
-                            <span>${g.team1} <b>${g.totalA}</b> — <b>${g.totalB}</b> ${g.team2}</span>
-                            <span class="text-slate-400 font-mono">${g.timestamp ? g.timestamp.toDate().toLocaleDateString('de-CH') : ''}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>`;
+        // Zeichnet SVG-Verbindungslinien zwischen Matches innerhalb einer Bracket-Sektion (WB bzw. LB).
+        window.drawBracketConnectors = () => {
+            if (!bracketDoc || !bracketDoc.matches) return;
+            const sections = [
+                { canvasId: 'wb-canvas', svgId: 'wb-svg', ids: bracketDoc.matches.filter(m => !m.isLB && !m.isGrandFinal).map(m => m.id) },
+                { canvasId: 'lb-canvas', svgId: 'lb-svg', ids: bracketDoc.matches.filter(m => m.isLB).map(m => m.id) },
+            ];
+            sections.forEach(sec => {
+                const canvas = document.getElementById(sec.canvasId);
+                const svg = document.getElementById(sec.svgId);
+                if (!canvas || !svg) return;
+                svg.innerHTML = '';
+                svg.setAttribute('width', canvas.scrollWidth);
+                svg.setAttribute('height', canvas.scrollHeight);
+                const canvasRect = canvas.getBoundingClientRect();
+                sec.ids.forEach(id => {
+                    const m = bracketDoc.matches.find(x => x.id === id);
+                    if (!m || !m.winnerTo) return;
+                    const [targetId] = m.winnerTo.split(':');
+                    if (!sec.ids.includes(targetId)) return;
+                    const srcEl = canvas.querySelector(`[data-match-id="${id}"]`);
+                    const tgtEl = canvas.querySelector(`[data-match-id="${targetId}"]`);
+                    if (!srcEl || !tgtEl) return;
+                    const s = srcEl.getBoundingClientRect(), t = tgtEl.getBoundingClientRect();
+                    const x1 = s.right - canvasRect.left + canvas.scrollLeft;
+                    const y1 = s.top + s.height / 2 - canvasRect.top + canvas.scrollTop;
+                    const x2 = t.left - canvasRect.left + canvas.scrollLeft;
+                    const y2 = t.top + t.height / 2 - canvasRect.top + canvas.scrollTop;
+                    const midX = x1 + (x2 - x1) / 2;
+                    const done = !!m.winnerId;
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`);
+                    path.setAttribute('stroke', done ? '#d4af37' : '#cbd5e1');
+                    path.setAttribute('stroke-width', done ? '3' : '2');
+                    if (!done) path.setAttribute('stroke-dasharray', '5,5');
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-linecap', 'round');
+                    svg.appendChild(path);
+                });
+            });
         };
+        window.removeEventListener('resize', window.drawBracketConnectors);
+        window.addEventListener('resize', window.drawBracketConnectors);
 
-        const renderEventFreeGameForm = () => {
-            if (evFreeGame.step === 'setup') return `
-                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-3 space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="ev-fg-team1" value="${evFreeGame.team1}" placeholder="Team 1 Namen" class="retro-input px-3 py-2 text-sm">
-                        <input type="text" id="ev-fg-team2" value="${evFreeGame.team2}" placeholder="Team 2 Namen" class="retro-input px-3 py-2 text-sm">
+        const renderTourneyBracket = () => {
+            if (!tourney) return `<div class="px-4 py-12 text-center text-slate-400 italic">Event wird geladen...</div>`;
+            if (!bracketDoc || !bracketDoc.matches) {
+                return `
+                <div class="px-4 py-12 text-center animate-in fade-in">
+                    <div class="retro-card p-8 bg-slate-50 border-dashed max-w-md mx-auto">
+                        <i data-lucide="git-branch" class="w-12 h-12 mx-auto text-slate-300 mb-4"></i>
+                        <h3 class="font-comic text-xl text-slate-800 mb-2">Turnierbaum</h3>
+                        <p class="text-sm text-slate-500 mb-2">Für "${tourney.name}" wurde noch kein Turnier gestartet.</p>
+                        <a href="event.html?id=${tourney.id}" class="text-xs font-bold text-blue-600 underline">Zum Event</a>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="startEventFreeGame()" class="flex-1 retro-btn py-2 text-sm">Start</button>
-                        <button onclick="toggleEventFreeGame(false)" class="px-4 text-xs font-bold text-slate-400 uppercase">Abbrechen</button>
+                </div>`;
+            }
+
+            const matches = bracketDoc.matches;
+            const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const teamsById = {};
+            (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm);
+
+            const teamName = (mId, slot) => {
+                const m = matches.find(x => x.id === mId);
+                if (!m) return 'TBD';
+                const tid = slot === 'A' ? m.teamA : m.teamB;
+                if (!tid) return 'TBD';
+                if (tid === 'BYE') return 'Freilos';
+                return (teamsById[tid] || {}).name || 'TBD';
+            };
+
+            const renderTeamRow = (m, slot, total, isWinnerRow) => {
+                const name = teamName(m.id, slot);
+                const isTBD = name === 'TBD';
+                const isBye = name === 'Freilos';
+                return `
+                <div class="flex items-center justify-between px-3 py-2 relative ${isWinnerRow ? 'bg-gradient-to-r from-yellow-300 to-amber-400 font-bold text-slate-900' : 'bg-slate-900/95 text-slate-200'} ${isTBD || isBye ? 'opacity-40' : ''}">
+                    <span class="text-xs sm:text-sm truncate flex items-center gap-1.5">
+                        ${isWinnerRow ? '<i data-lucide="crown" class="w-3.5 h-3.5 text-slate-900 shrink-0"></i>' : ''}
+                        ${name}
+                    </span>
+                    <span class="text-xs sm:text-sm font-mono font-bold shrink-0 ml-2">${(m.rounds||[]).length ? total : ''}</span>
+                </div>`;
+            };
+
+            const renderMatchCard = (m) => {
+                if (!m) return '';
+                const done = !!m.winnerId;
+                const live = !done && (m.rounds || []).length > 0;
+                const totalA = matchSumPoints(m, mults, 'A');
+                const totalB = matchSumPoints(m, mults, 'B');
+                const teamsKnown = m.teamA && m.teamB && m.teamA !== 'BYE' && m.teamB !== 'BYE';
+                const canEnterAsParticipant = !done && teamsKnown && (teamHasUser(m.teamA) || teamHasUser(m.teamB));
+                // Admins dürfen ein Match auch öffnen, wenn noch nicht beide Teams feststehen — z.B. um nach
+                // einer Bracket-Unstimmigkeit die Teams manuell zuzuweisen (siehe "Admin: Team manuell zuweisen").
+                const canEnterAsAdmin = isAdmin();
+                const canAct = canEnterAsAdmin || canEnterAsParticipant;
+
+                return `
+                <div class="bracket-match-wrap relative mb-7" data-match-id="${m.id}">
+                    <div class="bracket-match rounded-lg overflow-hidden border-2 border-black ${live ? 'ring-2 ring-swiss-red animate-pulse' : ''} ${done ? 'shadow-[3px_3px_0_#d4af37] opacity-90' : 'shadow-[3px_3px_0_black]'}">
+                        <div class="flex items-center justify-between px-2 py-1 bg-black">
+                            <span class="text-[9px] font-bold uppercase text-yellow-400 tracking-wider">${m.round}</span>
+                            ${live ? '<span class="flex items-center gap-1 text-[8px] font-bold uppercase text-red-400"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>Live</span>' : ''}
+                            ${done ? '<i data-lucide="lock" class="w-3 h-3 text-yellow-400"></i>' : ''}
+                        </div>
+                        <div class="divide-y divide-black/40">
+                            ${renderTeamRow(m, 'A', totalA, done && m.winnerId === m.teamA)}
+                            ${renderTeamRow(m, 'B', totalB, done && m.winnerId === m.teamB)}
+                        </div>
+                    </div>
+                    ${canAct ? (done
+                        ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[9px] bg-white border border-slate-300 text-slate-400 py-1 rounded uppercase hover:text-slate-700 hover:border-slate-400 transition-colors flex items-center justify-center gap-1"><i data-lucide="lock-open" class="w-3 h-3"></i> Admin: wieder öffnen</button>`
+                        : !teamsKnown
+                            ? `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[9px] bg-amber-400 text-amber-950 border-2 border-black py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1"><i data-lucide="user-cog" class="w-3 h-3"></i> Admin: Teams zuweisen</button>`
+                            : `<button onclick="openScoringModal('${m.id}')" class="w-full mt-1.5 text-[10px] bg-swiss-red text-white border-2 border-black py-1 rounded font-bold uppercase shadow-[2px_2px_0_black] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center justify-center gap-1"><i data-lucide="${live ? 'play' : 'swords'}" class="w-3 h-3"></i> ${live ? 'Weiterspielen' : 'Spiel starten'}</button>`
+                    ) : ''}
+                </div>`;
+            };
+
+            const wbMatches = matches.filter(m => !m.isLB && !m.isGrandFinal);
+            const lbMatches = matches.filter(m => m.isLB);
+            const gf = matches.find(m => m.id === 'gf');
+            const gf2 = matches.find(m => m.id === 'gf2');
+            const champion = computeChampion(matches, teamsById);
+
+            const groupByRound = (list) => { const g = {}; list.forEach(m => { (g[m.round] = g[m.round] || []).push(m); }); return g; };
+            const wbRounds = groupByRound(wbMatches);
+            const lbRounds = groupByRound(lbMatches);
+
+            const renderBracketSection = (title, icon, colorClass, rounds, canvasId) => `
+                <div>
+                    <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full ${colorClass} border-2 border-black shadow-[2px_2px_0_black]">
+                        <i data-lucide="${icon}" class="w-4 h-4"></i>
+                        <span class="font-comic text-sm uppercase tracking-wide">${title}</span>
+                    </div>
+                    <div id="${canvasId}" class="bracket-canvas bracket-scroll flex gap-10 pb-4">
+                        <svg id="${canvasId.replace('canvas','svg')}" class="bracket-svg-lines"></svg>
+                        ${Object.entries(rounds).map(([round, ms]) => `
+                            <div class="bracket-col shrink-0 flex flex-col justify-around relative z-10">
+                                <div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">${round}</div>
+                                ${ms.map(renderMatchCard).join('')}
+                            </div>
+                        `).join('')}
                     </div>
                 </div>`;
 
-            const modes = trumpModesFromRules(tourney.rules);
-            if (!evFreeGame.trump) evFreeGame.trump = modes[0].id;
-            const totalA = evFreeGameSum('A'), totalB = evFreeGameSum('B');
+            setTimeout(() => window.drawBracketConnectors(), 60);
+
             return `
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-3">
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                    <div class="retro-card !min-h-0 bg-blue-50 p-2 text-center !border-blue-800"><div class="text-[10px] uppercase text-blue-400 font-bold">${evFreeGame.team1}</div><div class="text-2xl font-comic text-blue-900">${totalA}</div></div>
-                    <div class="retro-card !min-h-0 bg-red-50 p-2 text-center !border-red-800"><div class="text-[10px] uppercase text-red-400 font-bold">${evFreeGame.team2}</div><div class="text-2xl font-comic text-red-900">${totalB}</div></div>
+            <div class="space-y-8 animate-in fade-in duration-500 px-2 pb-24 max-w-6xl mx-auto w-full">
+                <div class="flex items-center justify-between px-1">
+                    <div>
+                        <h3 class="text-3xl font-comic text-slate-900 transform -rotate-1">Turnierbaum</h3>
+                        <p class="text-xs text-slate-400 font-mono uppercase">${tourney.name}</p>
+                    </div>
+                    ${isAdmin() ? `<button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="bg-white border-2 border-red-400 text-red-500 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-red-50 shrink-0">Zurücksetzen</button>` : ''}
                 </div>
-                <div class="grid grid-cols-3 gap-1 mb-3">
-                    ${modes.map(m => `
-                        <button type="button" data-trump-btn="${m.id}" onclick="selectEventFreeTrump('${m.id}')" class="trump-mode-btn flex flex-col items-center justify-center p-1.5 rounded border-2 ${evFreeGame.trump===m.id?'bg-slate-800 text-white border-slate-900':'bg-white border-slate-200 text-slate-500'}">
-                            <span class="text-lg">${m.icon}</span><span class="text-[8px] font-bold uppercase">${m.mult}×</span>
-                        </button>`).join('')}
+
+                ${renderClaimBanner()}
+
+                ${champion ? `
+                <div class="relative overflow-hidden rounded-2xl border-4 border-black bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 p-8 text-center shadow-[6px_6px_0_black]">
+                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(black 1px, transparent 1px); background-size: 14px 14px;"></div>
+                    <div class="relative z-10">
+                        <i data-lucide="trophy" class="w-12 h-12 mx-auto text-slate-900 mb-2 drop-shadow"></i>
+                        <div class="text-xs uppercase text-slate-800/70 font-bold tracking-[0.3em] mb-1">Turnier beendet — Champion</div>
+                        <div class="text-5xl font-comic text-slate-900 drop-shadow-sm">${champion}</div>
+                        <p class="text-[11px] text-slate-800/70 mt-3 max-w-sm mx-auto">Das Turnier ist entschieden. Offen bleiben ab jetzt nur noch Freispiele — oder startet auf der Event-Seite eine neue Runde mit denselben Teilnehmern.</p>
+                        <a href="event.html?id=${tourney.id}" class="inline-block mt-3 text-xs font-bold text-slate-900 underline">Zur Event-Seite</a>
+                    </div>
+                </div>` : `
+                <div class="retro-card p-3 bg-slate-50 !border-slate-300 flex items-center gap-3 text-xs text-slate-500">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+                    ${isAdmin() ? 'Als Admin könnt ihr jedes Spiel öffnen, um es zu starten oder ein bereits entschiedenes Resultat zu korrigieren.' : 'Klickt euer Match an, um live Resultate einzutragen.'}
+                </div>`}
+
+                ${renderBracketSection('Winner Bracket', 'trending-up', 'bg-blue-100 text-blue-800', wbRounds, 'wb-canvas')}
+                ${Object.keys(lbRounds).length ? renderBracketSection('Loser Bracket', 'trending-down', 'bg-red-100 text-red-800', lbRounds, 'lb-canvas') : ''}
+
+                <div class="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 border-2 border-black shadow-[2px_2px_0_black]">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                    <span class="font-comic text-sm uppercase tracking-wide">Grand Final</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <input type="number" id="ev-fg-pa" min="0" max="157" placeholder="Punkte" oninput="syncEvFreePoints('a')" class="retro-input px-2 py-2 text-center text-lg">
-                    <input type="number" id="ev-fg-pb" min="0" max="157" placeholder="Punkte" oninput="syncEvFreePoints('b')" class="retro-input px-2 py-2 text-center text-lg">
+                <div class="bracket-scroll flex gap-8 pb-4 -mt-4">
+                    <div class="bracket-col shrink-0">${renderMatchCard(gf)}</div>
+                    ${gf2 ? `<div class="bracket-col shrink-0"><div class="text-center text-[10px] font-bold uppercase text-slate-400 mb-3 tracking-widest">Entscheidungsspiel</div>${renderMatchCard(gf2)}</div>` : ''}
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                    <input type="number" id="ev-fg-wa" placeholder="Weis" class="border-b-2 border-slate-300 bg-transparent text-center py-1 text-sm">
-                    <input type="number" id="ev-fg-wb" placeholder="Weis" class="border-b-2 border-slate-300 bg-transparent text-center py-1 text-sm">
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="submitEventFreeRound()" class="flex-1 retro-btn py-2 text-sm">Runde speichern</button>
-                </div>
-                <div class="text-[10px] text-slate-400 mt-2">${evFreeGame.rounds.length} Runde(n)</div>
-                <div class="flex gap-2 mt-2">
-                    <button onclick="finishEventFreeGame()" class="flex-1 retro-btn-secondary retro-btn py-2 text-xs">Spiel speichern &amp; beenden</button>
-                    <button onclick="toggleEventFreeGame(false)" class="px-3 text-xs font-bold text-slate-400 uppercase">Abbrechen</button>
+
+                ${renderTourneyStats()}
+            </div>`;
+        };
+
+        const renderScoringModal = () => {
+            const m = (bracketDoc.matches || []).find(x => x.id === scoringMatchId);
+            if (!m) return '';
+            const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const modes = trumpModesFromRules(tourney.rules);
+            const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm);
+            const nameA = (teamsById[m.teamA] || {}).name || 'Team A';
+            const nameB = (teamsById[m.teamB] || {}).name || 'Team B';
+            const totalA = matchSumPoints(m, mults, 'A');
+            const totalB = matchSumPoints(m, mults, 'B');
+            const done = !!m.winnerId;
+            if (!scoringTrump) scoringTrump = modes[0].id;
+
+            return `
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onclick="closeModal(event)">
+                <div class="retro-card p-5 w-full max-w-md bg-white relative max-h-[92vh] overflow-y-auto border-4 border-black">
+                    <button onclick="closeModal(null, true)" class="absolute top-2 right-2 text-slate-400 hover:text-black"><i data-lucide="x"></i></button>
+                    <div class="flex items-center gap-2 mb-3">
+                        <h2 class="text-xl font-comic text-slate-900">${m.round}</h2>
+                        ${done ? '<span class="text-[9px] font-bold uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-300">Bereits entschieden — Admin-Korrektur</span>' : ''}
+                    </div>
+                    ${done && isAdmin() ? `<p class="text-[11px] text-slate-400 mb-3">Achtung: Wenn nachfolgende Spiele im Baum bereits gespielt wurden, kann eine Korrektur hier zu Inkonsistenzen weiter oben im Baum führen — im Zweifel danach auch die Folge-Matches prüfen.</p>` : ''}
+                    ${isAdmin() ? `
+                    <div class="mb-4 border border-amber-300 bg-amber-50 rounded p-3">
+                        <div class="text-[10px] font-bold uppercase text-amber-700 mb-2">Admin: Team manuell zuweisen</div>
+                        <p class="text-[10px] text-amber-600 mb-2">Für Fälle wie fehlende Gegner durch eine falsche Bracket-Zuordnung — überschreibt direkt, ohne Runden/Resultate zu löschen.</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[9px] text-amber-600 mb-1">Team A</label>
+                                <select id="manual-team-a" class="w-full text-xs border border-amber-300 rounded p-1 bg-white">
+                                    <option value="">— leer —</option>
+                                    ${(bracketDoc.teams||[]).map(tm => `<option value="${tm.id}" ${m.teamA===tm.id?'selected':''}>${tm.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-amber-600 mb-1">Team B</label>
+                                <select id="manual-team-b" class="w-full text-xs border border-amber-300 rounded p-1 bg-white">
+                                    <option value="">— leer —</option>
+                                    ${(bracketDoc.teams||[]).map(tm => `<option value="${tm.id}" ${m.teamB===tm.id?'selected':''}>${tm.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="assignTeamsManually('${m.id}')" class="w-full mt-2 text-[10px] font-bold uppercase bg-amber-400 hover:bg-amber-500 text-amber-950 py-1.5 rounded">Zuweisung übernehmen</button>
+                    </div>` : ''}
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="retro-card !min-h-0 bg-blue-50 p-2 text-center !border-blue-800"><div class="text-[10px] uppercase text-blue-400 font-bold">${nameA}</div><div class="text-3xl font-comic text-blue-900">${totalA}</div></div>
+                        <div class="retro-card !min-h-0 bg-red-50 p-2 text-center !border-red-800"><div class="text-[10px] uppercase text-red-400 font-bold">${nameB}</div><div class="text-3xl font-comic text-red-900">${totalB}</div></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        ${modes.map(tm => `
+                            <button type="button" data-trump-btn="${tm.id}" onclick="selectScoringTrump('${tm.id}')"
+                                class="trump-mode-btn flex flex-col items-center justify-center p-2 rounded border-2 transition-all ${scoringTrump === tm.id ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">
+                                <span class="text-xl">${tm.icon}</span>
+                                <span class="text-[9px] font-bold uppercase mt-1">${tm.label} <span class="bg-yellow-400 text-black px-1 rounded">${tm.mult}×</span></span>
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div><label class="block text-[10px] font-bold text-blue-900 uppercase text-center mb-1">Punkte ${nameA}</label><input type="number" id="score-pa" min="0" max="157" placeholder="0" oninput="syncMatchPoints('a')" class="retro-input w-full h-12 text-center text-2xl"></div>
+                        <div><label class="block text-[10px] font-bold text-red-900 uppercase text-center mb-1">Punkte ${nameB}</label><input type="number" id="score-pb" min="0" max="157" placeholder="0" oninput="syncMatchPoints('b')" class="retro-input w-full h-12 text-center text-2xl"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div><label class="block text-[10px] font-bold text-blue-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wa" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
+                        <div><label class="block text-[10px] font-bold text-red-400 uppercase text-center mb-1">Weis</label><input type="number" id="score-wb" placeholder="0" class="text-center w-full text-lg font-mono border-b-2 border-slate-300 bg-transparent py-1"></div>
+                    </div>
+                    <button id="submit-round-btn" onclick="submitMatchRound()" class="w-full retro-btn py-3 mb-4">Runde speichern</button>
+
+                    ${(m.rounds||[]).length ? `
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">${m.rounds.length} Runde(n) gespielt</div>
+                            <button onclick="undoLastRound('${m.id}')" class="text-[9px] font-bold uppercase text-red-500 hover:text-red-700 flex items-center gap-1"><i data-lucide="undo-2" class="w-3 h-3"></i> Letzte Runde rückgängig</button>
+                        </div>
+                        <div class="space-y-1 max-h-40 overflow-y-auto">
+                            ${m.rounds.map((r, idx) => {
+                                const mode = modes.find(tm => tm.id === r.trumpId);
+                                return `
+                                <div class="flex items-center justify-between text-[11px] bg-slate-50 rounded px-2 py-1 border border-slate-200">
+                                    <span class="text-slate-400 w-5">${idx + 1}.</span>
+                                    <span class="w-6 text-center">${mode ? mode.icon : '?'}</span>
+                                    <span class="flex-1 text-center font-mono"><span class="text-blue-700">${r.pA}</span> : <span class="text-red-700">${r.pB}</span>${(r.wA || r.wB) ? ` <span class="text-slate-400">(Weis ${r.wA || 0}/${r.wB || 0})</span>` : ''}</span>
+                                    ${isAdmin() ? `<button onclick="deleteRoundAt('${m.id}', ${idx})" class="text-slate-300 hover:text-red-600 ml-1"><i data-lucide="x" class="w-3 h-3"></i></button>` : ''}
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    <div class="border-t border-slate-200 pt-3">
+                        <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">${done ? 'Sieger korrigieren' : 'Spiel abschliessen'}</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="finalizeMatch('${m.id}','A')" class="retro-btn-secondary retro-btn py-2 text-xs ${done && m.winnerId===m.teamA ? '!bg-yellow-400' : ''}">${nameA} gewinnt</button>
+                            <button onclick="finalizeMatch('${m.id}','B')" class="retro-btn-secondary retro-btn py-2 text-xs ${done && m.winnerId===m.teamB ? '!bg-yellow-400' : ''}">${nameB} gewinnt</button>
+                        </div>
+                        ${isAdmin() ? `<button onclick="resetMatchCompletely('${m.id}')" class="w-full mt-3 text-[9px] font-bold uppercase text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded py-1.5 flex items-center justify-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Admin: Match komplett zurücksetzen</button>` : ''}
+                    </div>
                 </div>
             </div>`;
         };
 
-        window.toggleEventFreeGame = (open) => {
-            evFreeGame = { open, step: 'setup', team1: '', team2: '', rounds: [], trump: null };
-            renderApp();
+        let showTourneyStats = false;
+
+        const computeTourneyStats = () => {
+            const matches = (bracketDoc && bracketDoc.matches) || [];
+            const mults = (tourney && tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const teamsById = {};
+            ((bracketDoc && bracketDoc.teams) || []).forEach(tm => teamsById[tm.id] = tm);
+
+            const stats = {}; // teamId -> { name, wins, losses, points, weis, trumps: {suitId: count}, games: [] }
+            const ensure = (tid) => {
+                if (!tid || tid === 'BYE') return null;
+                if (!stats[tid]) stats[tid] = { name: (teamsById[tid] || {}).name || tid, wins: 0, losses: 0, points: 0, weis: 0, trumps: {}, gamesPlayed: 0 };
+                return stats[tid];
+            };
+
+            const gameLog = [];
+
+            matches.forEach(m => {
+                if (!m.teamA || !m.teamB || m.teamA === 'BYE' || m.teamB === 'BYE') return;
+                const sA = ensure(m.teamA), sB = ensure(m.teamB);
+                if (!sA || !sB) return;
+                const rounds = m.rounds || [];
+                if (rounds.length === 0 && !m.winnerId) return; // noch nicht gespielt
+
+                let totalA = 0, totalB = 0;
+                rounds.forEach(r => {
+                    const mult = mults[r.trumpId] || 1;
+                    const valA = r.pA === 157 ? 257 : r.pA;
+                    const valB = r.pB === 157 ? 257 : r.pB;
+                    totalA += (valA * mult) + (r.wA * mult);
+                    totalB += (valB * mult) + (r.wB * mult);
+                    sA.weis += r.wA || 0;
+                    sB.weis += r.wB || 0;
+                    if (r.trumpId) {
+                        sA.trumps[r.trumpId] = (sA.trumps[r.trumpId] || 0) + 1;
+                        sB.trumps[r.trumpId] = (sB.trumps[r.trumpId] || 0) + 1;
+                    }
+                });
+                sA.points += totalA; sB.points += totalB;
+                if (m.winnerId) {
+                    sA.gamesPlayed++; sB.gamesPlayed++;
+                    if (m.winnerId === m.teamA) { sA.wins++; sB.losses++; } else { sB.wins++; sA.losses++; }
+                    gameLog.push({ round: m.round, nameA: sA.name, nameB: sB.name, totalA, totalB, winner: m.winnerId === m.teamA ? sA.name : sB.name });
+                } else if (rounds.length) {
+                    gameLog.push({ round: m.round, nameA: sA.name, nameB: sB.name, totalA, totalB, winner: null });
+                }
+            });
+
+            const teamList = Object.values(stats).sort((a, b) => b.points - a.points);
+            return { teamList, gameLog };
         };
-        window.startEventFreeGame = () => {
-            const t1 = document.getElementById('ev-fg-team1').value.trim();
-            const t2 = document.getElementById('ev-fg-team2').value.trim();
-            if (!t1 || !t2) return alert('Bitte beide Teams benennen.');
-            evFreeGame.team1 = t1; evFreeGame.team2 = t2; evFreeGame.step = 'play';
-            renderApp();
+
+        const suitIconLabel = (suitId) => {
+            const s = TRUMP_SUITS.find(x => x.id === suitId);
+            return s ? `${s.icon} ${s.label}` : suitId;
         };
-        window.selectEventFreeTrump = (id) => {
-            evFreeGame.trump = id;
-            document.querySelectorAll('.trump-mode-btn').forEach(btn => {
+
+        const renderTourneyStats = () => {
+            if (!bracketDoc) return '';
+            const { teamList, gameLog } = computeTourneyStats();
+            if (teamList.length === 0) return '';
+
+            return `
+            <div class="retro-card p-0 overflow-hidden">
+                <button onclick="toggleTourneyStats()" class="w-full flex items-center justify-between px-5 py-4 bg-slate-900 text-white">
+                    <span class="font-comic text-lg uppercase flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-5 h-5"></i> Turnier-Statistik</span>
+                    <i data-lucide="${showTourneyStats ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5"></i>
+                </button>
+                ${showTourneyStats ? `
+                <div class="p-5 space-y-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs sm:text-sm">
+                            <thead>
+                                <tr class="text-left text-[10px] uppercase text-slate-400 border-b-2 border-slate-200">
+                                    <th class="py-2 pr-2">Team</th>
+                                    <th class="py-2 px-2 text-center">Siege</th>
+                                    <th class="py-2 px-2 text-center">Niederlagen</th>
+                                    <th class="py-2 px-2 text-center">Punkte</th>
+                                    <th class="py-2 px-2 text-center">Weis</th>
+                                    <th class="py-2 pl-2">Meist gespielter Trumpf</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${teamList.map(t => {
+                                    const topTrump = Object.entries(t.trumps).sort((a,b)=>b[1]-a[1])[0];
+                                    return `
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 pr-2 font-bold">${t.name}</td>
+                                        <td class="py-2 px-2 text-center text-green-700 font-bold">${t.wins}</td>
+                                        <td class="py-2 px-2 text-center text-red-600 font-bold">${t.losses}</td>
+                                        <td class="py-2 px-2 text-center font-mono">${t.points}</td>
+                                        <td class="py-2 px-2 text-center font-mono">${t.weis}</td>
+                                        <td class="py-2 pl-2">${topTrump ? suitIconLabel(topTrump[0]) + ` (${topTrump[1]}×)` : '—'}</td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Trumpf-Verteilung pro Team</h5>
+                        <div class="space-y-2">
+                            ${teamList.map(t => `
+                                <div class="flex items-center gap-2 flex-wrap text-xs">
+                                    <span class="font-bold w-28 truncate shrink-0">${t.name}</span>
+                                    ${TRUMP_SUITS.map(s => t.trumps[s.id] ? `<span class="bg-slate-100 rounded-full px-2 py-0.5 border border-slate-200">${s.icon} ${t.trumps[s.id]}×</span>` : '').join('')}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 class="text-[10px] font-bold uppercase text-slate-400 mb-2">Alle Einzelspiele</h5>
+                        <div class="space-y-1">
+                            ${gameLog.map(g => `
+                                <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-3 py-2 text-xs">
+                                    <span class="text-slate-400 font-mono w-24 shrink-0 truncate">${g.round}</span>
+                                    <span class="flex-1 text-center">${g.nameA} <b class="font-mono">${g.totalA}</b> — <b class="font-mono">${g.totalB}</b> ${g.nameB}</span>
+                                    ${g.winner ? `<span class="text-[9px] uppercase font-bold text-yellow-600 shrink-0 flex items-center gap-1"><i data-lucide="crown" class="w-3 h-3"></i>${g.winner}</span>` : '<span class="text-[9px] uppercase text-slate-300 shrink-0">läuft</span>'}
+                                </div>
+                            `).join('') || '<div class="text-slate-400 text-xs italic">Noch keine Spiele erfasst.</div>'}
+                        </div>
+                    </div>
+                </div>` : ''}
+            </div>`;
+        };
+
+        window.toggleTourneyStats = () => { showTourneyStats = !showTourneyStats; renderApp(); };
+
+        window.openScoringModal = (matchId) => {
+            scoringMatchId = matchId;
+            scoringTrump = null;
+            document.getElementById('modal-container').innerHTML = renderScoringModal();
+            if (window.lucide) window.lucide.createIcons();
+        };
+
+        window.selectScoringTrump = (id) => {
+            scoringTrump = id;
+            // Nur die Buttons umfärben statt die ganze Maske neu zu rendern —
+            // sonst gehen bereits eingetippte Punkte/Weis-Werte verloren.
+            document.querySelectorAll('#modal-container .trump-mode-btn').forEach(btn => {
                 const active = btn.dataset.trumpBtn === id;
                 btn.classList.toggle('bg-slate-800', active);
                 btn.classList.toggle('text-white', active);
                 btn.classList.toggle('border-slate-900', active);
-                btn.classList.toggle('bg-white', !active);
+                btn.classList.toggle('bg-slate-50', !active);
                 btn.classList.toggle('border-slate-200', !active);
                 btn.classList.toggle('text-slate-500', !active);
             });
         };
-        window.syncEvFreePoints = (src) => {
-            const inA = document.getElementById('ev-fg-pa'); const inB = document.getElementById('ev-fg-pb');
+
+        window.syncMatchPoints = (src) => {
+            const inA = document.getElementById('score-pa'); const inB = document.getElementById('score-pb');
             let val = parseInt(src === 'a' ? inA.value : inB.value); if (isNaN(val)) val = 0; if (val > 157) val = 157; if (val < 0) val = 0;
             if (src === 'a') { inA.value = val; inB.value = 157 - val; } else { inB.value = val; inA.value = 157 - val; }
         };
 
-        const EVFREEGAME_TARGET_POINTS = 2500;
+        // Gleiche 2500-Punkte-Regel wie beim normalen "Match": Spiel endet automatisch,
+        // sobald ein Team 2500 Punkte erreicht hat.
+        const MATCH_TARGET_POINTS = 2500;
 
-        window.submitEventFreeRound = () => {
-            const pa = parseInt(document.getElementById('ev-fg-pa').value) || 0;
-            const pb = parseInt(document.getElementById('ev-fg-pb').value) || 0;
+        // WICHTIG: Der Grund, warum bisher nur Admins "Spiel starten" sehen: Wenn ein Admin Teilnehmer per
+        // Name erfasst hat (statt dass sie sich selbst über den Link angemeldet haben), hat deren Anmeldung
+        // KEINE uid (uid: null) — teamHasUser() vergleicht aber die uid des eingeloggten Geräts mit der uid
+        // der Anmeldung. Ohne verknüpfte uid kann das nie zutreffen, egal wer eingeloggt ist.
+        // Lösung: Teilnehmer können sich selbst mit ihrer Anmeldung verknüpfen ("Das bin ich").
+        const renderClaimBanner = () => {
+            if (!user || !tourneyRegs.length) return '';
+            const alreadyClaimed = tourneyRegs.some(r => r.uid === user.uid);
+            if (alreadyClaimed) return '';
+            const unclaimed = tourneyRegs.filter(r => !r.uid);
+            if (!unclaimed.length) return '';
+            return `
+            <div class="retro-card p-3 bg-blue-50 !border-blue-300">
+                <div class="text-[11px] font-bold uppercase text-blue-700 mb-2 flex items-center gap-1.5"><i data-lucide="user-check" class="w-3.5 h-3.5"></i> Siehst du noch keinen "Spiel starten"-Button? Wähle deinen Namen:</div>
+                <div class="flex flex-wrap gap-1.5">
+                    ${unclaimed.map(r => `<button onclick="claimRegistration('${r.id}')" class="text-[11px] bg-white border border-blue-300 text-blue-700 px-2.5 py-1 rounded-full hover:bg-blue-100">${r.name}</button>`).join('')}
+                </div>
+            </div>`;
+        };
+
+        window.claimRegistration = async (regId) => {
+            if (!user) return;
+            const reg = tourneyRegs.find(r => r.id === regId);
+            if (!reg) return;
+            if (reg.uid) return alert('Diese Anmeldung ist bereits einem Gerät/Account zugeordnet.');
+            if (tourneyRegs.some(r => r.uid === user.uid)) return alert('Du bist diesem Turnier bereits als Teilnehmer zugeordnet.');
+            if (!confirm(`Bist du "${reg.name}"? Dieses Gerät/dieser Account wird damit verknüpft.`)) return;
+            try {
+                await updateDoc(doc(db, TCOL.REGS, regId), { uid: user.uid });
+            } catch (err) {
+                console.error('Zuordnung fehlgeschlagen', err);
+                alert('Konnte die Zuordnung nicht speichern (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
+        };
+
+
+        // Grund: bracketDoc.matches ist EIN einziges Array-Feld für ALLE Matches des Turniers. Beim alten
+        // Code wurde beim Speichern einer Runde das komplette Array (Stand aus dem lokalen, evtl. veralteten
+        // bracketDoc) zurückgeschrieben. Wenn gleichzeitig ein anderes Match gespeichert wurde (z.B. weil ein
+        // Handy kurz im Hintergrund war/Screen-Lock/schwaches Netz), hat die zeitlich zweite Schreibung die
+        // erste überschrieben -> Runden bzw. ganze andere Matches gingen verloren oder wirkten "blockiert".
+        // Die Transaction liest den Stand immer frisch direkt vor dem Schreiben und Firestore wiederholt sie
+        // automatisch, falls zwischenzeitlich ein anderes Gerät geschrieben hat.
+        window.submitMatchRound = async () => {
+            const pa = parseInt(document.getElementById('score-pa').value) || 0;
+            const pb = parseInt(document.getElementById('score-pb').value) || 0;
             if (pa + pb !== 157) return alert('Die Punkte von beiden Teams müssen zusammen 157 ergeben (Kartenpunkte + Stöck).');
-            const wa = parseInt(document.getElementById('ev-fg-wa').value) || 0;
-            const wb = parseInt(document.getElementById('ev-fg-wb').value) || 0;
-            evFreeGame.rounds.push({ trumpId: evFreeGame.trump, pA: pa, pB: pb, wA: wa, wB: wb });
-            renderApp();
-            const totalA = evFreeGameSum('A'), totalB = evFreeGameSum('B');
-            if (totalA >= EVFREEGAME_TARGET_POINTS || totalB >= EVFREEGAME_TARGET_POINTS) {
-                setTimeout(() => { alert(`${totalA >= EVFREEGAME_TARGET_POINTS ? evFreeGame.team1 : evFreeGame.team2} hat ${EVFREEGAME_TARGET_POINTS} Punkte erreicht — Spiel ist entschieden!`); finishEventFreeGame(); }, 50);
+            const wa = parseInt(document.getElementById('score-wa').value) || 0;
+            const wb = parseInt(document.getElementById('score-wb').value) || 0;
+            const matchId = scoringMatchId;
+            const trumpId = scoringTrump;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            const btn = document.getElementById('submit-round-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Speichert…'; }
+
+            let freshMatches;
+            try {
+                freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    m.rounds = m.rounds || [];
+                    m.rounds.push({ trumpId, pA: pa, pB: pb, wA: wa, wB: wb, enteredAt: Date.now() });
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+            } catch (err) {
+                console.error('Runde speichern fehlgeschlagen', err);
+                if (btn) { btn.disabled = false; btn.textContent = 'Runde speichern'; }
+                alert('Die Runde konnte nicht gespeichert werden (Verbindungsproblem?). Bitte Internetverbindung prüfen und nochmals versuchen — die Eingabe ist NICHT verloren, sie steht noch im Formular.');
+                return;
+            }
+
+            document.getElementById('score-pa').value = '';
+            document.getElementById('score-pb').value = '';
+            document.getElementById('score-wa').value = '';
+            document.getElementById('score-wb').value = '';
+            if (btn) { btn.disabled = false; btn.textContent = 'Runde speichern'; }
+
+            // bracketDoc lokal sofort nachführen, damit die Rundenliste im Modal ohne Wartezeit auf den
+            // nächsten onSnapshot-Callback aktuell ist.
+            bracketDoc = { ...bracketDoc, matches: freshMatches };
+            const m = freshMatches.find(x => x.id === matchId);
+            document.getElementById('modal-container').innerHTML = renderScoringModal();
+            if (window.lucide) window.lucide.createIcons();
+
+            const mults = (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults;
+            const totalA = matchSumPoints(m, mults, 'A'), totalB = matchSumPoints(m, mults, 'B');
+            if (totalA >= MATCH_TARGET_POINTS || totalB >= MATCH_TARGET_POINTS) {
+                alert(`${totalA >= MATCH_TARGET_POINTS ? nameAOf(m) : nameBOf(m)} hat ${MATCH_TARGET_POINTS} Punkte erreicht — Spiel wird automatisch abgeschlossen!`);
+                await window.finalizeMatch(matchId, totalA >= totalB ? 'A' : 'B', true);
             }
         };
-        window.finishEventFreeGame = async () => {
-            if (evFreeGame.rounds.length === 0) return alert('Noch keine Runde erfasst.');
-            const totalA = evFreeGameSum('A'), totalB = evFreeGameSum('B');
-            await addDoc(collection(db, TCOL.FREEGAMES), {
-                eventId: tourney.id,
-                team1: evFreeGame.team1, team2: evFreeGame.team2,
-                rounds: evFreeGame.rounds, totalA, totalB, winnerTeam: totalA >= totalB ? 1 : 2,
-                rulesUsed: (tourney.rules && tourney.rules.preset) || 'klassisch', mults: (tourney.rules && tourney.rules.mults) || RULE_PRESETS.klassisch.mults,
-                createdByName: (userData && userData.name) || 'Gast',
-                timestamp: serverTimestamp(),
-            });
-            evFreeGame = { open: false, step: 'setup', team1: '', team2: '', rounds: [], trump: null };
-            renderApp();
-            window.celebrate(false);
-        };
 
-        const renderRulesTable = (rules) => {
-            const modes = trumpModesFromRules(rules);
-            return `
-            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                ${modes.map(m => `
-                    <div class="retro-card p-2 text-center !min-h-0 !rounded-lg">
-                        <div class="text-xl">${m.icon}</div>
-                        <div class="text-[9px] font-bold uppercase text-slate-500">${m.label}</div>
-                        <div class="text-xs font-comic bg-yellow-400 text-black rounded px-1 inline-block mt-1">${m.mult}×</div>
-                    </div>
-                `).join('')}
-            </div>`;
-        };
-
-        const renderTourneyDetail = () => {
-            if (!tourney) {
-                return `<div class="px-4 py-12 text-center text-slate-400 italic">Event wird geladen oder existiert nicht (mehr).</div>`;
+        // Letzte erfasste Runde eines Matches rückgängig machen (Korrektur bei Vertippen).
+        // Für alle, die das Match auch erfassen dürfen (Teilnehmer ihres eigenen Matches + Admins).
+        window.undoLastRound = async (matchId) => {
+            if (!confirm('Die zuletzt erfasste Runde wirklich löschen?')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m || !(m.rounds || []).length) throw new Error('nothing-to-undo');
+                    m.rounds.pop();
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Runde löschen fehlgeschlagen', err);
+                alert('Konnte die Runde nicht löschen (Verbindungsproblem?). Bitte nochmals versuchen.');
             }
-            const myReg = tourneyRegs.find(r => user && r.uid === user.uid);
-            const teamed = tourneyRegs.filter(r => r.teamNumber != null);
-            const teamsMap = {};
-            teamed.forEach(r => { (teamsMap[r.teamNumber] = teamsMap[r.teamNumber] || []).push(r); });
-            const teamCount = Object.keys(teamsMap).length;
-            const canDraw = tourneyRegs.length >= 4 && tourneyRegs.length % 2 === 0;
-            const bracketSize = [4, 8, 16].filter(n => n <= teamCount).pop();
-            const shareUrl = window.location.href;
-
-            return `
-            <div class="space-y-6 animate-in fade-in duration-500 px-2 pb-24 max-w-3xl mx-auto w-full">
-
-                <div class="retro-card p-5">
-                    <div class="flex items-center gap-2 mb-2">${statusBadge(tourney.status)}</div>
-                    <h2 class="text-3xl font-comic text-slate-900 leading-none mb-1">${tourney.name}</h2>
-                    <div class="text-sm text-slate-500 mb-3">${tourney.date ? tourney.date.toDate().toLocaleDateString('de-CH', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) : ''}</div>
-                    ${tourney.description ? `<p class="text-sm text-slate-600 mb-4">${tourney.description}</p>` : ''}
-                    <div class="text-[10px] font-bold uppercase text-slate-400 mb-2">Zählweise</div>
-                    ${renderRulesTable(tourney.rules)}
-                </div>
-
-                ${tourney.championName ? `
-                <div class="relative overflow-hidden rounded-2xl border-4 border-black bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 p-6 text-center shadow-[6px_6px_0_black]">
-                    <i data-lucide="trophy" class="w-9 h-9 mx-auto text-slate-900 mb-1"></i>
-                    <div class="text-[10px] uppercase text-slate-800/70 font-bold tracking-[0.3em] mb-1">Turnier beendet — Champion</div>
-                    <div class="text-3xl font-comic text-slate-900">${tourney.championName}</div>
-                </div>` : ''}
-
-                ${(tourney.status === 'running' || tourney.status === 'finished') ? `
-                <a href="bracket.html?id=${tourney.id}" class="retro-btn w-full py-3 text-lg flex items-center justify-center gap-2">
-                    <i data-lucide="git-branch" class="w-5 h-5"></i> Turnierbaum ${tourney.status === 'finished' ? 'ansehen' : 'live verfolgen'}
-                </a>` : ''}
-
-                <a href="freispiel.html?eventId=${tourney.id}" class="w-full block text-center py-2 text-xs font-bold text-slate-400 hover:text-black uppercase tracking-widest">
-                    (alternativ: als eigenständige Seite öffnen)
-                </a>
-
-                ${renderEventFreeGamesSection()}
-
-                ${(tourney.status === 'registration' || tourney.status === 'draft') ? `
-                <div class="retro-card p-5">
-                    <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Anmeldung</h4>
-                    ${myReg ? `<div class="text-sm text-green-700 font-bold flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Du bist angemeldet als ${myReg.name}</div>` : `
-                    <div class="flex gap-2">
-                        <input type="text" id="reg-self-name" placeholder="${userData?.name ? userData.name : 'Dein Name (auch als Gast)'}" value="${userData?.name || ''}" class="retro-input flex-1 px-3 py-2">
-                        <button onclick="registerSelfForTourney('${tourney.id}')" class="retro-btn px-4">Anmelden</button>
-                    </div>`}
-                </div>` : ''}
-
-                <div class="retro-card p-5">
-                    <h4 class="font-bold text-sm uppercase mb-3">Angemeldet (${tourneyRegs.length})</h4>
-                    ${tourneyRegs.length === 0 ? '<div class="text-slate-400 text-sm italic">Noch niemand angemeldet.</div>' : `
-                    <div class="space-y-2">
-                        ${tourneyRegs.map(r => `
-                            <div class="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-100">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-sm">${r.name}</span>
-                                    ${r.isGuest ? '<span class="text-[9px] uppercase bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full">Gast</span>' : ''}
-                                    ${r.teamNumber != null ? `<span class="text-[9px] uppercase bg-black text-white px-1.5 py-0.5 rounded-full">Team ${parseInt(r.teamNumber)+1}</span>` : ''}
-                                </div>
-                                ${isAdmin() ? `<button onclick="removeTourneyReg('${r.id}')" class="text-slate-300 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
-                            </div>
-                        `).join('')}
-                    </div>`}
-                </div>
-
-                ${isAdmin() ? `
-                <div class="retro-card p-5 !border-slate-800">
-                    <h4 class="font-bold text-sm uppercase mb-3 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4"></i> Admin-Bereich</h4>
-
-                    <div class="mb-4">
-                        <label class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Gast erfassen</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="admin-guest-name" placeholder="Name des Gasts" class="retro-input flex-1 px-3 py-2 text-sm">
-                            <button onclick="adminAddGuestToTourney('${tourney.id}')" class="retro-btn py-2 px-3 text-xs">+ Gast</button>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Link zum Anmelden teilen</label>
-                        <div class="flex gap-2">
-                            <input readonly id="tourney-share-url" value="${shareUrl}" class="retro-input flex-1 px-3 py-2 text-xs">
-                            <button onclick="copyTourneyLink()" class="retro-btn py-2 px-3 text-xs">Kopieren</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 mb-3">
-                        ${tourney.status === 'registration'
-                            ? `<button onclick="setTourneyStatus('${tourney.id}','draft')" class="retro-btn-secondary retro-btn py-2 text-xs">Anmeldung schliessen</button>`
-                            : `<button onclick="setTourneyStatus('${tourney.id}','registration')" class="retro-btn-secondary retro-btn py-2 text-xs">Anmeldung öffnen</button>`}
-                        <button onclick="drawTourneyTeams('${tourney.id}')" ${!canDraw ? 'disabled' : ''} class="retro-btn py-2 text-xs ${!canDraw ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none' : ''}">Teams auslosen</button>
-                    </div>
-                    ${!canDraw ? '<p class="text-[10px] text-slate-400 mb-3">Für die Auslosung braucht es mind. 4 Angemeldete (gerade Anzahl).</p>' : ''}
-
-                    <div class="grid grid-cols-2 gap-2 mb-3">
-                        <button onclick="generateTourneyBracket('${tourney.id}')" ${teamCount < 2 ? 'disabled' : ''} class="retro-btn py-2 text-xs ${teamCount < 2 ? '!bg-slate-200 !text-slate-400 !border-slate-300 !shadow-none' : ''}">Turnier starten</button>
-                        <button onclick="setTourneyStatus('${tourney.id}','finished')" class="retro-btn-secondary retro-btn py-2 text-xs">Als beendet markieren</button>
-                    </div>
-
-                    ${tourney.championName ? `
-                    <div class="mb-3 p-3 bg-amber-50 border-2 border-amber-300 rounded-lg">
-                        <p class="text-[11px] text-amber-800 mb-2">🏆 Turnier ist entschieden. Gleiche Teilnehmer nochmal gegeneinander antreten lassen?</p>
-                        <button onclick="startNewRoundSameParticipants('${tourney.id}')" class="w-full retro-btn py-2 text-xs flex items-center justify-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Neue Runde starten (gleiche Teilnehmer)</button>
-                    </div>` : ''}
-
-                    <div class="border-t border-slate-200 pt-3 flex justify-between">
-                        <button onclick="resetTourneyTeamsAndBracket('${tourney.id}')" class="text-red-500 text-xs font-bold hover:underline">Teams & Turnierbaum zurücksetzen</button>
-                        <button onclick="deleteTourney('${tourney.id}')" class="text-red-500 text-xs font-bold hover:underline">Event löschen</button>
-                    </div>
-                </div>` : ''}
-            </div>`;
         };
 
-        window.registerSelfForTourney = async (tourneyId) => {
-            const nameInput = document.getElementById('reg-self-name');
-            const name = nameInput ? nameInput.value.trim() : '';
-            if (!name) return alert('Bitte Namen eingeben.');
-            const already = tourneyRegs.find(r => (user && r.uid === user.uid) || r.name.toLowerCase() === name.toLowerCase());
-            if (already) return alert('Diese Person ist bereits angemeldet.');
-            await addDoc(collection(db, TCOL.REGS), {
-                tourneyId, uid: user ? user.uid : null, name,
-                avatar: (userData && userData.avatar) || (user && user.photoURL) || '',
-                isGuest: !userData, teamNumber: null, timestamp: serverTimestamp(),
-            });
-        };
-
-        window.adminAddGuestToTourney = async (tourneyId) => {
+        // Admin: eine beliebige (nicht nur die letzte) Runde eines Matches löschen.
+        window.deleteRoundAt = async (matchId, roundIndex) => {
             if (!isAdmin()) return;
-            const input = document.getElementById('admin-guest-name');
-            const name = input ? input.value.trim() : '';
-            if (!name) return;
-            await addDoc(collection(db, TCOL.REGS), {
-                tourneyId, uid: null, name, avatar: '', isGuest: true, teamNumber: null, timestamp: serverTimestamp(),
-            });
-            input.value = '';
+            if (!confirm('Diese Runde wirklich löschen?')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m || !(m.rounds || [])[roundIndex]) throw new Error('round-missing');
+                    m.rounds.splice(roundIndex, 1);
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Runde löschen fehlgeschlagen', err);
+                alert('Konnte die Runde nicht löschen (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
         };
 
-        window.removeTourneyReg = async (regId) => {
-            if (!isAdmin()) return;
-            if (!confirm('Anmeldung entfernen?')) return;
-            await deleteDoc(doc(db, TCOL.REGS, regId));
-        };
+        const nameAOf = (m) => { const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm); return (teamsById[m.teamA] || {}).name || 'Team A'; };
+        const nameBOf = (m) => { const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm); return (teamsById[m.teamB] || {}).name || 'Team B'; };
 
-        window.copyTourneyLink = () => {
-            const el = document.getElementById('tourney-share-url');
-            el.select();
-            navigator.clipboard?.writeText(el.value);
-            alert('Link kopiert!');
-        };
-
-        window.setTourneyStatus = async (tourneyId, status) => {
-            if (!isAdmin()) return;
-            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status });
-        };
-
-        window.drawTourneyTeams = async (tourneyId) => {
-            if (!isAdmin()) return;
-            if (tourneyRegs.length < 4 || tourneyRegs.length % 2 !== 0) return alert('Mind. 4 Angemeldete (gerade Anzahl) nötig.');
-            if (!confirm('Teams neu auslosen?')) return;
-            const shuffled = [...tourneyRegs].sort(() => Math.random() - 0.5);
-            const batch = writeBatch(db);
-            shuffled.forEach((r, idx) => { batch.update(doc(db, TCOL.REGS, r.id), { teamNumber: Math.floor(idx / 2) }); });
-            await batch.commit();
-        };
-
-        window.generateTourneyBracket = async (tourneyId) => {
-            if (!isAdmin()) return;
-            const teamed = tourneyRegs.filter(r => r.teamNumber != null);
-            const teamsMap = {};
-            teamed.forEach(r => { (teamsMap[r.teamNumber] = teamsMap[r.teamNumber] || []).push(r.name.split(' ')[0]); });
-            let teamList = Object.keys(teamsMap).sort((a,b)=>a-b).map(tn => ({ id: 'team-' + tn, name: teamsMap[tn].join(' & ') }));
-            if (teamList.length < 2) return alert('Zu wenig Teams. Bitte zuerst Teams auslosen.');
-            if (!confirm('Turnier jetzt starten? Der Turnierbaum wird erstellt.')) return;
-
-            teamList = [...teamList].sort(() => Math.random() - 0.5);
-            const size = [4, 8, 16].find(n => teamList.length <= n) || 16;
-            while (teamList.length < size) teamList.push({ id: 'BYE', name: 'Freilos' });
-
-            const template = BRACKET_TEMPLATES2[size];
-            const matches = template.map(tpl => {
-                const m = { id: tpl.id, round: tpl.round, isLB: !!tpl.isLB, isGrandFinal: !!tpl.isGrandFinal, winnerTo: tpl.winnerTo || null, loserTo: tpl.loserTo || null, teamA: null, teamB: null, winnerId: null, rounds: [] };
-                if (tpl.teamASeed !== undefined) m.teamA = teamList[tpl.teamASeed].id;
-                if (tpl.teamBSeed !== undefined) m.teamB = teamList[tpl.teamBSeed].id;
-                return m;
-            });
-
-            const resolveByes = (list) => {
-                let changed = true;
-                while (changed) {
-                    changed = false;
-                    list.forEach(m => {
-                        if (!m.winnerId && m.teamA && m.teamB) {
-                            let winner = null, loser = null;
-                            if (m.teamA === 'BYE' && m.teamB !== 'BYE') { winner = m.teamB; loser = 'BYE'; }
-                            else if (m.teamB === 'BYE' && m.teamA !== 'BYE') { winner = m.teamA; loser = 'BYE'; }
-                            if (winner) {
-                                m.winnerId = winner; changed = true;
-                                if (m.winnerTo) { const [mid, slot] = m.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winner; }
-                                if (m.loserTo && loser !== 'BYE') { const [mid, slot] = m.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loser; }
-                            }
+        window.finalizeMatch = async (matchId, winningSlot, skipConfirm) => {
+            if (!skipConfirm && !confirm('Spiel wirklich abschliessen? Der Sieger rückt im Turnierbaum weiter.')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            let matches, m;
+            try {
+                matches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const list = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const match = list.find(x => x.id === matchId);
+                    if (!match) throw new Error('match-missing');
+                    const winnerId = winningSlot === 'A' ? match.teamA : match.teamB;
+                    const loserId = winningSlot === 'A' ? match.teamB : match.teamA;
+                    match.winnerId = winnerId;
+                    if (match.winnerTo) { const [mid, slot] = match.winnerTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = winnerId; }
+                    if (match.loserTo) { const [mid, slot] = match.loserTo.split(':'); const target = list.find(x => x.id === mid); if (target) target[slot === 'A' ? 'teamA' : 'teamB'] = loserId; }
+                    if (match.id === 'gf' && winningSlot === 'B') {
+                        if (!list.find(x => x.id === 'gf2')) {
+                            list.push({ id: 'gf2', round: 'Entscheidungsspiel', isGrandFinal: true, winnerTo: null, loserTo: null, teamA: match.teamA, teamB: match.teamB, winnerId: null, rounds: [] });
                         }
-                    });
-                }
-            };
-            resolveByes(matches);
+                    }
+                    tx.update(bracketRef, { matches: list });
+                    return list;
+                });
+                m = matches.find(x => x.id === matchId);
+            } catch (err) {
+                console.error('Match abschliessen fehlgeschlagen', err);
+                alert('Konnte das Spiel nicht abschliessen (Verbindungsproblem?). Bitte nochmals versuchen.');
+                return;
+            }
+            bracketDoc = { ...bracketDoc, matches };
 
-            await setDoc(doc(db, TCOL.BRACKETS, tourneyId), { teams: teamList.filter(t=>t.id!=='BYE'), matches, createdAt: serverTimestamp() });
-            await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'running' });
-            window.location.href = 'bracket.html?id=' + tourneyId;
+            // Champion ermitteln & aufs Event-Dokument schreiben, damit er auch in der Übersicht sichtbar ist
+            let championJustWon = false;
+            if (m.id === 'gf' || m.id === 'gf2') {
+                const teamsById = {}; (bracketDoc.teams || []).forEach(tm => teamsById[tm.id] = tm);
+                const champion = computeChampion(matches, teamsById);
+                if (champion) {
+                    await updateDoc(doc(db, TCOL.TOURNEYS, currentTourneyId), { status: 'finished', championName: champion });
+                    championJustWon = true;
+                }
+            }
+            closeModal(null, true);
+            if (championJustWon) { window.celebrate(true); } else { window.celebrate(false); }
         };
 
-
-        window.deleteTourney = async (tourneyId) => {
+        // Admin: EIN einzelnes Match komplett zurücksetzen (alle Runden löschen + Sieger aufheben).
+        // Bewusst OHNE automatische Kaskaden-Korrektur der Folge-Matches im Baum (wie schon bei der
+        // Sieger-Korrektur) — falls im Baum bereits mit dem alten Resultat weitergespielt wurde, muss das
+        // manuell geprüft werden. Der Dialog weist explizit darauf hin.
+        // Admin: Team A / Team B eines Matches manuell setzen — z.B. um die aktuell falsch verdrahtete
+        // 16er-Bracket-Zuordnung im laufenden Turnier zu reparieren, ohne Runden/Resultate zu verlieren.
+        window.assignTeamsManually = async (matchId) => {
             if (!isAdmin()) return;
-            if (!confirm('Event inkl. aller Anmeldungen und des Turnierbaums komplett löschen?')) return;
-            const batch = writeBatch(db);
-            tourneyRegs.forEach(r => batch.delete(doc(db, TCOL.REGS, r.id)));
-            batch.delete(doc(db, TCOL.TOURNEYS, tourneyId));
-            await batch.commit();
-            await deleteDoc(doc(db, TCOL.BRACKETS, tourneyId)).catch(() => {});
-            window.location.href = 'events.html';
+            const teamA = document.getElementById('manual-team-a').value || null;
+            const teamB = document.getElementById('manual-team-b').value || null;
+            if (teamA && teamA === teamB) return alert('Team A und Team B dürfen nicht dasselbe Team sein.');
+            if (!confirm('Team-Zuweisung für dieses Match wirklich manuell überschreiben?')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    m.teamA = teamA;
+                    m.teamB = teamB;
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Team-Zuweisung fehlgeschlagen', err);
+                alert('Konnte die Team-Zuweisung nicht speichern (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
+        };
+
+        window.resetMatchCompletely = async (matchId) => {
+            if (!isAdmin()) return;
+            if (!confirm('Dieses Match wirklich KOMPLETT zurücksetzen? Alle erfassten Runden dieses Matches gehen verloren, der Sieger wird aufgehoben. Falls im Turnierbaum bereits mit dem bisherigen Resultat weitergespielt wurde, danach unbedingt die Folge-Matches prüfen.')) return;
+            const bracketRef = doc(db, TCOL.BRACKETS, currentTourneyId);
+            try {
+                const freshMatches = await runTransaction(db, async (tx) => {
+                    const snap = await tx.get(bracketRef);
+                    if (!snap.exists()) throw new Error('bracket-missing');
+                    const matches = JSON.parse(JSON.stringify(snap.data().matches || []));
+                    const m = matches.find(x => x.id === matchId);
+                    if (!m) throw new Error('match-missing');
+                    m.rounds = [];
+                    m.winnerId = null;
+                    tx.update(bracketRef, { matches });
+                    return matches;
+                });
+                bracketDoc = { ...bracketDoc, matches: freshMatches };
+                document.getElementById('modal-container').innerHTML = renderScoringModal();
+                if (window.lucide) window.lucide.createIcons();
+            } catch (err) {
+                console.error('Match zurücksetzen fehlgeschlagen', err);
+                alert('Konnte das Match nicht zurücksetzen (Verbindungsproblem?). Bitte nochmals versuchen.');
+            }
         };
 
         window.resetTourneyTeamsAndBracket = async (tourneyId) => {
@@ -1187,6 +1522,9 @@
             await updateDoc(doc(db, TCOL.TOURNEYS, tourneyId), { status: 'running', championName: null });
             window.location.href = 'bracket.html?id=' + tourneyId;
         };
+
+        let NAV_MODE = 'context';
+        const getContextBack = () => ({ label: tourney ? tourney.name : 'Event', href: tourney ? ('event.html?id=' + tourney.id) : 'events.html' });
 
         // --- SCROLL-HANDLER (Mobile-Nav Shrink) ---
         const handleScroll = () => { const nav = document.getElementById('mobile-nav'); if(nav) { if(window.scrollY > 50) nav.classList.add('translate-y-2', 'opacity-90', 'scale-95'); else nav.classList.remove('translate-y-2', 'opacity-90', 'scale-95'); } };
@@ -1371,7 +1709,11 @@
 
 
         const renderApp = () => {
-            mountPage(renderTourneyDetail())
+            mountPage(renderTourneyBracket());
+            if (scoringMatchId && bracketDoc) {
+                const mc = document.getElementById('modal-container');
+                if (mc) { mc.innerHTML = renderScoringModal(); if (window.lucide) window.lucide.createIcons(); }
+            }
         };
 
 
@@ -1402,7 +1744,7 @@
             if (currentTourneyId) {
                 onSnapshot(doc(db, TCOL.TOURNEYS, currentTourneyId), sn => { tourney = sn.exists() ? { id: sn.id, ...sn.data() } : null; renderApp(); });
                 onSnapshot(query(collection(db, TCOL.REGS), where('tourneyId', '==', currentTourneyId)), sn => { tourneyRegs = sn.docs.map(d=>({id:d.id, ...d.data()})); renderApp(); });
-                onSnapshot(query(collection(db, TCOL.FREEGAMES), where('eventId', '==', currentTourneyId)), sn => { eventFreeGames = sn.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=> (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0)); renderApp(); });
+                onSnapshot(doc(db, TCOL.BRACKETS, currentTourneyId), sn => { bracketDoc = sn.exists() ? sn.data() : null; renderApp(); });
             }
 
             onAuthStateChanged(auth, async (u) => {
